@@ -37,7 +37,7 @@ const columns = computed(() => [
 
 <template>
   <footer>
-    <div class="h-0.5 bg-(image:--gradient-bismuth)" />
+    <div class="h-px bg-ghost-border" />
     <div class="page page-grid gap-y-12 pt-14 pb-10">
       <div class="col-span-12 flex flex-col gap-4 lg:col-span-6">
         <NuxtLink
@@ -45,7 +45,7 @@ const columns = computed(() => [
           class="-ml-1 flex w-fit items-center gap-2.5 rounded-md px-1 py-1"
           :aria-label="t('nav.home')"
         >
-          <img src="/favicon.svg" alt="" class="size-6" width="24" height="24" />
+          <BrandLogo class="size-6 shrink-0" />
           <span class="text-[0.9375rem] font-semibold tracking-[-0.01em]">Olauda</span>
         </NuxtLink>
         <p class="max-w-[22rem] text-[0.9375rem] leading-relaxed text-on-ghost-muted">

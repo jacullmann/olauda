@@ -105,8 +105,8 @@ function isNow(day: DemoDay, blockIndex: number, periodIndex: number) {
               class="absolute inset-x-0 flex items-center"
               :style="{ top: `${demoNow.progress * 100}%` }"
             >
-              <span class="-ml-1 size-2 shrink-0 rounded-full bg-bismuth-yellow" />
-              <span class="h-[1.5px] flex-1 bg-(image:--gradient-bismuth)" />
+              <span class="-ml-1 size-2 shrink-0 rounded-full bg-accent" />
+              <span class="h-[1.5px] flex-1 bg-accent" />
               <span
                 class="tabular absolute right-2 bottom-1.5 text-[0.6875rem] font-semibold text-on-ghost"
               >

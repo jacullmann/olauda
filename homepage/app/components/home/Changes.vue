@@ -49,7 +49,7 @@ const changes = [
     </dl>
   </PageChapter>
 
-  <div class="mt-figure bg-announcement text-on-announcement">
+  <div class="mt-figure bg-accent text-on-accent">
     <div class="page flex min-h-12 items-center gap-6 py-3">
       <p class="flex-1 text-center text-sm font-medium">{{ t('home.changes.announcement') }}</p>
       <span class="tabular text-xs opacity-80">1/3</span>

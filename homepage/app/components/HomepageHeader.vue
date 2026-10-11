@@ -35,7 +35,7 @@ useHead({ bodyAttrs: { class: computed(() => (menuOpen.value ? 'overflow-hidden'
         class="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-1"
         :aria-label="t('nav.home')"
       >
-        <img src="/favicon.svg" alt="" class="size-6" width="24" height="24" />
+        <BrandLogo class="size-6 shrink-0" />
         <span class="text-[0.9375rem] font-semibold tracking-[-0.01em]">Olauda</span>
       </NuxtLink>
 
