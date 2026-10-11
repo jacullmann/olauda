@@ -68,7 +68,7 @@
         "toggle_title": "Dalton",
         "toggle_description": "Dalton wird zum Aufgabentyp und kann wie ein Fach in den Stundenplan eingetragen werden. Fächer können als Daltonfächer markiert werden.",
         "modal": {
-          "title": "Dalton deaktivieren?",
+          "title": "Dalton ausschalten?",
           "message": "Alle Daltonstunden werden aus dem Stundenplan entfernt und es können keine neuen Daltonaufträge erstellt werden. Bestehende Daltonaufträge und die Dalton-Markierungen der Fächer bleiben erhalten."
         }
       },

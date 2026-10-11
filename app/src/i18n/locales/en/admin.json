@@ -582,8 +582,8 @@
         "data_exported": "Data exported"
       },
       "mfa": {
-        "enabled": "Two-factor enabled",
-        "disabled": "Two-factor disabled",
+        "enabled": "Two-factor turned on",
+        "disabled": "Two-factor turned off",
         "recovery_codes_regenerated": "Recovery codes regenerated"
       },
       "passkey": {

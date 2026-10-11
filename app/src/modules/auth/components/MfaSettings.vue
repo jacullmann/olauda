@@ -193,7 +193,7 @@ async function activateMfa() {
     newRecoveryCodes.value = result.data;
     emit('mfaChanged', true);
   } else {
-    verifyError.value = result.error || t('auth.mfa.errors.activate');
+    verifyError.value = result.error || t('auth.mfa.errors.turn_on');
     verifyCode.value = '';
     await nextTick();
     codeInput.value?.focus();
@@ -204,9 +204,9 @@ async function activateMfa() {
 
 async function deactivate() {
   const confirmed = await confirmModal.ask({
-    title: t('auth.mfa.deactivate.title'),
-    content: t('auth.mfa.deactivate.warning'),
-    submitText: t('auth.mfa.actions.deactivate'),
+    title: t('auth.mfa.turn_off.title'),
+    content: t('auth.mfa.turn_off.warning'),
+    submitText: t('auth.mfa.actions.turn_off'),
     danger: true,
   });
   if (!confirmed) return;
@@ -274,8 +274,8 @@ onUnmounted(() => {
           >
             {{
               mfaEnabled
-                ? t('auth.security.activated')
-                : t('auth.security.deactivated')
+                ? t('auth.security.on')
+                : t('auth.security.off')
             }}
           </span>
         </div>
@@ -292,7 +292,7 @@ onUnmounted(() => {
       full
       @click="startSetup"
     >
-      {{ t('auth.mfa.actions.activate') }}
+      {{ t('auth.mfa.actions.turn_on') }}
     </BaseButton>
 
     <div v-if="setupMode" class="flex flex-col gap-4">
@@ -428,7 +428,7 @@ onUnmounted(() => {
             :loading="loading"
             @click="activateMfa"
           >
-            {{ t('auth.mfa.actions.activate') }}
+            {{ t('auth.mfa.actions.turn_on') }}
           </BaseButton>
         </BaseRow>
       </div>
@@ -464,7 +464,7 @@ onUnmounted(() => {
       </BaseButton>
 
       <BaseButton :disabled="loading" variant="danger" full @click="deactivate">
-        {{ t('auth.mfa.actions.deactivate') }}
+        {{ t('auth.mfa.actions.turn_off') }}
       </BaseButton>
     </template>
   </BaseFormContent>

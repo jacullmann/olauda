@@ -130,7 +130,7 @@ export function useMfa() {
         mfaEnabled.value = true;
         recoveryCodesLeft.value = codes.length;
       },
-      'auth.mfa.errors.activate',
+      'auth.mfa.errors.turn_on',
     );
 
   const deactivateMfa = () =>
@@ -140,7 +140,7 @@ export function useMfa() {
         mfaEnabled.value = false;
         recoveryCodesLeft.value = null;
       },
-      'auth.mfa.errors.deactivate',
+      'auth.mfa.errors.turn_off',
     );
 
   const regenerateRecoveryCodes = () =>

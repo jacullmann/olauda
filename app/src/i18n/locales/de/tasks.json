@@ -33,7 +33,7 @@
         },
         {
           "title": "Archiv",
-          "text": "Abgehakte Aufgaben werden nach Ablauf ihres Abgabetags <strong>automatisch ausgeblendet</strong>, um die Ansicht übersichtlich zu halten – angeheftete Aufgaben bleiben sichtbar. Falls du trotzdem eine alte Aufgabe finden willst, kannst du den Filter <strong>Archiv</strong> aktivieren. Über das Menü kannst du Aufgaben mit <strong>Archivieren</strong> und <strong>Wiederherstellen</strong> auch manuell ins Archiv verschieben und zurückholen. Das betrifft nur deine eigene Ansicht."
+          "text": "Abgehakte Aufgaben werden nach Ablauf ihres Abgabetags <strong>automatisch ausgeblendet</strong>, um die Ansicht übersichtlich zu halten – angeheftete Aufgaben bleiben sichtbar. Falls du trotzdem eine alte Aufgabe finden willst, kannst du den Filter <strong>Archiv</strong> einschalten. Über das Menü kannst du Aufgaben mit <strong>Archivieren</strong> und <strong>Wiederherstellen</strong> auch manuell ins Archiv verschieben und zurückholen. Das betrifft nur deine eigene Ansicht."
         }
       ],
       "tooltip": "Übersicht und Funktionen für Aufgaben"
@@ -244,7 +244,7 @@
       "own_quota_exceeded": "Zu viele Bilder. Du kannst dieser Aufgabe noch {remaining} hinzufügen (max. {max}). Es wurde nichts hochgeladen.",
       "task_quota_reached": "Diese Aufgabe hat schon die maximale Anzahl von {max} Bildern.",
       "task_quota_exceeded": "Zu viele Bilder. Diese Aufgabe hat noch Platz für {remaining} (max. {max}). Es wurde nichts hochgeladen.",
-      "type_quota_exceeded": "Dieser Aufgabentyp erlaubt höchstens {max} Bilder. Entferne die überzähligen."
+      "type_quota_exceeded": "Dieser Aufgabentyp kann höchstens {max} Bilder haben. Entferne die überzähligen."
     }
   },
   "errors": {

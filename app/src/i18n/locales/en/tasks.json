@@ -238,7 +238,7 @@
       "own_quota_exceeded": "Too many images. You can add {remaining} more to this task (max. {max}). Nothing was uploaded.",
       "task_quota_reached": "This task already has the maximum of {max} images.",
       "task_quota_exceeded": "Too many images. This task has room for {remaining} more (max. {max}). Nothing was uploaded.",
-      "type_quota_exceeded": "This task type allows at most {max} images. Remove the extra ones."
+      "type_quota_exceeded": "This task type can have at most {max} images. Remove the extra ones."
     }
   },
   "errors": {

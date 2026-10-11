@@ -68,7 +68,7 @@
         "toggle_title": "Dalton",
         "toggle_description": "Dalton becomes a task type and can be scheduled like a subject. Subjects can be marked as Dalton subjects.",
         "modal": {
-          "title": "Disable Dalton?",
+          "title": "Turn off Dalton?",
           "message": "All Dalton lessons are removed from the schedule and no new Dalton tasks can be created. Existing Dalton tasks and the Dalton flags on subjects are kept."
         }
       },

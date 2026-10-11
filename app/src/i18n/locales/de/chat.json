@@ -19,7 +19,7 @@
   },
   "scroll_down": "Nach unten",
   "reload": "Erneut laden",
-  "placeholder_disabled": "Das Senden von Nachrichten ist für dich deaktiviert",
+  "placeholder_no_permission": "Du hast keine Berechtigung, Nachrichten zu senden",
   "success": {
     "copy": "Nachricht kopiert.",
     "report": "Nachricht gemeldet."

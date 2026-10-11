@@ -19,7 +19,7 @@
   },
   "scroll_down": "Scroll down",
   "reload": "Reload",
-  "placeholder_disabled": "Sending messages is disabled for you",
+  "placeholder_no_permission": "You don't have permission to send messages",
   "success": {
     "copy": "Message copied.",
     "report": "Message reported."

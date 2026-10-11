@@ -134,9 +134,9 @@
       },
       "registration_held": "Im Shutdown-Modus immer geschlossen.",
       "shutdown_modal": {
-        "title": "Shutdown-Modus aktivieren?",
+        "title": "Shutdown-Modus einschalten?",
         "content": "Alle außer Superadmins verlieren sofort den Zugriff auf Olauda und können sich weder anmelden noch registrieren.",
-        "submit": "Aktivieren"
+        "submit": "Einschalten"
       },
       "retry": "Erneut versuchen",
       "errors": {
@@ -582,8 +582,8 @@
         "data_exported": "Daten exportiert"
       },
       "mfa": {
-        "enabled": "Zwei-Faktor aktiviert",
-        "disabled": "Zwei-Faktor deaktiviert",
+        "enabled": "Zwei-Faktor eingeschaltet",
+        "disabled": "Zwei-Faktor ausgeschaltet",
         "recovery_codes_regenerated": "Wiederherstellungscodes erneuert"
       },
       "passkey": {
