@@ -596,8 +596,8 @@ mod tests {
 
     fn relying_party() -> Webauthn {
         crate::passkeys::relying_party(&WebauthnConfig {
-            rp_id: "schul-dashboard.com".into(),
-            rp_origin: Url::parse("https://app.schul-dashboard.com").unwrap(),
+            rp_id: "olauda.com".into(),
+            rp_origin: Url::parse("https://app.olauda.com").unwrap(),
         })
         .unwrap()
     }
@@ -652,7 +652,7 @@ mod tests {
     #[test]
     fn an_origin_outside_the_rp_id_is_refused() {
         let config = WebauthnConfig {
-            rp_id: "schul-dashboard.com".into(),
+            rp_id: "olauda.com".into(),
             rp_origin: Url::parse("https://evil.example").unwrap(),
         };
 

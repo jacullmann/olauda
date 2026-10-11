@@ -102,7 +102,7 @@ async function cancel() {
         <p class="m-0! mt-4! text-sm! text-on-ghost-muted">
           {{ t('auth.mfa.verify.support.text') }}
           <a
-            href="mailto:kontakt@schul-dashboard.com"
+            href="mailto:kontakt@olauda.com"
             class="text-on-ghost underline hover:opacity-75 transition-opacity"
           >
             {{ t('auth.mfa.verify.support.link') }}

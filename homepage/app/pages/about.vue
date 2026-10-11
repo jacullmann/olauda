@@ -10,7 +10,7 @@ useSeoMetaWithI18n({
     '@type': 'AboutPage',
     name: t('pages.about.title'),
     description: t('pages.about.description'),
-    isPartOf: { '@id': 'https://schul-dashboard.com/#website' },
+    isPartOf: { '@id': 'https://olauda.com/#website' },
   },
 });
 

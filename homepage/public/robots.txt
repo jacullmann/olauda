@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://schul-dashboard.com/sitemap_index.xml
+Sitemap: https://olauda.com/sitemap_index.xml

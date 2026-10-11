@@ -1,4 +1,4 @@
-# schul-dashboard
+# Olauda
 
 A web-based platform for schools and student groups.
 

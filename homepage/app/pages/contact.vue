@@ -9,7 +9,7 @@ useSeoMetaWithI18n({
   keywords: 'contact, support, email, discord',
 });
 
-const email = 'kontakt@schul-dashboard.com';
+const email = 'kontakt@olauda.com';
 
 const channels: { key: 'discord' | 'status' | 'bugs'; href?: string }[] = [
   { key: 'discord', href: 'https://discord.gg/schul-dashboard' },

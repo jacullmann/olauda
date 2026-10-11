@@ -28,8 +28,8 @@ const appLinks = useAppLinks();
         <p class="text-[0.9375rem] text-on-ghost-muted">
           <i18n-t keypath="cta.question" scope="global">
             <template #email>
-              <a href="mailto:kontakt@schul-dashboard.com" class="link-underline text-on-ghost">
-                kontakt@schul-dashboard.com
+              <a href="mailto:kontakt@olauda.com" class="link-underline text-on-ghost">
+                kontakt@olauda.com
               </a>
             </template>
           </i18n-t>

@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   site: {
-    url: 'https://schul-dashboard.com',
+    url: 'https://olauda.com',
     name: 'Olauda',
   },
 
@@ -43,7 +43,7 @@ export default defineNuxtConfig({
     lazy: true,
     langDir: '../locales',
     defaultLocale: 'en',
-    baseUrl: 'https://schul-dashboard.com',
+    baseUrl: 'https://olauda.com',
     locales: [
       {
         code: 'en',
@@ -111,14 +111,14 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: 'Olauda – Free School Management for Students' },
         { property: 'og:description', content: 'The free, ad-free school management system by students for students.' },
-        { property: 'og:image', content: 'https://schul-dashboard.com/og-image.png' },
+        { property: 'og:image', content: 'https://olauda.com/og-image.png' },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '630' },
         { property: 'og:site_name', content: 'Olauda' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Olauda – Free School Management' },
         { name: 'twitter:description', content: 'The free school management system by students for students.' },
-        { name: 'twitter:image', content: 'https://schul-dashboard.com/og-image.png' },
+        { name: 'twitter:image', content: 'https://olauda.com/og-image.png' },
         { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
         { name: 'theme-color', content: '#0e0e0e', media: '(prefers-color-scheme: dark)' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
@@ -142,34 +142,33 @@ export default defineNuxtConfig({
             '@graph': [
               {
                 '@type': 'WebSite',
-                '@id': 'https://schul-dashboard.com/#website',
-                url: 'https://schul-dashboard.com/',
+                '@id': 'https://olauda.com/#website',
+                url: 'https://olauda.com/',
                 name: 'Olauda',
-                alternateName: ['schul-dashboard', 'Schul-Dashboard', 'Schuldashboard'],
                 inLanguage: ['en-US', 'de-DE'],
-                publisher: { '@id': 'https://schul-dashboard.com/#organization' },
+                publisher: { '@id': 'https://olauda.com/#organization' },
               },
               {
                 '@type': 'WebApplication',
-                '@id': 'https://schul-dashboard.com/#webapp',
-                url: 'https://app.schul-dashboard.com',
+                '@id': 'https://olauda.com/#webapp',
+                url: 'https://app.olauda.com',
                 name: 'Olauda',
                 description: 'The free school management system by students for students',
                 applicationCategory: 'EducationalApplication',
                 operatingSystem: 'Web',
                 offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-                publisher: { '@id': 'https://schul-dashboard.com/#organization' },
+                publisher: { '@id': 'https://olauda.com/#organization' },
               },
               {
                 '@type': 'Organization',
-                '@id': 'https://schul-dashboard.com/#organization',
+                '@id': 'https://olauda.com/#organization',
                 name: 'Olauda',
-                url: 'https://schul-dashboard.com/',
-                logo: 'https://schul-dashboard.com/apple-touch-icon.png',
-                email: 'kontakt@schul-dashboard.com',
+                url: 'https://olauda.com/',
+                logo: 'https://olauda.com/apple-touch-icon.png',
+                email: 'kontakt@olauda.com',
                 contactPoint: {
                   '@type': 'ContactPoint',
-                  email: 'kontakt@schul-dashboard.com',
+                  email: 'kontakt@olauda.com',
                   contactType: 'customer support',
                 },
               },
@@ -192,7 +191,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      appUrl: 'https://app.schul-dashboard.com',
+      appUrl: 'https://app.olauda.com',
       apiUrl: '',
     },
   },

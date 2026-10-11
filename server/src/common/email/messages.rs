@@ -1,6 +1,6 @@
 use crate::common::locale::Locale;
 
-pub(super) const CONTACT_EMAIL: &str = "kontakt@schul-dashboard.com";
+pub(super) const CONTACT_EMAIL: &str = "kontakt@olauda.com";
 
 /// Links point at the public homepage in every environment: the legal pages
 /// only exist there, and the homepage prefixes every non-English route with
@@ -20,18 +20,18 @@ impl LegalFooter {
         match locale {
             Locale::De => Self {
                 privacy_label: "Datenschutz",
-                privacy_url: "https://schul-dashboard.com/de/legal/datenschutz",
+                privacy_url: "https://olauda.com/de/legal/datenschutz",
                 imprint_label: "Impressum",
-                imprint_url: "https://schul-dashboard.com/de/legal/impressum",
+                imprint_url: "https://olauda.com/de/legal/impressum",
                 contact_label: "Kontakt",
                 automated_notice: "Diese E-Mail wurde automatisch versendet. Bitte antworte nicht darauf.",
                 sender: "Olauda · Berlin, Deutschland",
             },
             Locale::En => Self {
                 privacy_label: "Privacy Policy",
-                privacy_url: "https://schul-dashboard.com/legal/privacy-policy",
+                privacy_url: "https://olauda.com/legal/privacy-policy",
                 imprint_label: "Imprint",
-                imprint_url: "https://schul-dashboard.com/legal/imprint",
+                imprint_url: "https://olauda.com/legal/imprint",
                 contact_label: "Contact",
                 automated_notice: "This email was sent automatically. Please don't reply to it.",
                 sender: "Olauda · Berlin, Germany",
@@ -193,11 +193,11 @@ struct NoticeText {
     paragraphs: &'static [&'static str],
 }
 
-const ADVICE_DE: &str = "Warst du das nicht? Setze dein Passwort zurück, melde in den Kontoeinstellungen unter Sicherheit alle anderen Geräte ab und schreib uns an kontakt@schul-dashboard.com.";
-const ADVICE_EN: &str = "Wasn't you? Reset your password, sign out all other devices under Security in your account settings and write to us at kontakt@schul-dashboard.com.";
-const SUPPORT_ADVICE_DE: &str = "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an kontakt@schul-dashboard.com.";
+const ADVICE_DE: &str = "Warst du das nicht? Setze dein Passwort zurück, melde in den Kontoeinstellungen unter Sicherheit alle anderen Geräte ab und schreib uns an kontakt@olauda.com.";
+const ADVICE_EN: &str = "Wasn't you? Reset your password, sign out all other devices under Security in your account settings and write to us at kontakt@olauda.com.";
+const SUPPORT_ADVICE_DE: &str = "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an kontakt@olauda.com.";
 const SUPPORT_ADVICE_EN: &str =
-    "Didn't ask us for this? Please write to us at kontakt@schul-dashboard.com right away.";
+    "Didn't ask us for this? Please write to us at kontakt@olauda.com right away.";
 
 impl SecurityNotice {
     fn notice(self, locale: Locale) -> NoticeText {
