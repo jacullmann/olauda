@@ -108,14 +108,21 @@ export const useTaskFormModal = defineStore('task-form-modal', () => {
 export const usePrivateTaskFormModal = defineStore(
   'private-task-form-modal',
   () => {
-    const modal = useModalState<{ task: PrivateTask | null }, PrivateTask>();
+    const modal = useModalState<
+      {
+        task: PrivateTask | null;
+        /** Opened from the private task list, which shows the new task. */
+        local: boolean;
+      },
+      PrivateTask
+    >();
 
-    function openNew() {
-      modal.open({ task: null });
+    function openNew({ local = false } = {}) {
+      modal.open({ task: null, local });
     }
 
     function openEdit(task: PrivateTask) {
-      modal.open({ task });
+      modal.open({ task, local: true });
     }
 
     return { ...modal, openNew, openEdit };

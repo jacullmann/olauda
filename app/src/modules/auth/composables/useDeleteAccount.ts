@@ -21,7 +21,7 @@ export function useDeleteAccount(emit: {
     try {
       const res = await api.delete('/auth/me');
       if (res?.data?.ok) {
-        toast.success(t('auth.delete_account.success'));
+        toast.success(t('auth.delete_account.success.delete'));
         emit('deleted');
       } else {
         errorMsg.value = t('auth.delete_account.errors.delete');

@@ -51,7 +51,6 @@ async function copyLink(inviteId: string, token: string) {
   try {
     await navigator.clipboard.writeText(getInviteUrl(token));
     copiedId.value = inviteId;
-    toast.success(t('auth.groups.invite.copied'));
     setTimeout(() => {
       if (copiedId.value === inviteId) {
         copiedId.value = null;

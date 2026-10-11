@@ -219,8 +219,7 @@
       "groups": "Gruppen & Rollen",
       "no_groups": "Keine Gruppenmitgliedschaften.",
       "joined": "Beigetreten am {date}",
-      "log": "Protokoll",
-      "role_changed": "Rolle geändert."
+      "log": "Protokoll"
     },
     "ban_modal": {
       "title": "Benutzer bannen?",
@@ -230,13 +229,10 @@
       "title": "Benutzer entbannen?",
       "content": "{email} kann sich danach wieder anmelden."
     },
-    "ban_success": "Benutzer gebannt.",
-    "unban_success": "Benutzer entbannt.",
     "delete_modal": {
       "title": "Benutzer löschen?",
       "content": "{email} und alle zugehörigen Daten werden unwiderruflich gelöscht."
     },
-    "delete_success": "Benutzer gelöscht.",
     "errors": {
       "ban": "Der Benutzer konnte nicht gesperrt werden.",
       "unban": "Die Sperre konnte nicht aufgehoben werden.",
@@ -250,7 +246,9 @@
       "title": "Zwei-Faktor-Authentifizierung zurücksetzen?",
       "content": "Die Zwei-Faktor-Authentifizierung und die Wiederherstellungscodes von {email} werden entfernt. Tu das nur, wenn du sichergestellt hast, dass die Anfrage wirklich von dieser Person stammt. Sie wird per E-Mail benachrichtigt."
     },
-    "reset_mfa_success": "Zwei-Faktor-Authentifizierung zurückgesetzt."
+    "success": {
+      "delete": "Benutzer gelöscht."
+    }
   },
   "reports": {
     "title": "Gemeldete Inhalte",
@@ -265,7 +263,6 @@
       "title": "Meldung löschen?",
       "content": "Bist du dir sicher, dass du diese Meldung löschen willst?"
     },
-    "delete_success": "Meldung gelöscht.",
     "errors": {
       "load": "Die Meldungen konnten nicht geladen werden.",
       "delete": "Die Meldung konnte nicht gelöscht werden."
@@ -292,7 +289,6 @@
     "open_tooltip": "Gruppe öffnen",
     "invite_tooltip": "Einladungslink generieren",
     "delete_tooltip": "Gruppe löschen",
-    "delete_success": "Gruppe „{name}“ gelöscht.",
     "errors": {
       "load": "Die Gruppen konnten nicht geladen werden."
     }
@@ -339,8 +335,6 @@
       "active": "Die Info verschwindet sofort bei allen Benutzern.",
       "scheduled": "Die Info wird nicht veröffentlicht."
     },
-    "save_success": "Info gespeichert.",
-    "delete_success": "Info gelöscht.",
     "errors": {
       "load": "Die Infos konnten nicht geladen werden.",
       "delete": "Die Info konnte nicht gelöscht werden.",

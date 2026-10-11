@@ -39,7 +39,6 @@ export function useSuperAdminReports() {
     try {
       await api.delete(`/admin/reports/${id}`);
       reports.value = reports.value.filter((r) => r.id !== id);
-      toast.success(t('admin.reports.delete_success'));
       await loadStats();
     } catch {
       toast.error(t('admin.reports.errors.delete'));

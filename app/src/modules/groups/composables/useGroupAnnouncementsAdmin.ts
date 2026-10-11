@@ -42,7 +42,6 @@ export function useGroupAnnouncementsAdmin() {
       await api.delete(groupPath(groupId, `/admin/announcements/${id}`));
       announcements.value = announcements.value.filter((a) => a.id !== id);
       announcementStore.remove(id);
-      toast.success(t('groups.settings.messages.announcement_deleted'));
     } catch {
       toast.error(t('announcements.errors.delete'));
     }

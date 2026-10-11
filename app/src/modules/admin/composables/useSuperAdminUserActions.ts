@@ -37,7 +37,6 @@ export function useSuperAdminUserActions(user: Ref<SuperAdminUser | null>) {
     pendingAction.value = action;
     try {
       await request();
-      toast.success(t(`admin.users.${action}_success`));
       return true;
     } catch {
       toast.error(t(options.errorKey));
@@ -104,8 +103,11 @@ export function useSuperAdminUserActions(user: Ref<SuperAdminUser | null>) {
       },
       () => api.delete(`/admin/users/${target.id}`),
     );
-    if (done) await loadStats();
-    return done;
+    if (!done) return false;
+    // The page is left, so the user no longer sees the account go.
+    toast.success(t('admin.users.success.delete'));
+    await loadStats();
+    return true;
   }
 
   return { pendingAction, toggleBan, resetMfa, deleteUser };

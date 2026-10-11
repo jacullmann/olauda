@@ -56,7 +56,6 @@ export function useGroupMembers() {
       await api.patch(groupPath(groupId, `/admin/members/${userId}/role`), {
         role,
       });
-      toast.success(t('groups.settings.messages.role_updated'));
       // A role change also changes what may be done to that member next.
       await Promise.all([isSelf && checkAuthStatus(), loadMembers()]);
     } catch (e) {
@@ -73,11 +72,6 @@ export function useGroupMembers() {
         params: { ban },
       });
       members.value = members.value.filter((m) => m.userId !== userId);
-      toast.success(
-        ban
-          ? t('groups.settings.messages.member_removed_banned')
-          : t('groups.settings.messages.member_removed'),
-      );
     } catch (e) {
       toast.error(
         apiErrorMessage(e, t('groups.settings.members.errors.remove')),
@@ -114,7 +108,6 @@ export function useGroupMembers() {
       await api.post(groupPath(groupId, '/admin/transfer-ownership'), {
         targetUserId,
       });
-      toast.success(t('groups.settings.messages.ownership_transferred'));
       await Promise.all([checkAuthStatus(), loadMembers()]);
     } catch (e) {
       toast.error(

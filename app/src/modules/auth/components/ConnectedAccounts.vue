@@ -37,7 +37,6 @@ async function handleUnlink() {
 
   if (result.ok) {
     providers.value = providers.value.filter((p) => p.provider !== 'google');
-    toast.success(t('auth.connected_accounts.unlinked'));
   } else {
     toast.error(result.error);
   }

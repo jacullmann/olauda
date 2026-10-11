@@ -48,7 +48,6 @@ async function copyLink() {
   try {
     await navigator.clipboard.writeText(inviteUrl.value);
     copied.value = true;
-    toast.success(t('auth.groups.invite.copied'));
     setTimeout(() => {
       copied.value = false;
     }, 3000);
@@ -66,7 +65,7 @@ async function regenerate() {
     if (res.ok && res.token) {
       currentToken.value = res.token;
       copied.value = false;
-      toast.success(t('auth.groups.invite.renewed'));
+      toast.success(t('groups.success.renew_invite'));
     } else {
       toast.error(res.error || t('groups.errors.renew_invite'));
     }

@@ -90,7 +90,6 @@ export function useSuperAdminGroups() {
     deletingGroup.value = true;
     try {
       await api.delete(`/admin/groups/${group.id}`);
-      toast.success(t('admin.groups.delete_success', { name: group.name }));
       deleteModalOpen.value = false;
       list.refresh();
     } catch {

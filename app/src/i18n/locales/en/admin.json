@@ -219,8 +219,7 @@
       "groups": "Groups & roles",
       "no_groups": "No group memberships.",
       "joined": "Joined {date}",
-      "log": "Log",
-      "role_changed": "Role changed."
+      "log": "Log"
     },
     "ban_modal": {
       "title": "Ban user?",
@@ -230,13 +229,10 @@
       "title": "Unban user?",
       "content": "{email} will be able to sign in again."
     },
-    "ban_success": "User banned.",
-    "unban_success": "User unbanned.",
     "delete_modal": {
       "title": "Delete user?",
       "content": "{email} and all associated data will be permanently deleted."
     },
-    "delete_success": "User deleted.",
     "errors": {
       "ban": "Couldn't ban the user.",
       "unban": "Couldn't lift the ban.",
@@ -250,7 +246,9 @@
       "title": "Reset two-factor authentication?",
       "content": "Two-factor authentication and the recovery codes of {email} will be removed. Only do this once you've made sure the request really comes from this person. They will be notified by email."
     },
-    "reset_mfa_success": "Two-factor authentication reset."
+    "success": {
+      "delete": "User deleted."
+    }
   },
   "reports": {
     "title": "Reported Content",
@@ -265,7 +263,6 @@
       "title": "Delete report?",
       "content": "Are you sure you want to delete this report?"
     },
-    "delete_success": "Report deleted.",
     "errors": {
       "load": "Couldn't load the reports.",
       "delete": "Couldn't delete the report."
@@ -292,7 +289,6 @@
     "open_tooltip": "Open group",
     "invite_tooltip": "Generate invite link",
     "delete_tooltip": "Delete group",
-    "delete_success": "Group \"{name}\" deleted.",
     "errors": {
       "load": "Couldn't load the groups."
     }
@@ -339,8 +335,6 @@
       "active": "The info disappears for every user right away.",
       "scheduled": "The info will not be published."
     },
-    "save_success": "Info saved.",
-    "delete_success": "Info deleted.",
     "errors": {
       "load": "Couldn't load the infos.",
       "delete": "Couldn't delete the info.",

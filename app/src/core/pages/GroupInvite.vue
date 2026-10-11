@@ -79,7 +79,6 @@ async function handleJoin() {
       await openExistingGroup(res.groupId);
     } else if (res.ok && res.groupId) {
       clearPendingInvite();
-      toast.success(t('auth.groups.invite.success_join'));
       // The router sends a member who still has courses to pick to the setup.
       await router.push({
         name: 'group-dashboard',
@@ -94,7 +93,7 @@ async function handleJoin() {
 }
 
 async function openExistingGroup(groupId: string) {
-  toast.info(t('auth.groups.invite.already_member'));
+  toast.info(t('groups.notices.already_member'));
   await router.replace({ name: 'group-dashboard', params: { groupId } });
 }
 

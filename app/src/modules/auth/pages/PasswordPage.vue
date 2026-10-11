@@ -42,10 +42,10 @@ function succeed(message: string) {
 }
 
 const changeForm = reactive(
-  useChangePassword(() => succeed(t('auth.change_password.success'))),
+  useChangePassword(() => succeed(t('auth.change_password.success.change'))),
 );
 const setForm = reactive(
-  useSetPassword(() => succeed(t('auth.set_password.success'))),
+  useSetPassword(() => succeed(t('auth.set_password.success.set'))),
 );
 const form = isChange ? changeForm : setForm;
 

@@ -8,11 +8,8 @@
   "typing_multiple": "are typing…",
   "no_messages": "No messages yet. Say hello!",
   "quote_label": "Reply to",
-  "copy_success": "Message copied to clipboard",
   "delete_confirm": "Are you sure you want to delete this message?",
   "delete_confirm_title": "Delete Message?",
-  "delete_success": "Message deleted",
-  "report_success": "Message reported",
   "errors": {
     "load": "Couldn't load the messages.",
     "report": "Couldn't report the message.",
@@ -22,5 +19,9 @@
   },
   "scroll_down": "Scroll down",
   "reload": "Reload",
-  "placeholder_disabled": "Sending messages is disabled for you"
+  "placeholder_disabled": "Sending messages is disabled for you",
+  "success": {
+    "copy": "Message copied.",
+    "report": "Message reported."
+  }
 }

@@ -18,7 +18,8 @@
     "saving": "Saving…",
     "refresh": "Refresh",
     "retry": "Try again",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "copied": "Copied"
   },
   "discard_changes": {
     "title": "Discard changes?",
@@ -271,5 +272,8 @@
   "errors": {
     "rate_limited": "Too many attempts. Wait a moment and try again.",
     "copy_link": "Couldn't copy the link."
+  },
+  "success": {
+    "copy_link": "Link copied."
   }
 }

@@ -52,7 +52,6 @@ export function useGroupGeneralSettings() {
     savingGroupName.value = true;
     try {
       await api.patch(groupPath(groupId, '/admin/settings'), { name });
-      toast.success(t('groups.settings.messages.group_name_updated'));
       editingGroupName.value = false;
       await checkAuthStatus();
     } catch (e) {
@@ -68,11 +67,6 @@ export function useGroupGeneralSettings() {
   async function saveGroupAvatar(avatarId: string | null): Promise<boolean> {
     try {
       await patchSettings({ avatarId });
-      toast.success(
-        avatarId
-          ? t('groups.settings.general.avatar.update_success')
-          : t('groups.settings.general.avatar.delete_success'),
-      );
       return true;
     } catch (e) {
       toast.error(
@@ -91,7 +85,6 @@ export function useGroupGeneralSettings() {
     savingGroupType.value = true;
     try {
       await patchSettings({ groupType });
-      toast.success(t('groups.settings.general.group_type.success'));
       return true;
     } catch (e) {
       toast.error(
@@ -107,7 +100,6 @@ export function useGroupGeneralSettings() {
     savingDaltonEnabled.value = true;
     try {
       await patchSettings({ daltonEnabled });
-      toast.success(t('groups.settings.general.dalton.success'));
       return true;
     } catch (e) {
       toast.error(
@@ -122,7 +114,7 @@ export function useGroupGeneralSettings() {
   async function deleteGroup(): Promise<boolean> {
     try {
       await api.delete(groupPath(groupId));
-      toast.success(t('groups.settings.messages.group_deleted'));
+      toast.success(t('groups.success.delete'));
       return true;
     } catch (e) {
       toast.error(apiErrorMessage(e, t('groups.errors.delete')));

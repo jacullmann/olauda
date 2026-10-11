@@ -33,8 +33,7 @@ async function confirmRemovePassword() {
   if (!confirmed) return;
 
   const result = await removePassword();
-  if (result.ok) toast.success(t('auth.remove_password.success'));
-  else if (result.error) toast.error(result.error);
+  if (!result.ok && result.error) toast.error(result.error);
 }
 </script>
 

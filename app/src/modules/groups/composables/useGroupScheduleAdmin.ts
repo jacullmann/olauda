@@ -82,7 +82,6 @@ export function useGroupScheduleAdmin() {
         scheduleConfig: config,
       });
       await Promise.all([checkAuthStatus(), loadSchedule()]);
-      toast.success(t('groups.settings.schedule.editor.success_save_all'));
       return true;
     } catch (error) {
       toast.error(scheduleSaveError(error));

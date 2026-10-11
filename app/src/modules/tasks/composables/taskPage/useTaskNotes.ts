@@ -43,7 +43,6 @@ export function useTaskNotes(
     savingNote.value = true;
     try {
       await writeNote(taskId, noteEditContent.value);
-      toast.success(t('tasks.list.notes.saved'));
       cancelEditNote();
     } catch (e) {
       toast.error(apiErrorMessage(e, t('tasks.notes.errors.save')));
@@ -64,7 +63,6 @@ export function useTaskNotes(
     savingNote.value = true;
     try {
       await writeNote(taskId, '');
-      toast.success(t('tasks.notes.delete_modal.success'));
     } catch (e) {
       toast.error(apiErrorMessage(e, t('tasks.notes.errors.delete')));
     } finally {

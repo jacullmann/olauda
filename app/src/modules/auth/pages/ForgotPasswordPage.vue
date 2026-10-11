@@ -77,7 +77,7 @@ function leave() {
 }
 
 async function onPasswordReset(resetEmail: string) {
-  toast.success(t('auth.login.reset_success'));
+  toast.success(t('auth.login.reset.success.reset'));
   // A reset revokes every session of that account, so resetting your
   // own signs you out here as well.
   if (user.value?.email.toLowerCase() === resetEmail) {

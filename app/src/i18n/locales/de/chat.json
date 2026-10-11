@@ -8,11 +8,8 @@
   "typing_multiple": "schreiben…",
   "no_messages": "Noch keine Nachrichten. Sag Hallo!",
   "quote_label": "Antwort an",
-  "copy_success": "Nachricht in die Zwischenablage kopiert",
   "delete_confirm": "Möchtest du diese Nachricht wirklich löschen?",
   "delete_confirm_title": "Nachricht löschen?",
-  "delete_success": "Nachricht gelöscht",
-  "report_success": "Nachricht gemeldet",
   "errors": {
     "load": "Die Nachrichten konnten nicht geladen werden.",
     "report": "Die Nachricht konnte nicht gemeldet werden.",
@@ -22,5 +19,9 @@
   },
   "scroll_down": "Nach unten",
   "reload": "Erneut laden",
-  "placeholder_disabled": "Das Senden von Nachrichten ist für dich deaktiviert"
+  "placeholder_disabled": "Das Senden von Nachrichten ist für dich deaktiviert",
+  "success": {
+    "copy": "Nachricht kopiert.",
+    "report": "Nachricht gemeldet."
+  }
 }

@@ -415,7 +415,7 @@ export function useMessages() {
     activeMessage.value = null;
     try {
       await navigator.clipboard.writeText(msg.content);
-      toast.success(t('chat.copy_success'));
+      toast.success(t('chat.success.copy'));
     } catch (err) {
       console.error('Failed to copy message:', err);
       toast.error(t('chat.errors.copy'));
@@ -435,7 +435,6 @@ export function useMessages() {
 
     try {
       await api.delete(groupPath(groupId.value, `/messages/${msg.id}`));
-      toast.success(t('chat.delete_success'));
     } catch (err) {
       console.error('Failed to delete message:', err);
       toast.error(apiErrorMessage(err, t('chat.errors.delete')));
@@ -464,7 +463,7 @@ export function useMessages() {
         messageId: msg.id,
         reason: reason || undefined,
       });
-      toast.success(t('chat.report_success'));
+      toast.success(t('chat.success.report'));
     } catch (err) {
       console.error('Failed to report message:', err);
       toast.error(apiErrorMessage(err, t('chat.errors.report')));

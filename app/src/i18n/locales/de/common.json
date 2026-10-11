@@ -18,7 +18,8 @@
     "saving": "Wird gespeichert…",
     "refresh": "Aktualisieren",
     "retry": "Erneut versuchen",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "copied": "Kopiert"
   },
   "discard_changes": {
     "title": "Änderungen verwerfen?",
@@ -271,5 +272,8 @@
   "errors": {
     "rate_limited": "Zu viele Versuche. Warte kurz und versuche es dann erneut.",
     "copy_link": "Der Link konnte nicht kopiert werden."
+  },
+  "success": {
+    "copy_link": "Link kopiert."
   }
 }

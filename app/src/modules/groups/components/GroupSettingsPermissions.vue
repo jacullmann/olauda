@@ -130,7 +130,6 @@ async function savePermission(
     await api.patch(groupPath(groupId, '/admin/permissions'), {
       permissions: { [key]: role },
     });
-    toast.success(t('groups.settings.permissions.update_success'));
     await checkAuthStatus();
   } catch {
     permissions.value[key] = previousRole;

@@ -36,7 +36,6 @@ export function useTaskActions(
     try {
       await api.delete(groupPath(groupId, `/items/${taskId}`));
       removeFromList(taskId);
-      toast.success(t('tasks.actions.delete_modal.success'));
       return true;
     } catch (e) {
       toast.error(apiErrorMessage(e, t('tasks.errors.delete')));
@@ -68,7 +67,7 @@ export function useTaskActions(
         itemTitle: task.title,
         reason,
       });
-      toast.success(t('tasks.list.tasks.menu.report.success'));
+      toast.success(t('tasks.success.report'));
     } catch (e) {
       toast.error(apiErrorMessage(e, t('tasks.errors.report')));
     }
@@ -88,7 +87,7 @@ export function useTaskActions(
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(t('tasks.list.tasks.menu.share_copied'));
+      toast.success(t('common.success.copy_link'));
     } catch {
       toast.error(t('common.errors.copy_link'));
     }

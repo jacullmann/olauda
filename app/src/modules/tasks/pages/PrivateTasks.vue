@@ -51,7 +51,7 @@ const { user } = storeToRefs(userStore);
               variant="action"
               :icon="Plus"
               icon-classes="size-6"
-              @click="privateTaskFormModal.openNew()"
+              @click="privateTaskFormModal.openNew({ local: true })"
             />
           </BaseTooltip>
         </template>

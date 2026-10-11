@@ -86,7 +86,7 @@ export function useConfirmSignUp(
       await api.post('/auth/verify/resend', { email: credentials.email });
       cooldown.start();
       code.value = '';
-      toast.success(t('auth.verify_email.resent'));
+      toast.success(t('auth.verify_email.success.resend_code'));
     } catch (e: unknown) {
       error.value = authErrorMessage(e, t('auth.errors.send_code'));
     } finally {

@@ -54,7 +54,6 @@
       "images": "Bilder",
       "new_task": "Neue Aufgabe",
       "subject": "Fach",
-      "success_edit": "Aufgabe bearbeitet",
       "title": "Titel"
     },
     "tasks": {
@@ -78,14 +77,12 @@
           "illegal_label": "Was genau ist das Problem? (optional)",
           "illegal_placeholder": "Beschreibung…",
           "name": "Melden",
-          "title": "Diese Aufgabe melden?",
-          "success": "Aufgabe gemeldet."
+          "title": "Diese Aufgabe melden?"
         },
         "share": "Teilen",
         "unarchive": "Wiederherstellen",
         "unpin": "Lösen",
-        "upload_images": "Bilder hinzufügen",
-        "share_copied": "Link in die Zwischenablage kopiert"
+        "upload_images": "Bilder hinzufügen"
       },
       "view": {
         "no_tasks": "Keine Aufgaben",
@@ -103,7 +100,6 @@
     "notes": {
       "no_notes": "Keine Notiz vorhanden",
       "note": "Notiz",
-      "saved": "Notiz gespeichert.",
       "placeholder": "Notiz hinzufügen…"
     },
     "reset_filters": "Filter zurücksetzen",
@@ -192,10 +188,6 @@
     "no_tasks": "Keine privaten Aufgaben",
     "only_visible_to_you": "Nur für dich sichtbar",
     "requires_account": "Du musst angemeldet sein, um private Aufgaben zu verwenden.",
-    "success_create": "Private Aufgabe erstellt",
-    "success_delete": "Private Aufgabe gelöscht",
-    "success_duplicate": "Private Aufgabe dupliziert",
-    "success_update": "Private Aufgabe aktualisiert",
     "title": "Private Aufgaben",
     "form": {
       "new_title": "Neue private Aufgabe",
@@ -205,6 +197,9 @@
       "duplicate": "Die Aufgabe konnte nicht dupliziert werden.",
       "load": "Deine privaten Aufgaben konnten nicht geladen werden.",
       "reorder": "Die neue Reihenfolge konnte nicht gespeichert werden."
+    },
+    "success": {
+      "create": "Private Aufgabe hinzugefügt."
     }
   },
   "report": {
@@ -216,16 +211,14 @@
     "delete_modal": {
       "title": "Diese Aufgabe löschen?",
       "message": "Die Aufgabe wird mit allen dazugehörigen Dateien unwiderruflich gelöscht.",
-      "submit": "Aufgabe löschen",
-      "success": "Aufgabe gelöscht."
+      "submit": "Aufgabe löschen"
     }
   },
   "notes": {
     "delete_modal": {
       "title": "Notiz löschen?",
       "message": "Bist du sicher, dass du diese Notiz unwiderruflich löschen möchtest?",
-      "submit": "Notiz löschen",
-      "success": "Notiz gelöscht."
+      "submit": "Notiz löschen"
     },
     "errors": {
       "save": "Die Notiz konnte nicht gespeichert werden.",
@@ -236,12 +229,10 @@
     "delete_modal": {
       "title": "Dieses Bild löschen?",
       "message": "Wenn du dieses Bild löschst, wird es unwiderruflich entfernt.",
-      "submit": "Bild löschen",
-      "success": "Bild gelöscht."
+      "submit": "Bild löschen"
     },
     "upload": {
-      "progress": "Bilder werden hochgeladen",
-      "success": "Bilder hochgeladen"
+      "progress": "Bilder werden hochgeladen"
     },
     "document": "Dokument",
     "errors": {
@@ -265,5 +256,9 @@
     "report": "Die Aufgabe konnte nicht gemeldet werden.",
     "save_status": "Der Status konnte nicht gespeichert werden.",
     "delete": "Die Aufgabe konnte nicht gelöscht werden."
+  },
+  "success": {
+    "create": "Aufgabe hinzugefügt.",
+    "report": "Aufgabe gemeldet."
   }
 }

@@ -36,7 +36,6 @@ export function useGroupBans() {
     try {
       await api.delete(groupPath(groupId, `/admin/banned-users/${userId}`));
       bannedUsers.value = bannedUsers.value.filter((u) => u.userId !== userId);
-      toast.success(t('groups.settings.messages.ban_reverted'));
     } catch {
       toast.error(t('groups.settings.members.errors.unban'));
     }

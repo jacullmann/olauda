@@ -69,6 +69,13 @@ Write **idiomatic, performant, secure code that speaks for itself.**
 - Wording: one or two short sentences ending with a period, second sentence only for what to do next. Failed actions read "Couldn't save the note." / "Die Notiz konnte nicht gespeichert werden." Field errors say what to do: "Enter a title." / "Gib einen Titel ein." No "please"/"bitte", no "error", "failed to", "request", "server" or "token". German uses "du".
 - Keys live in an `errors` object of the section that owns the thing that failed, e.g. `tasks.notes.errors.save`, and are reused from anywhere. `common.errors` only holds messages that belong to no feature. Names: `<verb>[_<object>]` for failed actions (`load`, `delete_course`), `<field>_<problem>` for input (`title_missing`, `title_too_long`), the condition for API reasons (`name_taken`, `locked`). No `_failed`/`_error` suffixes, and nothing but errors inside `errors`.
 
+**Success messages and notices:**
+- An action that worked is silent by default: the changed screen is the confirmation. Deleting, saving, toggling or adding something that then shows (or disappears) on screen gets no toast.
+- Confirm success only when the user cannot see the result: it is off screen (copied to the clipboard, reported, an email sent, a task added from a form opened outside its list) or the action took them away from it (password changed, group or account deleted). A copy button that turns into a check mark needs no toast either.
+- A notice (info or warning) only tells the user something unexpected they should know or act on: why they were redirected, that they must repeat an action, that recovery codes are running low.
+- Wording: the fact in past tense, then at most one sentence on what to do next. "Link copied." / "Link kopiert." No "successfully"/"erfolgreich", no exclamation marks.
+- Keys mirror errors: `<section>.success.<verb>[_<object>]`, using the same name as the matching error (`chat.errors.report` / `chat.success.report`), and `<section>.notices.<condition>` (`groups.notices.already_member`).
+
 ---
 
 ## General

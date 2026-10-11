@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
-import { useToast } from '@/common/composables/useToast';
 import SystemAnnouncementForm from '../components/SystemAnnouncementForm.vue';
 import { useSuperAdminAnnouncements } from '../composables/useSuperAdminAnnouncements';
 import { useSuperAdminFormat } from '../composables/useSuperAdminFormat';
@@ -12,7 +11,6 @@ const { active, scheduled, loading, load, remove } =
   useSuperAdminAnnouncements();
 const { fmtDateTime } = useSuperAdminFormat();
 const { t } = useI18n();
-const toast = useToast();
 
 const sections = computed(() =>
   [
@@ -55,7 +53,6 @@ function openForm(announcement: AdminSystemAnnouncement | null) {
 
 async function onSaved() {
   formOpen.value = false;
-  toast.success(t('admin.announcements.save_success'));
   await load();
 }
 

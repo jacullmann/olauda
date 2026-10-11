@@ -363,7 +363,7 @@ onUnmounted(() => {
               type="button"
               class="flex items-center justify-center p-2 bg-none border-none text-on-ghost-muted cursor-pointer rounded-lg transition-all hover:bg-ghost-hover hover:text-on-ghost"
               :title="
-                copied ? t('auth.mfa.setup.copied') : t('common.buttons.copy')
+                copied ? t('common.buttons.copied') : t('common.buttons.copy')
               "
               @click="copySecret"
             >

@@ -36,7 +36,6 @@ export function useDataExport() {
         responseType: 'blob',
       });
       saveFile(data, exportFileName());
-      toast.success(t('auth.account_settings.data_export.success'));
     } catch (e: unknown) {
       if (isReauthDeclined(e)) return;
       toast.error(

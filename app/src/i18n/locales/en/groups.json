@@ -34,9 +34,7 @@
           "title": "Adjust image",
           "hint": "Drag the image to position it. Use the mouse wheel or the slider to zoom.",
           "image_alt": "Image to crop"
-        },
-        "update_success": "Group picture updated",
-        "delete_success": "Group picture deleted"
+        }
       },
       "delete_group": {
         "warning_text": "Deleting the group is permanent and cannot be undone. All associated data (tasks, schedule, announcements, etc.) will be deleted for all users.",
@@ -64,8 +62,7 @@
           "title": "Change group type?",
           "message_regular": "Lessons keep the course they are scheduled for, but new subjects use the core, elective and extra categories again and courses lose their GK/LK/ZK type. Existing subjects keep their category until you edit them.",
           "message_abitur": "Every subject becomes course-based and each course gets a GK or LK type, or ZK below an additional subject. Existing subjects and lessons stay as they are until you edit them."
-        },
-        "success": "Group type updated"
+        }
       },
       "dalton": {
         "toggle_title": "Dalton",
@@ -73,8 +70,7 @@
         "modal": {
           "title": "Disable Dalton?",
           "message": "All Dalton lessons are removed from the schedule and no new Dalton tasks can be created. Existing Dalton tasks and the Dalton flags on subjects are kept."
-        },
-        "success": "Dalton setting updated"
+        }
       },
       "no_permission": "You don't have permission to change these settings.",
       "errors": {
@@ -245,8 +241,7 @@
         "all": "All",
         "moderators": "Moderators",
         "admins": "Admins"
-      },
-      "update_success": "Permission updated"
+      }
     },
     "schedule": {
       "info": {
@@ -328,7 +323,6 @@
         "delete_lesson_button": "Delete Lesson",
         "save_all_button": "Save Changes",
         "cancel_button": "Cancel",
-        "success_save_all": "Schedule saved",
         "add_lesson_slot": "Add lesson",
         "course_hint": "Without a course the lesson applies to the whole group.",
         "undo": "Undo (Ctrl+Z)",
@@ -399,26 +393,9 @@
       "courses_count_plural": "{count} Courses",
       "category_mismatch": "This subject is still saved as \"{category}\", a category of the other group type. Saving moves it to the selected category.",
       "dalton_label": "Dalton subject",
-      "dalton_badge": "Dalton subject",
-      "create_success": "Subject created",
-      "update_success": "Subject updated",
-      "delete_success": "Subject deleted",
-      "course_create_success": "Course created",
-      "course_update_success": "Course updated",
-      "course_delete_success": "Course deleted"
+      "dalton_badge": "Dalton subject"
     },
     "title": "Group Settings",
-    "messages": {
-      "role_updated": "Role updated",
-      "member_removed_banned": "Member removed and banned",
-      "member_removed": "Member removed",
-      "ban_reverted": "Ban lifted",
-      "announcement_deleted": "Announcement deleted",
-      "group_name_updated": "Group name updated",
-      "group_deleted": "Group deleted",
-      "ownership_transferred": "Ownership transferred",
-      "invite_revoked": "Invite revoked"
-    },
     "group_fallback": "Group",
     "announcements": {
       "delete_modal": {
@@ -462,5 +439,12 @@
     "create_invite": "Couldn't create an invite link.",
     "renew_invite": "Couldn't renew the invite link.",
     "delete": "Couldn't delete the group."
+  },
+  "success": {
+    "delete": "Group deleted.",
+    "renew_invite": "Invite link renewed. The old one no longer works."
+  },
+  "notices": {
+    "already_member": "You're already a member of this group."
   }
 }

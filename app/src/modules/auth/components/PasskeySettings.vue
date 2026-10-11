@@ -44,11 +44,7 @@ async function handleAdd() {
   const result = await addPasskey();
   adding.value = false;
 
-  if (result.ok) {
-    toast.success(t('auth.passkeys.added'));
-  } else if (!result.dismissed) {
-    toast.error(result.error);
-  }
+  if (!result.ok && !result.dismissed) toast.error(result.error);
 }
 
 async function startRename(passkey: Passkey) {
@@ -95,11 +91,7 @@ async function handleRemove(passkey: Passkey) {
   const result = await removePasskey(passkey);
   removingId.value = null;
 
-  if (result.ok) {
-    toast.success(t('auth.passkeys.removed'));
-  } else if (!result.dismissed) {
-    toast.error(result.error);
-  }
+  if (!result.ok && !result.dismissed) toast.error(result.error);
 }
 
 function usageLabel(passkey: Passkey): string {

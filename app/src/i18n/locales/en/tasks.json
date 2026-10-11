@@ -54,7 +54,6 @@
       "images": "Images",
       "new_task": "New Task",
       "subject": "Subject",
-      "success_edit": "Task edited",
       "title": "Title"
     },
     "tasks": {
@@ -78,14 +77,12 @@
           "illegal_label": "What exactly is the problem? (optional)",
           "illegal_placeholder": "Description…",
           "name": "Report",
-          "title": "Report this task?",
-          "success": "Task reported."
+          "title": "Report this task?"
         },
         "share": "Share",
         "unarchive": "Unarchive",
         "unpin": "Unpin",
-        "upload_images": "Add Images",
-        "share_copied": "Copied link to clipboard"
+        "upload_images": "Add Images"
       },
       "view": {
         "no_tasks": "No tasks",
@@ -103,7 +100,6 @@
     "notes": {
       "no_notes": "No notes",
       "note": "Note",
-      "saved": "Note saved.",
       "placeholder": "Add a note…"
     },
     "reset_filters": "Reset filters",
@@ -186,10 +182,6 @@
     "no_tasks": "No private tasks",
     "only_visible_to_you": "Only visible to you",
     "requires_account": "You must be logged in to use private tasks.",
-    "success_create": "Private task created",
-    "success_delete": "Private task deleted",
-    "success_duplicate": "Private task duplicated",
-    "success_update": "Private task updated",
     "title": "Private Tasks",
     "form": {
       "new_title": "New Private Task",
@@ -199,6 +191,9 @@
       "duplicate": "Couldn't duplicate the task.",
       "load": "Couldn't load your private tasks.",
       "reorder": "Couldn't save the new order."
+    },
+    "success": {
+      "create": "Private task added."
     }
   },
   "report": {
@@ -210,16 +205,14 @@
     "delete_modal": {
       "title": "Delete this task?",
       "message": "The task and all its files will be permanently deleted.",
-      "submit": "Delete task",
-      "success": "Task deleted."
+      "submit": "Delete task"
     }
   },
   "notes": {
     "delete_modal": {
       "title": "Delete note?",
       "message": "Are you sure you want to permanently delete this note?",
-      "submit": "Delete note",
-      "success": "Note deleted."
+      "submit": "Delete note"
     },
     "errors": {
       "save": "Couldn't save the note.",
@@ -230,12 +223,10 @@
     "delete_modal": {
       "title": "Delete this image?",
       "message": "If you delete this image, it will be permanently removed.",
-      "submit": "Delete image",
-      "success": "Image deleted."
+      "submit": "Delete image"
     },
     "upload": {
-      "progress": "Uploading images",
-      "success": "Images uploaded"
+      "progress": "Uploading images"
     },
     "document": "Document",
     "errors": {
@@ -259,5 +250,9 @@
     "report": "Couldn't report the task.",
     "save_status": "Couldn't save the status.",
     "delete": "Couldn't delete the task."
+  },
+  "success": {
+    "create": "Task added.",
+    "report": "Task reported."
   }
 }

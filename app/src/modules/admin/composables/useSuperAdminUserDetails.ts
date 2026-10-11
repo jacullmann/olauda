@@ -61,7 +61,6 @@ export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
       await api.patch(`/admin/users/${id}/groups/${membership.groupId}/role`, {
         role,
       });
-      toast.success(t('admin.users.details.role_changed'));
       // Transferring ownership also changes the previous owner, and the
       // assignable roles follow the new role, so the server stays the source.
       const { data } = await api.get<SuperAdminMembership[]>(

@@ -103,21 +103,28 @@ const reauthModal = useReauthModal();
 setReauthHandler(() => reauthModal.request());
 onUnmounted(() => setReauthHandler(null));
 
+// A new entry is confirmed only when the form was opened away from the list
+// that shows it; edits change what is already on screen.
 function onTaskFormSuccess() {
-  toast.success(t('tasks.list.task_form.success_edit'));
+  const payload = taskForm.payload;
+  if (payload && !payload.item && !payload.local) {
+    toast.success(t('tasks.success.create'));
+  }
   taskForm.succeed();
 }
 
 function onPrivateTaskFormSuccess(task: PrivateTask) {
-  const msg = privateTaskForm.payload?.task
-    ? t('tasks.private_tasks.success_update')
-    : t('tasks.private_tasks.success_create');
-  toast.success(msg);
+  const payload = privateTaskForm.payload;
+  if (payload && !payload.task && !payload.local) {
+    toast.success(t('tasks.private_tasks.success.create'));
+  }
   privateTaskForm.succeed(task);
 }
 
 function onAnnouncementFormSuccess() {
-  toast.success(t('announcements.actions.publish_success_toast'));
+  if (!announcementForm.payload?.local) {
+    toast.success(t('announcements.success.publish'));
+  }
   announcementForm.succeed();
 }
 

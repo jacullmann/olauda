@@ -34,9 +34,7 @@
           "title": "Bild anpassen",
           "hint": "Zieh das Bild zum Ausrichten. Benutze das Mausrad oder den Schieberegler zum Zoomen.",
           "image_alt": "Bild zum Zuschneiden"
-        },
-        "update_success": "Gruppenbild aktualisiert",
-        "delete_success": "Gruppenbild gelöscht"
+        }
       },
       "delete_group": {
         "warning_text": "Das Löschen der Gruppe ist endgültig und kann nicht rückgängig gemacht werden. Alle damit verbundenen Daten (Aufgaben, Stundenplan, Ankündigungen etc.) werden für alle Mitglieder gelöscht.",
@@ -64,8 +62,7 @@
           "title": "Gruppentyp ändern?",
           "message_regular": "Stunden behalten ihren Kurs, neue Fächer nutzen aber wieder die Kategorien Pflicht-, Wahl- und Zusatzfach und Kurse verlieren ihren GK/LK/ZK-Typ. Bestehende Fächer behalten ihre Kategorie, bis du sie bearbeitest.",
           "message_abitur": "Jedes Fach wird kursbasiert und jeder Kurs bekommt den Typ GK oder LK – unter einem Zusatzkurs ZK. Bestehende Fächer und Stunden bleiben unverändert, bis du sie bearbeitest."
-        },
-        "success": "Gruppentyp aktualisiert"
+        }
       },
       "dalton": {
         "toggle_title": "Dalton",
@@ -73,8 +70,7 @@
         "modal": {
           "title": "Dalton deaktivieren?",
           "message": "Alle Daltonstunden werden aus dem Stundenplan entfernt und es können keine neuen Daltonaufträge erstellt werden. Bestehende Daltonaufträge und die Dalton-Markierungen der Fächer bleiben erhalten."
-        },
-        "success": "Dalton-Einstellung aktualisiert"
+        }
       },
       "no_permission": "Du hast keine Berechtigung, diese Einstellungen zu ändern.",
       "errors": {
@@ -245,8 +241,7 @@
         "all": "Alle",
         "moderators": "Moderatoren",
         "admins": "Admins"
-      },
-      "update_success": "Berechtigung aktualisiert"
+      }
     },
     "schedule": {
       "info": {
@@ -328,7 +323,6 @@
         "delete_lesson_button": "Stunde löschen",
         "save_all_button": "Änderungen speichern",
         "cancel_button": "Abbrechen",
-        "success_save_all": "Stundenplan gespeichert",
         "add_lesson_slot": "Stunde hinzufügen",
         "course_hint": "Ohne Kurs gilt die Stunde für die ganze Gruppe.",
         "no_subjects": "Diese Gruppe hat keine Fächer. Richte sie in den Einstellungen ein, um Stunden hinzuzufügen.",
@@ -399,26 +393,9 @@
       "courses_count_plural": "{count} Kurse",
       "category_mismatch": "Dieses Fach ist noch als „{category}“ gespeichert – eine Kategorie des anderen Gruppentyps. Beim Speichern wird die ausgewählte Kategorie übernommen.",
       "dalton_label": "Daltonfach",
-      "dalton_badge": "Daltonfach",
-      "create_success": "Fach erstellt",
-      "update_success": "Fach aktualisiert",
-      "delete_success": "Fach gelöscht",
-      "course_create_success": "Kurs erstellt",
-      "course_update_success": "Kurs aktualisiert",
-      "course_delete_success": "Kurs gelöscht"
+      "dalton_badge": "Daltonfach"
     },
     "title": "Gruppeneinstellungen",
-    "messages": {
-      "role_updated": "Rolle aktualisiert",
-      "member_removed_banned": "Mitglied entfernt und gebannt",
-      "member_removed": "Mitglied entfernt",
-      "ban_reverted": "Sperre aufgehoben",
-      "announcement_deleted": "Ankündigung gelöscht",
-      "group_name_updated": "Gruppenname aktualisiert",
-      "group_deleted": "Gruppe gelöscht",
-      "ownership_transferred": "Besitz übertragen",
-      "invite_revoked": "Einladung widerrufen"
-    },
     "group_fallback": "Gruppe",
     "announcements": {
       "delete_modal": {
@@ -462,5 +439,12 @@
     "create_invite": "Der Einladungslink konnte nicht erstellt werden.",
     "renew_invite": "Der Einladungslink konnte nicht erneuert werden.",
     "delete": "Die Gruppe konnte nicht gelöscht werden."
+  },
+  "success": {
+    "delete": "Gruppe gelöscht.",
+    "renew_invite": "Einladungslink erneuert. Der alte funktioniert nicht mehr."
+  },
+  "notices": {
+    "already_member": "Du bist schon Mitglied dieser Gruppe."
   }
 }

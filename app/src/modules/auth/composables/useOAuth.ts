@@ -95,9 +95,7 @@ export function useOAuth() {
     result: string,
     reason: string | null,
   ): Promise<void> {
-    if (result === 'success') {
-      useToast().success(t('auth.connected_accounts.linked_success'));
-    } else {
+    if (result !== 'success') {
       showRedirectError(reason, 'auth.connected_accounts.errors.link');
     }
     await router.isReady();
@@ -128,7 +126,7 @@ export function useOAuth() {
       result === 'success' ||
       (result === 'second-factor' &&
         (await useReauthModal().request('google-second-factor')));
-    if (confirmed) useToast().success(t('auth.reauth.confirmed'));
+    if (confirmed) useToast().success(t('auth.reauth.notices.confirmed'));
   }
 
   // The backend redirect is a full page load, so App calls this exactly once

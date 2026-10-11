@@ -1,6 +1,5 @@
 {
   "actions": {
-    "publish_success_toast": "Announcement published!",
     "create": "Create announcement",
     "create_description": "Publish a new announcement for your group."
   },
@@ -30,5 +29,8 @@
   "errors": {
     "publish": "Couldn't publish the announcement.",
     "delete": "Couldn't delete the announcement."
+  },
+  "success": {
+    "publish": "Announcement published."
   }
 }

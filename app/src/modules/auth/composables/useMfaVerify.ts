@@ -27,10 +27,10 @@ export function useMfaVerify({ onVerified, onExpired }: MfaVerifyCallbacks) {
   const proof = computed(() => secondFactorProof(secondFactor.value));
 
   function warnIfFewCodesLeft(left: number | null) {
-    if (left === null) return;
-    const message = t('auth.recovery_codes.used', { count: left }, left);
-    if (left <= LOW_RECOVERY_CODES) toast.warning(message);
-    else toast.info(message);
+    if (left === null || left > LOW_RECOVERY_CODES) return;
+    toast.warning(
+      t('auth.recovery_codes.notices.running_low', { count: left }, left),
+    );
   }
 
   async function submit() {

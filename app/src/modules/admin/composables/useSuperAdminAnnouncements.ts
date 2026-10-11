@@ -50,7 +50,6 @@ export function useSuperAdminAnnouncements() {
       announcements.value = announcements.value.filter(
         (a) => a.id !== announcement.id,
       );
-      toast.success(t('admin.announcements.delete_success'));
     } catch {
       toast.error(t('admin.announcements.errors.delete'));
     }

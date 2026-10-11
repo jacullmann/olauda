@@ -163,7 +163,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
 
       if (uploaded === preparedFiles.length) {
         uploadSuccess.value = true;
-        progressToast.settle(t('tasks.images.upload.success'));
+        progressToast.dismiss();
       } else if (uploaded > 0) {
         uploadError.value = t('tasks.images.errors.upload_partial', {
           uploaded,
@@ -216,7 +216,6 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
           ),
         );
         images.value = images.value.filter((i) => i.id !== file.id);
-        toast.success(t('tasks.images.delete_modal.success'));
       } catch {
         uploadError.value = t('tasks.images.errors.delete');
       }

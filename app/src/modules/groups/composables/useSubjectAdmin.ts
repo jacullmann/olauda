@@ -19,7 +19,7 @@ export function useSubjectAdmin() {
   const groupId = useGroupPageId();
   const confirmModal = useConfirmModal();
   const subjectStore = useSubjectStore();
-  const { success, error: toastError } = useToast();
+  const { error: toastError } = useToast();
 
   const ERRORS = 'groups.settings.subjects.errors';
 
@@ -72,7 +72,6 @@ export function useSubjectAdmin() {
       subjects.value.push(data);
       subjects.value.sort((a, b) => a.name.localeCompare(b.name));
       subjectStore.reset();
-      success(t('groups.settings.subjects.create_success'));
     } catch (e: unknown) {
       toastError(failureMessage(e, 'create'));
     } finally {
@@ -103,7 +102,6 @@ export function useSubjectAdmin() {
       }
       // A new category can rewrite the type of every course below the subject.
       if (categoryChanged) await loadSubjects();
-      success(t('groups.settings.subjects.update_success'));
       return true;
     } catch (e: unknown) {
       toastError(failureMessage(e, 'update'));
@@ -127,7 +125,6 @@ export function useSubjectAdmin() {
       await api.delete(groupPath(groupId, `/admin/subjects/${id}`));
       subjects.value = subjects.value.filter((s) => s.id !== id);
       subjectStore.reset();
-      success(t('groups.settings.subjects.delete_success'));
       return true;
     } catch (e: unknown) {
       // The only rejection a member can cause is a subject still in use.
@@ -164,7 +161,6 @@ export function useSubjectAdmin() {
         subject.courses.sort((a, b) => a.name.localeCompare(b.name));
       }
       subjectStore.reset();
-      success(t('groups.settings.subjects.course_create_success'));
       return true;
     } catch (e: unknown) {
       toastError(failureMessage(e, 'create_course'));
@@ -197,7 +193,6 @@ export function useSubjectAdmin() {
         subject.courses.sort((a, b) => a.name.localeCompare(b.name));
       }
       subjectStore.reset();
-      success(t('groups.settings.subjects.course_update_success'));
       return true;
     } catch (e: unknown) {
       toastError(failureMessage(e, 'update_course'));
@@ -227,7 +222,6 @@ export function useSubjectAdmin() {
         subject.courses = subject.courses.filter((c) => c.id !== courseId);
       }
       subjectStore.reset();
-      success(t('groups.settings.subjects.course_delete_success'));
       return true;
     } catch (e: unknown) {
       toastError(failureMessage(e, 'delete_course'));

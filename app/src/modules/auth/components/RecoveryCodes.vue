@@ -73,9 +73,7 @@ function downloadCodes() {
     <BaseRow justify="end">
       <BaseButton variant="ghost" @click="copyCodes">
         <component :is="copied ? Check : Copy" :size="16" />
-        {{
-          copied ? t('auth.recovery_codes.copied') : t('common.buttons.copy')
-        }}
+        {{ copied ? t('common.buttons.copied') : t('common.buttons.copy') }}
       </BaseButton>
       <BaseButton variant="ghost" @click="downloadCodes">
         <Download :size="16" />

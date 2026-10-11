@@ -35,7 +35,6 @@ export function useGroupInvites() {
   async function revokeInvite(id: string) {
     try {
       await api.delete(groupPath(groupId, `/admin/invites/${id}`));
-      toast.success(t('groups.settings.messages.invite_revoked'));
       await loadInvites();
     } catch {
       toast.error(t('groups.settings.members.errors.revoke_invite'));

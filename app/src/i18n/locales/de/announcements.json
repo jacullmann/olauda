@@ -1,6 +1,5 @@
 {
   "actions": {
-    "publish_success_toast": "Ankündigung veröffentlicht!",
     "create": "Ankündigung erstellen",
     "create_description": "Eine neue Ankündigung für deine Gruppe veröffentlichen."
   },
@@ -30,5 +29,8 @@
   "errors": {
     "publish": "Die Ankündigung konnte nicht veröffentlicht werden.",
     "delete": "Die Ankündigung konnte nicht gelöscht werden."
+  },
+  "success": {
+    "publish": "Ankündigung veröffentlicht."
   }
 }

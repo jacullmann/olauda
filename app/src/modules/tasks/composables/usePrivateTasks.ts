@@ -213,7 +213,6 @@ export function usePrivateTasks() {
         completed: false,
       });
       addPrivateTask(data);
-      useToast().success(t('tasks.private_tasks.success_duplicate'));
     } catch (e: any) {
       useToast().error(
         apiErrorMessage(e, t('tasks.private_tasks.errors.duplicate')),
@@ -245,7 +244,6 @@ export function usePrivateTasks() {
 
     try {
       await api.delete(`/todos/${id}`);
-      useToast().success(t('tasks.private_tasks.success_delete'));
     } catch (e: any) {
       privateTasks.value.splice(idx, 0, backup);
       syncState();
