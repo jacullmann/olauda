@@ -209,7 +209,7 @@ async function deleteAvatar() {
 
           <BaseMenuButton
             v-if="activeGroupAvatarUrl"
-            variant="danger"
+            danger
             :icon="Trash2"
             :disabled="savingAvatar"
             @click="deleteAvatarAndClose"

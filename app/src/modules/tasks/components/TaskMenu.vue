@@ -137,7 +137,7 @@ function select(action: TaskMenuAction) {
 
       <BaseMenuButton
         v-if="canDelete"
-        variant="danger"
+        danger
         :icon="Trash2"
         @click="select('delete')"
       >

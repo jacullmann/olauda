@@ -218,7 +218,7 @@ async function submit() {
 
             <BaseMenuButton
               v-if="avatarUrl"
-              variant="danger"
+              danger
               :icon="Trash2"
               :disabled="savingAvatar"
               @click="deleteAvatar"

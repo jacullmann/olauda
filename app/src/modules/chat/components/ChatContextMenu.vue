@@ -58,7 +58,7 @@ defineExpose({
 
         <BaseMenuButton
           v-if="canDelete"
-          variant="danger"
+          danger
           :icon="Trash2"
           @click="emit('delete', activeMessage)"
         >

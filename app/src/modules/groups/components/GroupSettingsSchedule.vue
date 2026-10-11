@@ -854,7 +854,7 @@ onMounted(() => {
         {{ t('groups.settings.schedule.editor.edit_lesson_title') }}
       </BaseMenuButton>
       <BaseMenuButton
-        variant="danger"
+        danger
         :icon="Trash2"
         :disabled="selectedLessonIds.length === 0"
         @click="handleDeleteSelection"

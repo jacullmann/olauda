@@ -15,12 +15,12 @@ withDefaults(
     isSelect?: boolean;
     isSubmenu?: boolean;
     forceHover?: boolean;
-    variant?: 'default' | 'danger';
+    danger?: boolean;
     icon?: Component;
     disabled?: boolean;
   }>(),
   {
-    variant: 'default',
+    danger: false,
     disabled: false,
     isSelect: false,
     isSubmenu: false,
@@ -43,7 +43,7 @@ defineExpose({
     :disabled="disabled"
     class="flex justify-between items-center w-full text-left border-0 py-2 gap-4 cursor-pointer transition-hover user-select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-transparent!"
     :class="[
-      variant === 'danger'
+      danger
         ? 'text-danger hover:bg-danger-hover active:bg-danger-hover'
         : 'text-on-ghost hover:bg-ghost-hover active:bg-ghost-hover',
       isMobile ? (icon ? 'pl-4' : 'pl-4.5') : icon ? 'pl-2.5' : 'pl-3',
@@ -54,10 +54,9 @@ defineExpose({
     :style="
       forceHover
         ? {
-            backgroundColor:
-              variant === 'danger'
-                ? 'var(--color-danger-hover)'
-                : 'var(--color-ghost-hover)',
+            backgroundColor: danger
+              ? 'var(--color-danger-hover)'
+              : 'var(--color-ghost-hover)',
           }
         : {}
     "

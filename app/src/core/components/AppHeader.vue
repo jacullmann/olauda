@@ -251,7 +251,7 @@ defineExpose({ groupButton: groupButtonRef });
 
           <BaseMenuButton
             :icon="LogOut"
-            variant="danger"
+            danger
             :disabled="pending"
             @click="leaveActiveGroup"
           >

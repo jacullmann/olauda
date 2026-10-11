@@ -103,7 +103,7 @@ function leave(group: UserGroup) {
 
         <BaseMenuButton
           :icon="LogOut"
-          variant="danger"
+          danger
           :disabled="pending"
           @click="leave(group)"
         >

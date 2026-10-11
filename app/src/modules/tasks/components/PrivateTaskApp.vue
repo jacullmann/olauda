@@ -355,7 +355,7 @@ defineExpose({ loadPrivateTasks, addPrivateTask, updatePrivateTask });
 
                       <BaseMenuButton
                         :icon="Trash2"
-                        variant="danger"
+                        danger
                         @click="
                           deletePrivateTask(privateTask.id);
                           openMenuId = null;
