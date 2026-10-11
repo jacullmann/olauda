@@ -34,13 +34,13 @@ impl Message {
 
     fn content_html(&self) -> String {
         let mut html = format!(
-            r#"<h1 class="text-strong" style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em; color: #0f0f0f;">{}</h1>"#,
+            r#"<h1 class="text-body" style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em; color: #333333;">{}</h1>"#,
             self.heading
         );
 
         for paragraph in self.paragraphs {
             html.push_str(&format!(
-                r#"<p class="text-body" style="margin: 12px 0 0; font-size: 15px; line-height: 24px; color: #414141;">{paragraph}</p>"#
+                r#"<p class="text-body" style="margin: 12px 0 0; font-size: 17px; line-height: 25px; color: #333333;">{paragraph}</p>"#
             ));
         }
 
@@ -50,7 +50,7 @@ impl Message {
 
         if let Some(note) = &self.note {
             html.push_str(&format!(
-                r#"<p class="text-muted" style="margin: 24px 0 0; font-size: 13px; line-height: 20px; color: #666666;">{note}</p>"#
+                r#"<p class="text-muted" style="margin: 0; font-size: 13px; line-height: 20px; color: #555555;">{note}</p>"#
             ));
         }
 
@@ -61,13 +61,13 @@ impl Message {
 fn code_html(code: &str) -> String {
     let code = escape_html(code);
     format!(
-        r#"<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-top: 24px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="code-box text-strong" style="padding: 16px 18px 16px 24px; background-color: #f5f5f5; border: 1px solid #e6e6e6; border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; font-size: 28px; line-height: 36px; font-weight: 700; letter-spacing: 0.2em; color: #0f0f0f;">{code}</td></tr></table></td></tr></table>"#
+        r#"<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td align="center""><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="text-body" style="text-align: center; padding: 32px 0; font-size: 28px; line-height: 36px; font-weight: 700; letter-spacing: 0.1em; color: #333333;">{code}</td></tr></table></td></tr></table>"#
     )
 }
 
 fn disclaimer_html(disclaimer: &str) -> String {
     format!(
-        r#"<tr><td style="padding: 24px 4px 0;"><p class="text-muted" style="margin: 0; font-size: 12px; line-height: 18px; color: #888888;">{disclaimer}</p></td></tr>"#
+        r#"<tr><td style="padding: 24px 8px 0;"><p class="text-subtle" style="margin: 0; font-size: 12px; line-height: 18px; color: #888888;">{disclaimer}</p></td></tr>"#
     )
 }
 
@@ -75,7 +75,7 @@ impl LegalFooter {
     fn to_html(&self) -> String {
         let link = |label: &str, href: &str| {
             format!(
-                r#"<a class="footer-link" href="{href}" target="_blank" rel="noopener" style="color: #666666; text-decoration: underline;">{label}</a>"#
+                r#"<a class="text-muted" href="{href}" target="_blank" rel="noopener" style="color: #555555; text-decoration: underline;">{label}</a>"#
             )
         };
         let separator = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;";
@@ -87,7 +87,7 @@ impl LegalFooter {
         .join(separator);
 
         format!(
-            r#"<tr><td style="padding: 32px 4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top: 24px; border-top: 1px solid #e6e6e6;"><p class="text-muted" style="margin: 0; font-size: 12px; line-height: 18px; color: #666666;">{links}</p><p class="text-muted" style="margin: 12px 0 0; font-size: 12px; line-height: 18px; color: #888888;">{notice}<br>{sender}</p></td></tr></table></td></tr>"#,
+            r#"<tr><td style="padding: 32px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="divider" style="padding-top: 24px; border-top: 1px solid #e6e6e6;"><p class="text-muted" style="margin: 0; font-size: 12px; line-height: 18px; color: #555555;">{links}</p><p class="text-subtle" style="margin: 12px 0 0; font-size: 12px; line-height: 18px; color: #888888;">{notice}<br>{sender}</p></td></tr></table></td></tr>"#,
             notice = self.automated_notice,
             sender = self.sender,
         )
