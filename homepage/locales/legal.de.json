@@ -1,0 +1,234 @@
+{
+  "legal": {
+    "imprint": {
+      "title": "Impressum",
+      "description": "Rechtliche Informationen zu Olauda.",
+      "responsible": "Verantwortliche Person",
+      "contact": "Kontakt",
+      "contact_label": "E-Mail: ",
+      "disclaimer": {
+        "title": "Haftungsausschluss",
+        "text": "Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich."
+      }
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "description": "Welche Daten Olauda verarbeitet, wofür und welche Rechte du hast.",
+      "sections": [
+        {
+          "title": "Überblick",
+          "paragraphs": [
+            "Diese Datenschutzerklärung gilt für die Website olauda.com und die App unter app.olauda.com. Sie erklärt, welche personenbezogenen Daten wir verarbeiten, wofür wir sie brauchen, wie lange wir sie speichern und welche Rechte du hast.",
+            "Stand: 9. Oktober 2026"
+          ]
+        },
+        {
+          "title": "Verantwortlicher",
+          "paragraphs": [
+            "Verantwortlich für die Datenverarbeitung ist Deniz Keskin, Berlin. Du erreichst uns per E-Mail an kontakt{'@'}olauda.com.",
+            "Olauda ist ein privates, nicht-kommerzielles Projekt. Wir verkaufen keine Daten, zeigen keine Werbung und geben Daten nicht zu Werbezwecken weiter."
+          ]
+        },
+        {
+          "title": "Aufruf von Website und App",
+          "paragraphs": [
+            "Wenn du die Website oder die App aufrufst, verarbeitet unser Server deine IP-Adresse, Datum und Uhrzeit, die aufgerufene Adresse und die Kennung deines Browsers (User-Agent). Ohne diese Daten können wir die Seiten nicht ausliefern und Angriffe nicht abwehren.",
+            "Damit niemand Passwörter und Zwei-Faktor-Codes durchprobieren oder über uns massenhaft E-Mails verschicken kann, begrenzen wir die Zahl der Anfragen pro IP-Adresse, bei IPv6 pro Netz (/64-Präfix). Die Zähler dafür liegen nur im Arbeitsspeicher und verfallen nach kurzer Zeit.",
+            "Server und Datenbank betreibt für uns die Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, in Rechenzentren in Deutschland. Hetzner verarbeitet die Daten in unserem Auftrag.",
+            "Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und funktionierenden Angebot (Art. 6 Abs. 1 lit. f DSGVO)."
+          ]
+        },
+        {
+          "title": "Dein Konto",
+          "paragraphs": [
+            "Für ein Konto brauchen wir deine E-Mail-Adresse und ein Passwort. Das Passwort speichern wir nur als Hash (Argon2), nie im Klartext. Außerdem speichern wir zu deinem Konto:"
+          ],
+          "items": [
+            "deine Einstellungen (Sprache, Farbschema, Personalisierung) und deine Kurswahl,",
+            "den Zeitpunkt der Registrierung und der letzten Anmeldung,",
+            "ob die Zwei-Faktor-Authentifizierung aktiv ist, das dafür nötige Geheimnis (verschlüsselt) und deine Wiederherstellungscodes (nur als Hash), jeweils mit dem Zeitpunkt, zu dem sie erstellt und verwendet wurden,",
+            "deine Passkeys: ihren öffentlichen Schlüssel, ihre Kennung und ihren Namen sowie wann sie hinzugefügt und zuletzt verwendet wurden. Der private Schlüssel verlässt dein Gerät nie,",
+            "bei Anmeldung mit Google deine Google-Konto-ID und die E-Mail-Adresse dieses Google-Kontos."
+          ],
+          "outro": [
+            "Wir schicken dir nur E-Mails, die für dein Konto nötig sind: den Bestätigungscode nach der Registrierung, Codes zum Zurücksetzen oder Festlegen deines Passworts und Sicherheitshinweise, sobald sich etwas am Schutz deines Kontos ändert, zum Beispiel wenn dein Passwort geändert wird, die Zwei-Faktor-Authentifizierung ein- oder ausgeschaltet wird oder ein Passkey oder ein Google-Konto hinzukommt oder entfernt wird. Newsletter oder Werbung verschicken wir nicht.",
+            "Ohne E-Mail-Adresse können wir kein Konto anlegen. Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO)."
+          ]
+        },
+        {
+          "title": "Gruppen und Inhalte",
+          "paragraphs": [
+            "In Gruppen verarbeiten wir die Inhalte, die du und andere Mitglieder anlegen: Aufgaben und Klausuren mit Beschreibungen, Bildern und Dateien, Ankündigungen, Stundenplan und Vertretungen sowie Chatnachrichten. Dazu speichern wir deine Mitgliedschaft, deine Rolle und wann du die Gruppe zuletzt geöffnet hast, damit wir dir neue Inhalte anzeigen können.",
+            "Andere Mitglieder sehen dich nur unter einem zufällig erzeugten Namen, nicht unter deiner E-Mail-Adresse. Sie sehen aber alles, was du in der Gruppe veröffentlichst.",
+            "Private Aufgaben speichern wir verschlüsselt (AES-256-GCM). Die Verschlüsselung geschieht auf unserem Server: Sie schützt die Daten in der Datenbank, ist aber keine Ende-zu-Ende-Verschlüsselung.",
+            "Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO)."
+          ]
+        },
+        {
+          "title": "Bilder und Dateien",
+          "paragraphs": [
+            "Bilder und Dateien, die du an Aufgaben anhängst, und Gruppenbilder speichern wir bei der Cloudinary Inc. (USA). Beim Hochladen prüft zuerst unser Server Art und Größe der Datei und gibt sie erst dann an Cloudinary weiter. Jede Datei ist über eine zufällig erzeugte Adresse abrufbar; wer diese Adresse kennt, kann die Datei öffnen. Dateien, die nicht mehr verwendet werden, etwa weil die Aufgabe gelöscht oder das Gruppenbild ersetzt wurde, löschen wir automatisch, spätestens nach etwa einem Tag.",
+            "Cloudinary verarbeitet die Daten in unserem Auftrag. Die Übermittlung in die USA stützt sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework, unter dem Cloudinary zertifiziert ist (Art. 45 DSGVO)."
+          ]
+        },
+        {
+          "title": "Vorschau von Office-Dateien",
+          "paragraphs": [
+            "Word-, PowerPoint- und Excel-Dateien, die an Aufgaben hängen, zeigt die App mit dem Office-Viewer von Microsoft an (Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Irland). Öffnest du eine solche Datei, lädt dein Browser die Vorschau von Servern von Microsoft. Microsoft erhält dabei deine IP-Adresse, die Kennung deines Browsers und die Adresse der Datei und ruft die Datei selbst ab, um sie darzustellen.",
+            "Microsoft verarbeitet diese Daten in eigener Verantwortung; es gilt die Datenschutzerklärung von Microsoft. Dabei können Daten an die Microsoft Corporation in den USA übermittelt werden, die unter dem EU-US Data Privacy Framework zertifiziert ist (Art. 45 DSGVO).",
+            "Rechtsgrundlage ist unser berechtigtes Interesse daran, Dokumente direkt in der App anzeigen zu können, ohne dass du sie herunterladen und eine passende Software installiert haben musst (Art. 6 Abs. 1 lit. f DSGVO). Bilder und PDF-Dateien zeigen wir ohne Microsoft an."
+          ]
+        },
+        {
+          "title": "E-Mail-Versand",
+          "paragraphs": [
+            "E-Mails verschicken wir über die Resend, Inc. (USA). Resend erhält dafür deine E-Mail-Adresse und den Inhalt der jeweiligen E-Mail. Resend verarbeitet die Daten in unserem Auftrag und ist unter dem EU-US Data Privacy Framework zertifiziert (Art. 45 DSGVO)."
+          ]
+        },
+        {
+          "title": "Anmeldung mit Google",
+          "paragraphs": [
+            "Du kannst dich mit deinem Google-Konto registrieren und anmelden. Dazu leiten wir dich zu Google weiter (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Google übermittelt uns deine Google-Konto-ID, deine E-Mail-Adresse und ob Google sie bestätigt hat. Weitere Daten fragen wir nicht ab.",
+            "Was Google bei der Anmeldung verarbeitet, regelt Googles eigene Datenschutzerklärung. Dabei können Daten an die Google LLC in den USA übermittelt werden, die unter dem EU-US Data Privacy Framework zertifiziert ist.",
+            "Die Anmeldung mit Google ist freiwillig; du kannst dich genauso mit E-Mail-Adresse und Passwort registrieren. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO."
+          ]
+        },
+        {
+          "title": "Anmeldungen und Sicherheit",
+          "paragraphs": ["Zum Schutz deines Kontos und des Dienstes speichern wir:"],
+          "items": [
+            "für jede Anmeldung (Sitzung) IP-Adresse, Browserkennung und Zeitpunkte. In den Kontoeinstellungen zeigen wir dir daraus deine angemeldeten Geräte mit ungefährem Ort. Den Ort ermitteln wir mit einer Datenbank auf unserem eigenen Server, die IP-Adresse geben wir dafür nicht weiter;",
+            "ein Sicherheitsprotokoll mit IP-Adresse und Browserkennung: Anmeldungen, fehlgeschlagene Anmeldeversuche und Abmeldungen, Änderungen an Passwort, Passkeys, Zwei-Faktor-Authentifizierung und der Verknüpfung mit Google, den Export und die Löschung deines Kontos, das Erstellen und Löschen von Gruppen, Einladungen, Änderungen an Mitgliedschaften, Rollen und Gruppenrechten sowie alle Aktionen von Admins."
+          ],
+          "outro": [
+            "So erkennen und verhindern wir Missbrauch und unbefugte Zugriffe. Rechtsgrundlage ist unser berechtigtes Interesse an der Sicherheit des Dienstes (Art. 6 Abs. 1 lit. f DSGVO).",
+            "Für die Ortsbestimmung verwenden wir GeoLite2-Daten von MaxMind: This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com."
+          ]
+        },
+        {
+          "title": "Aktivitätsprotokoll",
+          "paragraphs": [
+            "Wir protokollieren, welche Aktionen in deinem Konto stattfinden, zum Beispiel das Öffnen der App (mit Browserkennung), das Anlegen, Bearbeiten oder Abhaken von Aufgaben und Änderungen an Einstellungen. Gespeichert werden dabei nur Art, Zeitpunkt und Kennungen der betroffenen Einträge, keine Inhalte.",
+            "Wir nutzen das Protokoll, um Fehler und Missbrauch aufzuklären und um zu sehen, wie viele Personen den Dienst nutzen. Einsehen können es nur wir als Betreiber. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)."
+          ]
+        },
+        {
+          "title": "Meldungen",
+          "paragraphs": [
+            "Wenn du eine Aufgabe oder Nachricht meldest, speichern wir den gemeldeten Inhalt, deine Begründung, deine E-Mail-Adresse und die E-Mail-Adresse der Person, die den Inhalt erstellt hat. So können wir die Meldung prüfen und bei Bedarf nachfragen. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO)."
+          ]
+        },
+        {
+          "title": "Reichweitenmessung",
+          "paragraphs": [
+            "Um zu verstehen, welche Seiten genutzt werden, verwenden wir auf der Website und in der App Umami Cloud (Umami Software, Inc., USA). Die Daten werden auf Servern in der EU (Deutschland) gespeichert.",
+            "Erfasst werden die aufgerufene Seite und ihr Titel, die verweisende Seite, Browser, Betriebssystem, Gerätetyp, Bildschirmgröße, Sprache und Land. In der App entfernen wir vorher Suchparameter und den geheimen Teil von Einladungslinks.",
+            "Umami setzt keine Cookies und verfolgt dich nicht über andere Websites hinweg; deine IP-Adresse wird nach Angaben von Umami nicht gespeichert. Wir sehen nur zusammengefasste Statistiken.",
+            "Rechtsgrundlage ist unser berechtigtes Interesse daran, unser Angebot zu verbessern (Art. 6 Abs. 1 lit. f DSGVO). Du kannst dem jederzeit widersprechen."
+          ]
+        },
+        {
+          "title": "Cookies und lokale Speicherung",
+          "paragraphs": [
+            "Wir verwenden nur Cookies und lokalen Speicher, die für den Betrieb technisch nötig sind oder eine Einstellung speichern, die du gewählt hast (§ 25 Abs. 2 Nr. 2 TDDDG). Tracking- oder Werbe-Cookies setzen wir nicht."
+          ],
+          "items": [
+            "App, Anmeldung: access_token (15 Minuten), refresh_token (7 Tage), csrf_token (30 Tage, Schutz vor gefälschten Anfragen), mfa_pending_token (5 Minuten, während der Zwei-Faktor-Abfrage), oauth_state_token und oauth_pending_token (10 bzw. 15 Minuten, während der Anmeldung mit Google).",
+            "App, lokaler Speicher im Browser: Sprache, Farbschema, Zeitpunkt der letzten Sitzungsverlängerung und, bis du angemeldet bist, ein geöffneter Einladungslink (höchstens 24 Stunden).",
+            "Website: i18n_locale (Sprache, 1 Jahr), nuxt-homepage-color-mode (Farbschema, 1 Jahr), cookie_notice_dismissed (Hinweis geschlossen, 180 Tage)."
+          ]
+        },
+        {
+          "title": "Speicherdauer",
+          "items": [
+            "Kontodaten speichern wir, bis du dein Konto löschst.",
+            "Unbestätigte Registrierungen löschen wir, sobald ihr Bestätigungscode nach 2 Tagen abgelaufen ist.",
+            "Codes zum Zurücksetzen oder Festlegen des Passworts sind 30 Minuten gültig. Wir löschen sie nach 24 Stunden; bis dahin begrenzen wir mit ihnen, wie viele Codes eine E-Mail-Adresse erhält.",
+            "Sitzungsdaten mit IP-Adresse und Browserkennung löschen wir etwa 7 Tage nach ihrer letzten Nutzung.",
+            "Das Aktivitätsprotokoll löschen wir nach 30 Tagen, das Sicherheitsprotokoll nach 90 Tagen. Angriffe auf ein Konto fallen oft erst Wochen später auf, deshalb bewahren wir es länger auf.",
+            "Chatnachrichten löschen wir nach 7 Tagen automatisch.",
+            "Aufgaben und Klausuren in Gruppen löschen wir automatisch 90 Tage nach ihrem Fälligkeitsdatum.",
+            "Stundenplanänderungen wie Vertretungen und Ausfälle löschen wir automatisch 90 Tage nach dem Tag, für den sie gelten.",
+            "Meldungen speichern wir, bis wir sie bearbeitet haben.",
+            "Alle anderen Inhalte in Gruppen bleiben gespeichert, bis du, die Gruppenadmins oder wir sie löschen oder die Gruppe gelöscht wird."
+          ]
+        },
+        {
+          "title": "Löschung deines Kontos",
+          "paragraphs": [
+            "Du kannst dein Konto jederzeit in den Kontoeinstellungen löschen. Wenn du Eigentümer einer Gruppe bist, musst du sie vorher übertragen oder löschen.",
+            "Beim Löschen entfernen wir sofort deine Kontodaten, Sitzungen, Gruppenmitgliedschaften, Chatnachrichten, privaten Aufgaben, die Verknüpfung mit Google und dein Aktivitätsprotokoll.",
+            "Aufgaben und Ankündigungen, die du in Gruppen erstellt hast, bleiben für die Gruppe erhalten, sind aber nicht mehr deinem Konto zugeordnet. Einträge im Sicherheitsprotokoll löschen wir nach Ablauf ihrer Frist von 90 Tagen, Meldungen nach ihrer Bearbeitung."
+          ]
+        },
+        {
+          "title": "Deine Rechte",
+          "paragraphs": ["Nach der DSGVO hast du gegenüber uns das Recht auf:"],
+          "items": [
+            "Auskunft über deine gespeicherten Daten (Art. 15 DSGVO),",
+            "Berichtigung unrichtiger Daten (Art. 16 DSGVO),",
+            "Löschung deiner Daten (Art. 17 DSGVO),",
+            "Einschränkung der Verarbeitung (Art. 18 DSGVO),",
+            "Datenübertragbarkeit (Art. 20 DSGVO),",
+            "Widerspruch gegen Verarbeitungen, die auf unserem berechtigten Interesse beruhen (Art. 21 DSGVO)."
+          ],
+          "outro": [
+            "Eine Kopie aller Daten zu deinem Konto kannst du jederzeit selbst in den Kontoeinstellungen unter „Konto“ als ZIP-Datei herunterladen. Sie enthält deine Daten in einem maschinenlesbaren Format (JSON) und die Angaben nach Art. 15 DSGVO.",
+            "Für alle anderen Anliegen schreib uns an kontakt{'@'}olauda.com.",
+            "Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO). Für uns zuständig ist die Berliner Beauftragte für Datenschutz und Informationsfreiheit, Alt-Moabit 59–61, 10555 Berlin.",
+            "Eine automatisierte Entscheidungsfindung oder ein Profiling findet nicht statt."
+          ]
+        },
+        {
+          "title": "Änderungen",
+          "paragraphs": [
+            "Wir passen diese Datenschutzerklärung an, wenn sich der Dienst oder die Rechtslage ändert. Die aktuelle Fassung findest du immer auf dieser Seite."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "description": "Die Regeln für die Nutzung von Olauda.",
+      "acceptance": {
+        "title": "Zustimmung zu den Bedingungen",
+        "text": "Durch die Nutzung von Olauda stimmst du diesen Bedingungen zu. Wenn du nicht zustimmst, bitte die Nutzung des Dienstes einstellen."
+      },
+      "service": {
+        "title": "Der Dienst",
+        "text": "Olauda stellt eine kostenlose, webbasierte Schulverwaltungsplattform bereit. Wir behalten uns vor, Funktionen jederzeit zu ändern oder einzustellen, mit Ankündigung soweit möglich."
+      },
+      "account": {
+        "title": "Dein Konto",
+        "item0": "Du musst eine gültige E-Mail-Adresse angeben, um ein Konto zu erstellen.",
+        "item1": "Du bist dafür verantwortlich, deine Zugangsdaten sicher zu verwahren.",
+        "item2": "Du musst mindestens 18 Jahre alt sein oder die Zustimmung deiner Erziehungsberechtigten haben, um diesen Dienst zu nutzen.",
+        "item3": "Ein Konto pro Person. Teile dein Konto nicht mit anderen."
+      },
+      "conduct": {
+        "title": "Zulässige Nutzung",
+        "intro": "Du stimmst zu, Olauda nicht zu verwenden, um:",
+        "item0": "Illegale, schädliche oder beleidigende Inhalte hochzuladen oder zu teilen.",
+        "item1": "Unbefugten Zugriff auf andere Konten oder Systeme zu erlangen.",
+        "item2": "Den Dienst oder seine Infrastruktur zu stören.",
+        "item3": "Den Dienst ohne vorherige schriftliche Genehmigung kommerziell zu nutzen."
+      },
+      "termination": {
+        "title": "Kündigung",
+        "text": "Wir behalten uns das Recht vor, Konten zu sperren oder zu kündigen, die gegen diese Bedingungen verstoßen. Du kannst dein Konto jederzeit löschen."
+      },
+      "availability": {
+        "title": "Verfügbarkeit",
+        "text": "Wir garantieren keine ständige Verfügbarkeit des Dienstes und keine dauerhafte Speicherung deiner Daten."
+      },
+      "changes": {
+        "title": "Änderungen dieser Bedingungen",
+        "text": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren."
+      },
+      "governing": {
+        "title": "Anwendbares Recht",
+        "text": "Diese Bedingungen unterliegen dem deutschen Recht. Etwaige Streitigkeiten werden vor den zuständigen deutschen Gerichten gelöst."
+      }
+    }
+  }
+}

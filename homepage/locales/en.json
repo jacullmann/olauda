@@ -1,581 +1,367 @@
 {
   "common": {
+    "login": "Sign in",
+    "register": "Create account",
     "theme": "Theme",
-    "language": "Language",
-    "login": "Log in",
-    "getStarted": "Get started",
     "light": "Light",
     "dark": "Dark",
     "system": "System",
-    "back_home": "Back to home"
+    "language": "Language"
   },
   "nav": {
-    "label": "Main",
+    "label": "Main navigation",
     "home": "Olauda home",
     "features": "Features",
     "about": "About",
-    "contact": "Contact",
-    "open_menu": "Open menu",
-    "close_menu": "Close menu"
+    "contact": "Contact"
   },
   "pages": {
     "home": {
-      "title": "Olauda — the school week, in one place",
-      "description": "Homework, timetable changes and announcements for your whole class, kept up to date together. Free, without ads, made by students."
+      "title": "Olauda: homework and timetable changes for your whole class",
+      "description": "Homework, exams and timetable changes in one place your whole class shares. One person adds it, everyone sees it. Free and without ads."
     },
     "features": {
-      "title": "Features",
-      "description": "Tasks, timetable, announcements, chat, groups and a private space — everything Olauda does, in detail."
+      "title": "Features — Olauda",
+      "description": "Tasks, timetable, schedule changes, groups, announcements and private tasks: everything Olauda does, and the limits that come with it."
     },
     "about": {
-      "title": "About",
-      "description": "Olauda is built by students in Berlin. Why we started, and what we won't compromise on."
+      "title": "About — Olauda",
+      "description": "Why Olauda exists, what we won't do with it, and who runs it."
     },
     "contact": {
-      "title": "Contact",
-      "description": "Questions, bugs, ideas — write to us."
+      "title": "Contact — Olauda",
+      "description": "Questions, bugs or ideas: write to kontakt{'@'}olauda.com or find us on Discord."
     },
     "not_found": {
       "title": "Page not found"
     }
   },
+  "subjects": {
+    "german": "German",
+    "maths": "Maths",
+    "english": "English",
+    "biology": "Biology",
+    "history": "History",
+    "geography": "Geography",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "politics": "Politics",
+    "art": "Art",
+    "music": "Music",
+    "sport": "PE"
+  },
+  "days": {
+    "long": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "short": ["Mon", "Tue", "Wed", "Thu", "Fri"]
+  },
   "home": {
-    "days": {
-      "mon": "Mon",
-      "tue": "Tue",
-      "wed": "Wed",
-      "thu": "Thu",
-      "fri": "Fri"
-    },
-    "subjects": {
-      "maths": "Maths",
-      "german": "German",
-      "physics": "Physics",
-      "history": "History",
-      "chemistry": "Chemistry",
-      "english": "English",
-      "sport": "PE",
-      "biology": "Biology",
-      "computing": "Computer Science",
-      "art": "Art",
-      "politics": "Politics",
-      "music": "Music"
-    },
     "hero": {
-      "title": "The school week, {emphasis}",
-      "title_emphasis": "in one place.",
-      "lede": "Homework, timetable changes and announcements for your whole class — kept up to date together, visible to everyone the moment they change.",
-      "timetable_label": "Example timetable for class 10b: a cancelled German lesson on Monday, a room change on Tuesday, a substitute on Wednesday and an exam on Thursday.",
-      "caption": "Class 10b, week 39. Cancellations, room changes and substitutes show up in everyone's timetable as soon as they're entered.",
-      "break": "{minutes} min",
-      "cancelled": "Cancelled",
-      "substitute": "Substitute: Mr Weber",
-      "exam": "Exam"
+      "title": "Your class, always on the same page.",
+      "lede": "Olauda keeps homework, exams and timetable changes in one place your whole class shares. One person adds it, everyone sees it. Free, without ads.",
+      "invite_hint": "Got an invite link from your class? Open it and you're in."
+    },
+    "day": {
+      "label": "Sample timetable",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "pick_day": "Show a day",
+      "caption": "A sample week that runs on your clock. During school hours, the blue line shows where your day would be right now.",
+      "now": "Now",
+      "next": "Next",
+      "room": "Room {room}",
+      "gym": "Gym",
+      "canceled": "Canceled",
+      "instead_of": "instead of {value}",
+      "break": "{minutes} min break",
+      "break_left": "Break, {minutes} min left",
+      "homework": "Homework due: {title}",
+      "exam": "Exam: {title}",
+      "current_time": "Current time"
     },
     "tasks": {
-      "label": "Tasks",
-      "title": "Homework gets written down once. {emphasis} has it.",
-      "title_emphasis": "Everyone",
-      "body": "Everyone in your class — or only those your group allows — can add homework, exams and Dalton assignments, with a due date, a description and a photo of the board or the worksheet. Everyone ticks tasks off for themselves.",
-      "filter_label": "Filter tasks",
-      "due": "due {day}",
-      "added_by": "added by {name}",
-      "kinds": {
-        "all": "All",
-        "homework": "Homework",
-        "dalton": "Dalton",
-        "exam": "Exam"
-      },
-      "lab_report": "Lab report",
-      "vocabulary": "Vocabulary, unit 4",
-      "essay": "Essay draft",
-      "items": {
-        "titration": {
-          "title": "Lab report: acid–base titration"
-        },
-        "mechanics": {
-          "title": "Mechanics and Newton's laws",
-          "note": "Formula sheet pages 40–52 allowed."
-        },
-        "vocabulary": {
-          "title": "Vocabulary, unit 4"
-        },
-        "essay": {
-          "title": "Essay: digital tools in schools"
-        }
-      }
+      "reading": "read chapter 4",
+      "vocab": "vocabulary, unit 5",
+      "essay": "first draft of the essay",
+      "maths_test": "quadratic functions",
+      "worksheet": "worksheet, page 34"
     },
-    "changes": {
-      "label": "Timetable",
-      "title": "Cancelled, moved, covered — {emphasis}",
-      "title_emphasis": "you'll know before first period.",
-      "body": "Save the courses you take and your timetable shows only your lessons. Substitutes, room changes and cancellations are marked in the lesson they affect, and your next lesson waits on your dashboard.",
+    "everyone": {
+      "title": "Entered once. There for everyone.",
+      "body": "Whoever hears about it first adds it: Thursday's homework, the maths lesson that's off, the room change. Everyone else sees it straight away, without asking around.",
       "items": {
-        "room": "Room Info1 instead of Bio1",
-        "substitute": "Mr Weber covers for Ms Adler",
-        "cancelled": "Cancelled"
-      },
-      "announcement": "Because of the heat, lessons on Friday end after period 4.",
-      "announcement_caption": "Announcements stay at the top of the app for every member until they are taken down."
-    },
-    "groups": {
-      "label": "Groups",
-      "title": "One person keeps it up to date; the whole class has it.",
-      "one": "person enters the homework.",
-      "thirty": "classmates have it on their phone.",
-      "details": {
+        "tasks": {
+          "title": "Homework and exams",
+          "body": "With due date, description and attachments. Photos, PDFs, Word, PowerPoint and Excel files can all be attached."
+        },
+        "changes": {
+          "title": "Timetable changes",
+          "body": "Cancellations, substitutions and room changes show up right in the timetable, for the people they affect."
+        },
+        "announcements": {
+          "title": "Announcements",
+          "body": "Short notices for the whole group. The important ones are marked so they stand out."
+        },
         "roles": {
-          "title": "Roles and permissions",
-          "body": "Members, moderators and admins. Each group decides who may add tasks, edit the timetable, post announcements or moderate the chat."
-        },
-        "invites": {
-          "title": "Invite links",
-          "body": "Create a link, send it, done. Each link works for one person, expires on its own after seven days and can be revoked at any time."
-        },
-        "many": {
-          "title": "More than one group",
-          "body": "Your class, your advanced courses, your club — each with its own tasks and timetable, one switch apart."
+          "title": "Who can change what",
+          "body": "Owners, admins, moderators and members. You decide which role may add tasks, enter changes or post."
         }
       }
     },
-    "extras": {
-      "label": "Also included",
-      "title": "And the things you'd miss if they weren't there.",
+    "roster": {
+      "label": "Example: one change reaching a class of 28",
+      "lesson": "Maths, period 3",
+      "change": "Canceled",
+      "save": "Save change",
+      "reset": "Undo",
+      "idle": "Only you know so far.",
+      "done": "All 28 see it now."
+    },
+    "you": {
+      "title": "Shared list, personal checkmarks.",
+      "body": "Ticking off homework, pinning what matters and archiving what's done only changes your own view. Nobody sees what you've finished, and you can't mess up anyone else's list.",
       "items": {
-        "chat": {
-          "title": "Group chat",
-          "body": "Talk to your class without a separate messenger. Reply to a message, see who's typing — and nobody needs anyone's phone number."
+        "checks": {
+          "title": "Ticked off, pinned, archived",
+          "body": "Your progress, kept to yourself. Finished tasks move out of the way when you want them to."
+        },
+        "courses": {
+          "title": "Only your courses",
+          "body": "In Abitur year groups everyone picks their courses once. Lessons and tasks from the others stay hidden."
         },
         "private": {
-          "title": "Private notes",
-          "body": "Your own to-do list next to the class's. Encrypted with AES-256 and visible only to you."
-        },
-        "search": {
-          "title": "Search everything",
-          "body": "Jump to any page or action from the keyboard: create a task, switch groups or invite someone without reaching for the mouse.",
-          "shortcut": "Ctrl K"
-        },
-        "devices": {
-          "title": "On every device",
-          "body": "Runs in any browser on phones, tablets and laptops. Nothing to install, and what you tick off on one device is ticked off on all of them."
+          "title": "Private tasks",
+          "body": "A to-do list only you can see, stored encrypted. Not even your group's admins can read it."
         }
       }
     },
-    "principles": {
-      "label": "Why",
-      "lead": "Olauda is made by students in Berlin, because the tools our schools gave us weren't good enough.",
-      "rest": "It's free, it shows no ads, and it doesn't sell anyone's data. That isn't a launch offer — it's the point.",
-      "link": "About the project"
+    "specimen": {
+      "label": "Example task list",
+      "only_mine": "Only mine",
+      "all": "All",
+      "hidden": "{count} task from other courses hidden | {count} tasks from other courses hidden",
+      "mark_done": "Mark “{title}” as done",
+      "private": "Private",
+      "rows": {
+        "essay": "First draft of the essay",
+        "test": "Test: quadratic functions",
+        "lab": "Lab report, titration",
+        "reading": "Read chapter 4",
+        "worksheet": "Worksheet, page 34",
+        "gift": "Buy a present for Lena"
+      }
+    },
+    "setup": {
+      "title": "Ready in four steps",
+      "steps": {
+        "create": {
+          "title": "Create a group",
+          "body": "Pick a standard group for a class that has every lesson together, or an Abitur group for the course system."
+        },
+        "timetable": {
+          "title": "Enter the timetable",
+          "body": "Periods, breaks and lessons, once for everyone. Each day can have its own break plan."
+        },
+        "invite": {
+          "title": "Invite your class",
+          "body": "Share the invite link or let people scan the QR code. You can revoke links at any time."
+        },
+        "courses": {
+          "title": "Everyone picks their courses",
+          "body": "Each member chooses their own once. From then on, they only see what concerns them."
+        }
+      }
+    },
+    "faq": {
+      "title": "Before you sign up",
+      "items": [
+        {
+          "q": "Does it cost anything?",
+          "a": "No. There's no subscription, no premium tier and no advertising. Everyone gets the whole thing."
+        },
+        {
+          "q": "Does our school or our teachers need to take part?",
+          "a": "No. Anyone can create a group for their class or year group and invite the others. The school doesn't need to set anything up."
+        },
+        {
+          "q": "Who can see what I enter?",
+          "a": "Tasks, the timetable and announcements are visible to members of the group. Your checkmarks, pins and private tasks are visible only to you."
+        },
+        {
+          "q": "Where is my data stored?",
+          "a": "On servers in Germany. Attachments and emails go through a few service providers, all of which are listed in the privacy policy. Private tasks are stored encrypted with AES-256."
+        },
+        {
+          "q": "How do I keep my account safe?",
+          "a": "Sign in with a password, Google or a passkey, and turn on two-factor authentication with any authenticator app. You can see every device you're signed in on and sign them out."
+        },
+        {
+          "q": "I'm under 18. Can I use Olauda?",
+          "a": "Yes, as long as a parent or guardian agrees. You confirm that when you sign up."
+        },
+        {
+          "q": "Can I take my data with me, or delete it?",
+          "a": "Both, whenever you like. Your account settings export everything as a ZIP file, and you can delete your account there yourself."
+        }
+      ],
+      "more": "Anything else? Write to {email}."
+    },
+    "closing": {
+      "title": "Bring your class along.",
+      "body": "Create an account, set up a group and send your class the link. That's all it takes."
     }
   },
-  "cta": {
-    "title": "Set up your class {emphasis}",
-    "title_emphasis": "this afternoon.",
-    "button": "Get started — it's free",
-    "question": "Questions first? Write to {email}"
-  },
   "features": {
-    "title": "Everything {name} {emphasis}",
-    "title_emphasis": "does.",
-    "lede": "A complete tour of the app. Each part is short on purpose — Olauda is meant to be understood without a manual.",
-    "index_label": "On this page",
-    "chapters": {
+    "title": "Everything Olauda does",
+    "lede": "A complete list, including the limits. If something's missing here, Olauda doesn't do it yet.",
+    "index_label": "Sections",
+    "sections": {
       "tasks": {
         "title": "Tasks",
-        "body": "Homework, exams and Dalton assignments for the whole group live in one list. Someone adds a task once — subject, due date, description, attachments — and everyone has it. If the same subject already has an entry for that day, you're asked before a duplicate appears.",
+        "body": "Homework, exams and Dalton assignments for the whole group live in one list. Someone adds a task once, and everyone has it. If the same task already exists, you're asked before a duplicate appears.",
         "items": [
-          "Homework, exams and Dalton, filterable by type and subject",
-          "Photos, PDFs and Office files on any task",
-          "Tick off for yourself, without affecting anyone else",
-          "Pin what matters; past tasks move to the archive"
+          ["Types", "Homework, exams and, if your group uses it, Dalton"],
+          ["Details", "Title, subject, course, due date and a description with formatting"],
+          ["Attachments", "Photos up to 2 MB, PDF, Word, PowerPoint and Excel files up to 5 MB"],
+          ["Notes", "One shared note per task, for whoever is allowed to write it"],
+          ["Filters", "By type and subject, with completed and archived tasks hidden if you like"],
+          ["Personal", "Tick off, pin and archive without changing anyone else's list"]
         ]
       },
       "timetable": {
         "title": "Timetable",
-        "body": "Admins build the timetable once in a visual editor: lessons, rooms, breaks and courses. Save the courses you take and you only see your own lessons. Substitutes, room changes and cancellations are entered live and show up immediately for everyone they affect.",
+        "body": "The timetable is set up once for the group and looks the same for everyone, except that each member sees only their own courses. Changes are entered for a single week and show up straight away.",
         "items": [
-          "Week view on desktop, one day at a time on phones",
-          "Only the courses you take",
-          "Cancellations, substitutes and room changes",
-          "The next lesson, right on your dashboard"
-        ]
-      },
-      "announcements": {
-        "title": "Announcements",
-        "body": "Moderators and admins post a short notice — a school trip, an early finish, a moved exam — and it appears at the top of the app for every member. Anyone who hasn't read it yet gets a notification.",
-        "items": [
-          "Shown to every member at once",
-          "Three levels: info, warning and important",
-          "Several at once, one tap apart",
-          "Notifications for unread announcements"
-        ]
-      },
-      "chat": {
-        "title": "Group chat",
-        "body": "Every group has its own chat, so homework no longer drowns in a messenger group. Members appear under generated aliases, so nobody has to share their phone number.",
-        "items": [
-          "Replies to individual messages",
-          "See who's typing",
-          "Copy, report and delete messages",
-          "Choose which roles may write"
+          ["Views", "The whole week on large screens, one day at a time on phones"],
+          ["Changes", "Cancellations, substitutions, room changes and moved lessons"],
+          [
+            "Highlight",
+            "The running or next lesson stands out, and on phones a marker shows the current time"
+          ],
+          ["Free periods", "Shown with their length, with breaks counted in if you prefer"],
+          ["Editor", "Lessons, rooms and lengths, with undo and redo"],
+          ["Day plan", "Start time, lesson length and breaks, separately for every weekday"]
         ]
       },
       "groups": {
         "title": "Groups and roles",
-        "body": "A group is a class, a course or a club. Whoever creates it owns it and decides what members, moderators and admins may do. Standard groups suit grades 1 to 10; Abitur groups manage whole year groups with basic and advanced courses.",
+        "body": "A group is a class, a year group or a club. Whoever creates it owns it and decides what everyone else may do.",
         "items": [
-          "Invite links that expire and can be revoked",
-          "Roles with fine-grained permissions",
-          "Subjects, courses and a timetable editor",
-          "Remove and ban members",
-          "Abitur groups with GK and LK courses",
-          "Dalton as an optional group setting"
+          [
+            "Group types",
+            "Standard groups for classes, Abitur groups with basic, advanced and additional courses"
+          ],
+          ["Invites", "Links and QR codes that expire after seven days and can be revoked"],
+          ["Roles", "Owner, admin, moderator and member"],
+          ["Permissions", "Thirteen of them, each set to the lowest role that may use it"],
+          ["Members", "Remove people, or ban them if they shouldn't come back"]
+        ]
+      },
+      "announcements": {
+        "title": "Announcements",
+        "body": "A school trip, an early finish, a moved exam: announcements appear at the top of the app for every member until they've read them.",
+        "items": [
+          ["Length", "Up to 160 characters, so they stay readable at a glance"],
+          ["Important", "Marked in red when it matters"],
+          ["Several at once", "Shown one after another, all dismissable in one go"]
         ]
       },
       "private": {
-        "title": "Private space",
-        "body": "A to-do list that belongs to you alone — shopping, training, the book you promised to finish. Private tasks are stored encrypted and visible only to you; not even your group's admins can see them.",
+        "title": "Private tasks",
+        "body": "A to-do list that belongs to you alone: the present to buy, the book to finish. Nobody else can see it, not even your group's admins.",
         "items": [
-          "Encrypted with AES-256-GCM",
-          "Visible only to you",
-          "Drag to reorder, edit and duplicate",
-          "Tick off when done"
+          ["Encryption", "Stored encrypted with AES-256-GCM"],
+          ["Order", "Drag to reorder, duplicate and tick off"]
         ]
       },
       "search": {
         "title": "Search and shortcuts",
-        "body": "Press Ctrl K (⌘ K on a Mac) anywhere in the app to open quick search. Type a few letters to jump to a page or start an action — no clicking through menus.",
+        "body": "Press Ctrl K, or ⌘ K on a Mac, anywhere in the app. Type a few letters to jump to a page or start an action.",
         "items": [
-          "Open with Ctrl K or ⌘ K",
-          "Pages, settings and actions",
-          "Alt N for a new task, Alt P for a private one",
-          "Ctrl G to switch groups"
+          ["Quick search", "Pages, settings and actions in one list"],
+          ["New task", "Alt N, or Alt P for a private one"],
+          ["Switch group", "Ctrl G"]
         ]
       },
       "account": {
         "title": "Account and security",
-        "body": "Your account is protected by a verified email address, optional two-factor authentication and an overview of every device you're signed in on. If you want to leave, you delete your account yourself — no request, no waiting.",
+        "body": "Your account is protected by a confirmed email address, optional two-factor authentication and an overview of every device you're signed in on.",
         "items": [
-          "Email verification",
-          "Two-factor authentication with any authenticator app",
-          "Sign in with Google",
-          "See and end active sessions",
-          "Reset a forgotten password by email",
-          "Delete your account at any time"
+          ["Sign in", "Password, Google or passkey"],
+          ["Two-factor", "Any authenticator app, with recovery codes as a backup"],
+          ["Devices", "See where you're signed in and sign out remotely"],
+          ["Your data", "Export everything as a ZIP file at any time"],
+          ["Deleting", "Delete your account yourself, without asking anyone"],
+          ["Settings", "Light, dark or system theme, German or English"]
         ]
       }
     }
   },
   "about": {
-    "title": "Made by students {emphasis}",
-    "title_emphasis": "who needed it.",
-    "lede": "Olauda is a private project run by students in Berlin. We built the tool we were missing at school, and we use it every day.",
+    "title": "Why Olauda exists",
+    "lede": "Homework used to get lost in long message threads. You found out about a canceled lesson at the classroom door. Olauda is the one place where all of it gets written down once.",
     "story": {
-      "label": "Story",
-      "lead": "Homework got lost in a messenger group. Cancelled lessons were news at the classroom door.",
-      "body": "So we built what we were missing: one place where homework, exams and timetable changes are written down once and everyone can see them. It has grown one real need at a time — invite links, roles and permissions, a timetable editor, courses for Abitur year groups, Dalton support. Nothing was added because it looked good on a feature list."
+      "title": "Built one real need at a time",
+      "body": "It started with a shared homework list. Invite links, roles, a timetable editor, courses for Abitur year groups and Dalton support followed, each because a class actually needed it. Nothing was added to fill a feature list."
     },
     "principles": {
-      "label": "Principles",
-      "items": {
-        "free": {
-          "title": "Free, without ads",
-          "body": "No subscriptions, no premium tier, no advertising. Everyone gets the whole product, and that won't change."
-        },
-        "private": {
-          "title": "Private by default",
-          "body": "Private tasks are stored encrypted, passwords only as a hash. We don't sell data, we don't show ads, and we don't collect more than the service needs to run."
-        },
-        "students": {
-          "title": "By students",
-          "body": "We're students ourselves and use Olauda every day, so we build what we actually need — not what sounds good in a sales pitch."
-        },
-        "simple": {
-          "title": "Only what helps",
-          "body": "Every feature has to solve a real problem at school. Whatever doesn't gets cut."
-        }
-      }
+      "title": "What we won't do",
+      "items": [
+        ["Charge you", "No subscriptions, no premium tier. Everyone gets the whole product."],
+        ["Show you ads", "There's no advertising, and there won't be."],
+        [
+          "Sell your data",
+          "We collect what the service needs to run and nothing else. Private tasks are encrypted, passwords are only stored as a hash."
+        ],
+        [
+          "Add clutter",
+          "Every feature has to solve a real problem at school. Whatever doesn't gets cut."
+        ]
+      ]
     },
     "team": {
-      "label": "Team",
-      "body": "Olauda is built and run by a small group of students in Berlin, in our free time and with no company behind it. Want to help or have an idea? Write to us — we're happy to hear from you.",
-      "place": "Berlin, Germany"
+      "title": "Who runs it",
+      "body": "Olauda is an independent project, built and run by a small team in its spare time. There's no company and no investor behind it. Want to help, or have an idea? We'd like to hear it."
     }
   },
   "contact": {
-    "title": "Write {emphasis}",
-    "title_emphasis": "to us.",
-    "lede": "Questions, bugs, ideas for new features — we read everything and reply as soon as we can.",
+    "title": "Get in touch",
+    "lede": "Questions, bugs, ideas for new features: we read everything and reply as soon as we can.",
     "email_label": "Email",
     "channels": {
       "discord": {
         "title": "Discord",
-        "body": "Talk to other users, share ideas and reach us directly.",
+        "body": "Talk to other people using Olauda, share ideas and reach us directly.",
         "link": "Join the server"
       },
       "status": {
         "title": "System status",
-        "body": "See whether something is down before you write to us.",
+        "body": "Check whether something is down before you write to us.",
         "link": "View status"
       },
       "bugs": {
         "title": "Found a bug?",
-        "body": "Email us what you did, what you expected and what happened instead. A screenshot helps."
+        "body": "Tell us what you did, what you expected and what happened instead. A screenshot helps."
       }
     }
   },
   "not_found": {
-    "label": "404",
     "title": "Free period.",
-    "body": "This page doesn't exist — or it was cancelled.",
+    "body": "This page doesn't exist. Maybe it was moved, or the link has a typo.",
     "link": "Back to the homepage"
   },
   "cookie": {
-    "text": "We only use cookies the site needs to work. We measure reach with Umami, without cookies or profiles.",
+    "text": "We only use cookies the site needs to work. We count visits with Umami, without cookies or profiles.",
     "link": "Privacy policy",
     "dismiss": "Okay"
   },
   "footer": {
-    "tagline": "The school week, in one place. Free and without ads, made by students.",
-    "product": "Product",
-    "project": "Project",
+    "tagline": "Homework and timetable changes, shared with your class.",
+    "product": "Olauda",
     "legal": "Legal",
     "imprint": "Imprint",
     "privacy": "Privacy",
     "terms": "Terms",
     "status": "Status",
-    "made_in": "Made in Berlin"
-  },
-  "legal": {
-    "imprint": {
-      "title": "Imprint",
-      "description": "Legal information about Olauda.",
-      "responsible": "Responsible Party",
-      "contact": "Contact",
-      "contact_label": "Email: ",
-      "disclaimer": {
-        "title": "Disclaimer",
-        "text": "Despite careful review, we accept no liability for the content of external links. The operators of linked pages are solely responsible for their content."
-      }
-    },
-    "privacy": {
-      "title": "Privacy Policy",
-      "description": "What data Olauda processes, why, and what rights you have.",
-      "sections": [
-        {
-          "title": "Overview",
-          "paragraphs": [
-            "This privacy policy covers the website olauda.com and the app at app.olauda.com. It explains which personal data we process, why we need it, how long we keep it and what rights you have.",
-            "Last updated: October 9, 2026"
-          ]
-        },
-        {
-          "title": "Controller",
-          "paragraphs": [
-            "The controller responsible for data processing is Deniz Keskin, Berlin, Germany. You can reach us by email at kontakt{'@'}olauda.com.",
-            "Olauda is a private, non-commercial project. We do not sell data, show ads or share data for advertising."
-          ]
-        },
-        {
-          "title": "Visiting the website and app",
-          "paragraphs": [
-            "When you open the website or the app, our server processes your IP address, the date and time, the requested address and your browser identifier (user agent). Without this data we cannot deliver the pages or fend off attacks.",
-            "So that nobody can guess passwords and two-factor codes or use us to send mass emails, we limit the number of requests per IP address, and per network (/64 prefix) for IPv6. The counters for this are kept in memory only and expire after a short time.",
-            "Our servers and database are operated for us by Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, Germany, in data centres in Germany. Hetzner processes the data on our behalf.",
-            "The legal basis is our legitimate interest in a secure and working service (Art. 6(1)(f) GDPR)."
-          ]
-        },
-        {
-          "title": "Your account",
-          "paragraphs": [
-            "To create an account we need your email address and a password. We only store a hash of your password (Argon2), never the password itself. We also store for your account:"
-          ],
-          "items": [
-            "your settings (language, colour scheme, personalisation) and your course selection,",
-            "when you registered and when you last signed in,",
-            "whether two-factor authentication is enabled, the secret it needs (encrypted) and your recovery codes (as a hash only), each with when they were created and used,",
-            "your passkeys: their public key, identifier and name, and when they were added and last used. The private key never leaves your device,",
-            "if you sign in with Google, your Google account ID and that Google account's email address."
-          ],
-          "outro": [
-            "We only send you emails your account needs: the confirmation code after registration, codes to reset or set your password, and security notices whenever the protection of your account changes, for example when your password is changed, two-factor authentication is turned on or off, or a passkey or Google account is added or removed. We do not send newsletters or ads.",
-            "We cannot create an account without an email address. The legal basis is the performance of our terms of use (Art. 6(1)(b) GDPR)."
-          ]
-        },
-        {
-          "title": "Groups and content",
-          "paragraphs": [
-            "In groups we process the content you and other members create: tasks and exams with descriptions, images and files, announcements, timetables and substitutions, and chat messages. We also store your membership, your role and when you last opened the group, so we can show you what is new.",
-            "Other members only see you under a randomly generated name, not your email address. They do see everything you post in the group.",
-            "We store private tasks encrypted (AES-256-GCM). Encryption happens on our server: it protects the data in the database but is not end-to-end encryption.",
-            "The legal basis is the performance of our terms of use (Art. 6(1)(b) GDPR)."
-          ]
-        },
-        {
-          "title": "Images and files",
-          "paragraphs": [
-            "Images and files you attach to tasks, and group pictures, are stored with Cloudinary Inc. (USA). When you upload a file, our server first checks its type and size and only then passes it on to Cloudinary. Each file can be opened via a randomly generated address; anyone who knows that address can open the file. Files that are no longer used, for example because the task was deleted or the group picture replaced, are deleted automatically, within about a day.",
-            "Cloudinary processes the data on our behalf. The transfer to the USA is based on the European Commission's adequacy decision for the EU-U.S. Data Privacy Framework, under which Cloudinary is certified (Art. 45 GDPR)."
-          ]
-        },
-        {
-          "title": "Previews of Office files",
-          "paragraphs": [
-            "Word, PowerPoint and Excel files attached to tasks are displayed in the app with Microsoft's Office viewer (Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Ireland). When you open such a file, your browser loads the preview from Microsoft's servers. Microsoft receives your IP address, your browser's identifier and the address of the file, and fetches the file itself to display it.",
-            "Microsoft processes this data as an independent controller; Microsoft's privacy statement applies. Data may be transferred to Microsoft Corporation in the USA, which is certified under the EU-U.S. Data Privacy Framework (Art. 45 GDPR).",
-            "The legal basis is our legitimate interest in displaying documents directly in the app, without you having to download them and have suitable software installed (Art. 6(1)(f) GDPR). Images and PDF files are displayed without Microsoft."
-          ]
-        },
-        {
-          "title": "Sending emails",
-          "paragraphs": [
-            "We send emails via Resend, Inc. (USA). Resend receives your email address and the content of the email. Resend processes the data on our behalf and is certified under the EU-U.S. Data Privacy Framework (Art. 45 GDPR)."
-          ]
-        },
-        {
-          "title": "Sign in with Google",
-          "paragraphs": [
-            "You can register and sign in with your Google account. We then redirect you to Google (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland). Google sends us your Google account ID, your email address and whether Google has verified it. We do not request any other data.",
-            "What Google processes during sign-in is governed by Google's own privacy policy. Data may be transferred to Google LLC in the USA, which is certified under the EU-U.S. Data Privacy Framework.",
-            "Signing in with Google is optional; you can just as well register with an email address and password. The legal basis is Art. 6(1)(b) GDPR."
-          ]
-        },
-        {
-          "title": "Sign-ins and security",
-          "paragraphs": ["To protect your account and the service, we store:"],
-          "items": [
-            "for each sign-in (session) the IP address, browser identifier and timestamps. In your account settings we use this to show your signed-in devices with an approximate location. We determine the location with a database on our own server and do not pass your IP address on for this;",
-            "a security log with IP address and browser identifier: sign-ins, failed sign-in attempts and sign-outs, changes to your password, passkeys, two-factor authentication and Google link, the export and deletion of your account, the creation and deletion of groups, invites, changes to memberships, roles and group permissions, and every action by admins."
-          ],
-          "outro": [
-            "This lets us detect and prevent abuse and unauthorised access. The legal basis is our legitimate interest in the security of the service (Art. 6(1)(f) GDPR).",
-            "This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com."
-          ]
-        },
-        {
-          "title": "Activity log",
-          "paragraphs": [
-            "We log which actions happen in your account, for example opening the app (with browser identifier), creating, editing or checking off tasks, and changes to settings. We only store the type, time and IDs of the affected entries, not their content.",
-            "We use the log to investigate errors and abuse and to see how many people use the service. Only we as operators can view it. The legal basis is our legitimate interest (Art. 6(1)(f) GDPR)."
-          ]
-        },
-        {
-          "title": "Reports",
-          "paragraphs": [
-            "When you report a task or message, we store the reported content, your reason, your email address and the email address of the person who created the content. This lets us review the report and follow up if needed. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR)."
-          ]
-        },
-        {
-          "title": "Audience measurement",
-          "paragraphs": [
-            "To understand which pages are used, we use Umami Cloud (Umami Software, Inc., USA) on the website and in the app. The data is stored on servers in the EU (Germany).",
-            "Umami records the page visited and its title, the referring page, browser, operating system, device type, screen size, language and country. In the app we first remove query parameters and the secret part of invite links.",
-            "Umami does not set cookies or track you across other websites; according to Umami, your IP address is not stored. We only see aggregated statistics.",
-            "The legal basis is our legitimate interest in improving our service (Art. 6(1)(f) GDPR). You can object at any time."
-          ]
-        },
-        {
-          "title": "Cookies and local storage",
-          "paragraphs": [
-            "We only use cookies and local storage that are technically necessary or that store a setting you chose (Section 25(2) no. 2 TDDDG). We do not use tracking or advertising cookies."
-          ],
-          "items": [
-            "App, sign-in: access_token (15 minutes), refresh_token (7 days), csrf_token (30 days, protection against forged requests), mfa_pending_token (5 minutes, during the two-factor prompt), oauth_state_token and oauth_pending_token (10 and 15 minutes, during sign-in with Google).",
-            "App, local browser storage: language, colour scheme, time of the last session renewal and, until you are signed in, an opened invite link (at most 24 hours).",
-            "Website: i18n_locale (language, 1 year), nuxt-homepage-color-mode (colour scheme, 1 year), cookie_notice_dismissed (notice closed, 180 days)."
-          ]
-        },
-        {
-          "title": "Retention",
-          "items": [
-            "We keep account data until you delete your account.",
-            "We delete unconfirmed sign-ups once their confirmation code has expired after 2 days.",
-            "Codes to reset or set your password are valid for 30 minutes. We delete them after 24 hours; until then, we use them to limit how many codes an email address receives.",
-            "We delete session data with IP address and browser identifier about 7 days after it was last used.",
-            "We delete the activity log after 30 days and the security log after 90 days. Attacks on an account are often noticed only weeks later, so we keep it longer.",
-            "We delete chat messages automatically after 7 days.",
-            "We delete tasks and exams in groups automatically 90 days after their due date.",
-            "We delete schedule changes such as substitutions and cancellations automatically 90 days after the day they apply to.",
-            "We keep reports until we have handled them.",
-            "All other group content is kept until you, the group admins or we delete it, or the group is deleted."
-          ]
-        },
-        {
-          "title": "Deleting your account",
-          "paragraphs": [
-            "You can delete your account at any time in your account settings. If you own a group, you need to transfer or delete it first.",
-            "On deletion we immediately remove your account data, sessions, group memberships, chat messages, private tasks, your Google link and your activity log.",
-            "Tasks and announcements you created in groups remain available to the group but are no longer linked to your account. Security log entries are deleted once their 90-day period ends, reports once they have been handled."
-          ]
-        },
-        {
-          "title": "Your rights",
-          "paragraphs": ["Under the GDPR you have the right to:"],
-          "items": [
-            "access the data we hold about you (Art. 15 GDPR),",
-            "rectification of inaccurate data (Art. 16 GDPR),",
-            "erasure of your data (Art. 17 GDPR),",
-            "restriction of processing (Art. 18 GDPR),",
-            "data portability (Art. 20 GDPR),",
-            "object to processing based on our legitimate interest (Art. 21 GDPR)."
-          ],
-          "outro": [
-            "You can download a copy of all data for your account yourself at any time in your account settings under \"Account\" as a ZIP file. It contains your data in a machine-readable format (JSON) and the information required by Art. 15 GDPR.",
-            "For anything else, email us at kontakt{'@'}olauda.com.",
-            "You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR). The authority responsible for us is the Berlin Commissioner for Data Protection and Freedom of Information (Berliner Beauftragte für Datenschutz und Informationsfreiheit), Alt-Moabit 59–61, 10555 Berlin, Germany.",
-            "We do not use automated decision-making or profiling."
-          ]
-        },
-        {
-          "title": "Changes",
-          "paragraphs": [
-            "We update this privacy policy when the service or the law changes. You can always find the current version on this page."
-          ]
-        }
-      ]
-    },
-    "terms": {
-      "title": "Terms of Service",
-      "description": "The rules for using Olauda.",
-      "acceptance": {
-        "title": "Acceptance of Terms",
-        "text": "By using Olauda, you agree to these terms. If you do not agree, please discontinue use of the service."
-      },
-      "service": {
-        "title": "The Service",
-        "text": "Olauda provides a free, web-based school management platform. We reserve the right to modify or discontinue features at any time, with notice where possible."
-      },
-      "account": {
-        "title": "Your Account",
-        "item0": "You must provide a valid email address to create an account.",
-        "item1": "You are responsible for keeping your login credentials secure.",
-        "item2": "You must be at least 18 years old or have the consent of your legal guardians to use this service.",
-        "item3": "One account per person. Do not share accounts."
-      },
-      "conduct": {
-        "title": "Acceptable Use",
-        "intro": "You agree not to use Olauda to:",
-        "item0": "Upload or share illegal, harmful, or abusive content.",
-        "item1": "Attempt to gain unauthorised access to other accounts or systems.",
-        "item2": "Interfere with the service or its infrastructure.",
-        "item3": "Use the service for commercial purposes without prior written consent."
-      },
-      "termination": {
-        "title": "Termination",
-        "text": "We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time."
-      },
-      "availability": {
-        "title": "Availability",
-        "text": "We do not guarantee that the service is always available or that your data is stored permanently."
-      },
-      "changes": {
-        "title": "Changes to These Terms",
-        "text": "We may update these terms from time to time."
-      },
-      "governing": {
-        "title": "Governing Law",
-        "text": "These terms are governed by the laws of Germany. Any disputes shall be resolved in the competent courts of Germany."
-      }
-    }
+    "rights": "© {year} Olauda"
   }
 }

@@ -1,103 +1,87 @@
 <script setup lang="ts">
+import { CalendarDays, KeyRound, ListTodo, Lock, Megaphone, Search, UsersRound } from '@lucide/vue';
+
 const { t, tm, rt } = useI18n();
 
 useSeoMetaWithI18n({
-  title: () => `${t('pages.features.title')} — Olauda`,
+  title: () => t('pages.features.title'),
   description: () => t('pages.features.description'),
-  keywords: 'features, tasks, timetable, substitutions, announcements, group chat, private notes',
 });
 
-const chapters = [
-  'tasks',
-  'timetable',
-  'announcements',
-  'chat',
-  'groups',
-  'private',
-  'search',
-  'account',
+/** Icons match the app's navigation, so a section here looks like its place there. */
+const SECTIONS = [
+  { id: 'tasks', icon: ListTodo },
+  { id: 'timetable', icon: CalendarDays },
+  { id: 'groups', icon: UsersRound },
+  { id: 'announcements', icon: Megaphone },
+  { id: 'private', icon: Lock },
+  { id: 'search', icon: Search },
+  { id: 'account', icon: KeyRound },
 ] as const;
 
-const { activeId } = useScrollSpy(chapters);
+const { activeId } = useScrollSpy(SECTIONS.map((section) => section.id));
 
-function chapterItems(chapter: (typeof chapters)[number]) {
-  return (tm(`features.chapters.${chapter}.items`) as unknown[]).map((item) => rt(item as string));
-}
+const sectionItems = (id: (typeof SECTIONS)[number]['id']) =>
+  (tm(`features.sections.${id}.items`) as [string, string][]).map(([term, detail]) => ({
+    term: rt(term),
+    detail: rt(detail),
+  }));
 </script>
 
 <template>
-  <section class="page pt-intro">
-    <div class="page-grid gap-y-10">
-      <h1 class="col-span-12 font-serif text-display lg:col-span-10">
-        <i18n-t keypath="features.title" scope="global">
-          <template #name>
-            <span class="whitespace-nowrap">Olauda</span>
-          </template>
-          <template #emphasis>
-            <em>{{ t('features.title_emphasis') }}</em>
-          </template>
-        </i18n-t>
-      </h1>
-      <p
-        class="col-span-12 text-lede text-on-ghost-muted md:col-span-7 lg:col-span-5 lg:col-start-7"
-      >
-        {{ t('features.lede') }}
-      </p>
-    </div>
-  </section>
+  <PageIntro :title="t('features.title')" :lede="t('features.lede')" />
 
-  <div class="page page-grid pt-section">
-    <nav class="hidden lg:col-span-3 lg:block" :aria-label="t('features.index_label')">
-      <div class="sticky top-[calc(var(--spacing-header)+1.25rem)] flex flex-col gap-4">
-        <p class="border-t border-on-ghost pt-5 text-label font-medium">
-          {{ t('features.index_label') }}
-        </p>
-        <ol class="flex flex-col">
-          <li v-for="(chapter, index) in chapters" :key="chapter">
-            <a
-              :href="`#${chapter}`"
-              class="flex items-baseline gap-3 py-1.5 text-[0.9375rem] transition-colors"
-              :class="
-                activeId === chapter ? 'text-on-ghost' : 'text-on-ghost-subtle hover:text-on-ghost'
-              "
-              :aria-current="activeId === chapter ? 'location' : undefined"
-            >
-              <span class="tabular w-4 font-serif text-lg lining-nums">{{ index + 1 }}</span>
-              {{ t(`features.chapters.${chapter}.title`) }}
-            </a>
-          </li>
-        </ol>
-      </div>
+  <div class="page page-grid gap-y-12 pt-[clamp(3.5rem,2rem+5vw,7rem)]">
+    <nav :aria-label="t('features.index_label')" class="col-span-3 max-lg:hidden">
+      <ul class="sticky top-[calc(var(--spacing-header)+2rem)] flex flex-col gap-0.5">
+        <li v-for="section in SECTIONS" :key="section.id">
+          <!-- The app sidebar's active marker: a short bar on the leading edge. -->
+          <a
+            :href="`#${section.id}`"
+            class="relative flex h-10 items-center gap-3 rounded-full px-3 text-sm font-medium transition-colors duration-(--duration-hover) hover:bg-ghost-hover before:absolute before:top-1/2 before:left-0 before:h-0 before:w-0.5 before:-translate-y-1/2 before:rounded-r-full before:bg-action before:transition-[height] before:duration-300 before:ease-settle"
+            :class="
+              activeId === section.id
+                ? 'text-on-ghost before:h-5'
+                : 'text-on-ghost-muted hover:text-on-ghost'
+            "
+            :aria-current="activeId === section.id ? 'location' : undefined"
+          >
+            <component :is="section.icon" :size="20" aria-hidden="true" />
+            {{ t(`features.sections.${section.id}.title`) }}
+          </a>
+        </li>
+      </ul>
     </nav>
 
-    <div class="col-span-12 flex flex-col gap-figure lg:col-span-9">
-      <article
-        v-for="(chapter, index) in chapters"
-        :id="chapter"
-        :key="chapter"
-        class="grid gap-x-gutter gap-y-8 border-t border-on-ghost pt-5 md:grid-cols-9"
+    <div
+      class="col-span-12 flex flex-col gap-[clamp(4rem,2.5rem+4vw,7rem)] lg:col-span-8 lg:col-start-5"
+    >
+      <section
+        v-for="section in SECTIONS"
+        :id="section.id"
+        :key="section.id"
+        :aria-labelledby="`${section.id}-title`"
       >
-        <p class="tabular font-serif text-title lining-nums md:col-span-1">{{ index + 1 }}</p>
-        <div class="flex flex-col gap-5 md:col-span-8">
-          <h2 class="font-serif text-title">
-            {{ t(`features.chapters.${chapter}.title`) }}
-          </h2>
-          <p class="max-w-prose text-lede text-on-ghost-muted">
-            {{ t(`features.chapters.${chapter}.body`) }}
-          </p>
-          <ul class="mt-4 grid gap-x-gutter border-t border-ghost-border sm:grid-cols-2">
-            <li
-              v-for="item in chapterItems(chapter)"
-              :key="item"
-              class="border-b border-ghost-border py-3.5 text-[0.9375rem]"
-            >
-              {{ item }}
-            </li>
-          </ul>
-        </div>
-      </article>
+        <component :is="section.icon" :size="24" aria-hidden="true" />
+        <h2 :id="`${section.id}-title`" class="mt-5 text-title">
+          {{ t(`features.sections.${section.id}.title`) }}
+        </h2>
+        <p class="mt-4 max-w-prose text-lede text-on-ghost-muted">
+          {{ t(`features.sections.${section.id}.body`) }}
+        </p>
+        <dl class="mt-8">
+          <div
+            v-for="item in sectionItems(section.id)"
+            :key="item.term"
+            class="grid gap-x-8 gap-y-1 border-t border-ghost-border py-4 sm:grid-cols-[11rem_1fr]"
+          >
+            <dt class="font-semibold">{{ item.term }}</dt>
+            <dd class="text-on-ghost-muted">{{ item.detail }}</dd>
+          </div>
+        </dl>
+      </section>
     </div>
   </div>
 
-  <CallToAction />
+  <HomeClosing />
 </template>

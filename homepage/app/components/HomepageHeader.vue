@@ -1,104 +1,47 @@
 <script setup lang="ts">
-import { Menu, X } from '@lucide/vue';
-
 const { t } = useI18n();
 const localePath = useLocalePath();
-const route = useRoute();
 const appLinks = useAppLinks();
-const { y: scrollY } = useWindowScroll();
+const { y } = useWindowScroll();
 
-const menuOpen = ref(false);
-const scrolled = computed(() => scrollY.value > 8);
-
-const navLinks = [
-  { labelKey: 'nav.features', route: 'features' },
-  { labelKey: 'nav.about', route: 'about' },
-  { labelKey: 'nav.contact', route: 'contact' },
-] as const;
-
-watch(
-  () => route.fullPath,
-  () => (menuOpen.value = false),
-);
-
-useHead({ bodyAttrs: { class: computed(() => (menuOpen.value ? 'overflow-hidden' : '')) } });
+const isScrolled = computed(() => y.value > 4);
+const navItems = useSiteNav();
 </script>
 
 <template>
   <header
-    class="sticky top-0 z-(--z-header) bg-canvas transition-[box-shadow] duration-300"
-    :class="scrolled || menuOpen ? 'shadow-[0_1px_0_var(--color-ghost-border)]' : ''"
+    class="sticky top-0 z-(--z-header) bg-canvas transition-[box-shadow] duration-200"
+    :class="isScrolled && 'shadow-[0_1px_0_var(--color-ghost-border)]'"
   >
-    <nav class="page flex h-header items-center gap-10" :aria-label="t('nav.label')">
+    <div class="page flex h-header items-center gap-6">
       <NuxtLink
         :to="localePath('index')"
-        class="-ml-1 flex items-center gap-2.5 rounded-md px-1 py-1"
         :aria-label="t('nav.home')"
+        class="-ml-1 flex items-center gap-2 rounded-full p-1 font-display text-[1.375rem] font-bold tracking-[-0.02em]"
       >
-        <BrandLogo class="size-6 shrink-0" />
-        <span class="text-[0.9375rem] font-semibold tracking-[-0.01em]">Olauda</span>
+        <BrandLogo class="size-7" />
+        <span>Olauda</span>
       </NuxtLink>
 
-      <ul class="hidden items-center gap-7 md:flex">
-        <li v-for="link in navLinks" :key="link.route">
-          <NuxtLink
-            :to="localePath(link.route)"
-            class="text-sm text-on-ghost-muted transition-colors hover:text-on-ghost"
-            active-class="text-on-ghost!"
-          >
-            {{ t(link.labelKey) }}
-          </NuxtLink>
-        </li>
-      </ul>
-
-      <div class="ml-auto hidden items-center gap-1 md:flex">
-        <BaseButton :href="appLinks.login" target="_self">{{ t('common.login') }}</BaseButton>
-        <BaseButton :href="appLinks.register" target="_self" variant="action">
-          {{ t('common.getStarted') }}
-        </BaseButton>
-      </div>
-
-      <BaseButton
-        class="-mr-2 ml-auto md:hidden"
-        :icon="menuOpen ? X : Menu"
-        :aria-label="t(menuOpen ? 'nav.close_menu' : 'nav.open_menu')"
-        :aria-expanded="menuOpen"
-        aria-controls="mobile-nav"
-        @click="menuOpen = !menuOpen"
-      />
-    </nav>
-
-    <Transition
-      enter-from-class="opacity-0"
-      leave-to-class="opacity-0"
-      enter-active-class="transition-opacity duration-200"
-      leave-active-class="transition-opacity duration-150"
-    >
-      <div
-        v-if="menuOpen"
-        id="mobile-nav"
-        class="fixed inset-x-0 top-header bottom-0 z-(--z-mobile-nav) flex flex-col bg-canvas md:hidden"
-      >
-        <ul class="page flex flex-col pt-6">
-          <li v-for="link in navLinks" :key="link.route" class="border-b border-ghost-border">
+      <nav :aria-label="t('nav.label')" class="hidden md:block">
+        <ul class="flex items-center gap-1">
+          <li v-for="item in navItems" :key="item.name">
             <NuxtLink
-              :to="localePath(link.route)"
-              class="block py-4 font-serif text-title"
-              @click="menuOpen = false"
+              :to="localePath(item.name)"
+              class="relative flex h-9 items-center rounded-full px-3.5 text-sm/4 font-medium text-on-ghost-muted transition-colors duration-(--duration-hover) hover:bg-ghost-hover hover:text-on-ghost aria-[current=page]:text-on-ghost after:absolute after:bottom-0.5 after:left-1/2 after:h-0.5 after:w-0 after:-translate-x-1/2 after:rounded-full after:bg-action after:transition-[width] after:duration-300 after:ease-settle aria-[current=page]:after:w-3"
             >
-              {{ t(link.labelKey) }}
+              {{ t(item.labelKey) }}
             </NuxtLink>
           </li>
         </ul>
-        <div class="page mt-auto flex flex-col gap-2 pb-8">
-          <BaseButton :href="appLinks.register" target="_self" variant="action" size="lg">
-            {{ t('common.getStarted') }}
-          </BaseButton>
-          <BaseButton :href="appLinks.login" target="_self" size="lg">
-            {{ t('common.login') }}
-          </BaseButton>
-        </div>
+      </nav>
+
+      <div class="ml-auto flex items-center gap-1">
+        <BaseButton :href="appLinks.login" target="_self">{{ t('common.login') }}</BaseButton>
+        <BaseButton :href="appLinks.register" target="_self" variant="action" class="max-md:hidden">
+          {{ t('common.register') }}
+        </BaseButton>
       </div>
-    </Transition>
+    </div>
   </header>
 </template>

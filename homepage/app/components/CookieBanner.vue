@@ -11,11 +11,14 @@ const dismissed = useCookie<boolean>('cookie_notice_dismissed', { maxAge: 60 * 6
       v-if="!dismissed"
       role="region"
       :aria-label="t('cookie.link')"
-      class="fixed inset-x-4 bottom-4 z-(--z-notice) flex items-center gap-4 rounded-xl sm:rounded-full bg-action py-1.5 pr-1.5 pl-5 text-[0.8125rem] text-on-action shadow-menu sm:right-auto sm:left-4 sm:max-w-md"
+      class="fixed inset-x-4 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.25rem)] z-(--z-notice) flex items-center gap-4 rounded-3xl bg-action py-2 pr-2 pl-5 text-label text-on-action shadow-menu sm:right-auto sm:max-w-md md:bottom-4 md:left-4"
     >
       <p class="flex-1">
         {{ t('cookie.text') }}
-        <NuxtLink :to="localePath('legal-privacy-policy')" class="link-underline whitespace-nowrap">
+        <NuxtLink
+          :to="localePath('legal-privacy-policy')"
+          class="link whitespace-nowrap decoration-on-action-muted"
+        >
           {{ t('cookie.link') }}
         </NuxtLink>
       </p>

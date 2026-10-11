@@ -6,13 +6,9 @@ defineProps<{
 </script>
 
 <template>
-  <div class="page page-grid gap-y-10 pt-intro pb-section">
-    <div class="col-span-12 flex flex-col gap-6 lg:col-span-9 lg:col-start-4">
-      <h1 class="font-serif text-headline">{{ title }}</h1>
-      <p v-if="description" class="max-w-prose text-lede text-on-ghost-muted">{{ description }}</p>
-    </div>
-
-    <div class="col-span-12 mt-8 border-t border-on-ghost lg:col-span-9 lg:col-start-4">
+  <PageIntro :title="title" :lede="description" />
+  <div class="page page-grid pt-[clamp(3rem,2rem+4vw,6rem)] pb-section">
+    <div class="col-span-12 border-t border-on-ghost lg:col-span-10">
       <slot />
     </div>
   </div>

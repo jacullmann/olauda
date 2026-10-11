@@ -5,12 +5,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   ssr: true,
 
-  modules: [
-    '@vueuse/nuxt',
-    '@nuxtjs/color-mode',
-    '@nuxtjs/sitemap',
-    '@nuxtjs/i18n',
-  ],
+  modules: ['@vueuse/nuxt', '@nuxtjs/color-mode', '@nuxtjs/sitemap', '@nuxtjs/i18n'],
 
   vite: {
     plugins: [tailwindcss()],
@@ -49,13 +44,13 @@ export default defineNuxtConfig({
         code: 'en',
         language: 'en-US',
         name: 'English',
-        file: 'en.json'
+        files: ['en.json', 'legal.en.json'],
       },
       {
         code: 'de',
         language: 'de-DE',
         name: 'Deutsch',
-        file: 'de.json'
+        files: ['de.json', 'legal.de.json'],
       },
     ],
     strategy: 'prefix_except_default',
@@ -64,31 +59,31 @@ export default defineNuxtConfig({
     pages: {
       index: {
         en: '/',
-        de: '/'
+        de: '/',
       },
       features: {
         en: '/features',
-        de: '/funktionen'
+        de: '/funktionen',
       },
       about: {
         en: '/about',
-        de: '/uber-uns'
+        de: '/uber-uns',
       },
       contact: {
         en: '/contact',
-        de: '/kontakt'
+        de: '/kontakt',
       },
       'legal-imprint': {
         en: '/legal/imprint',
-        de: '/legal/impressum'
+        de: '/legal/impressum',
       },
       'legal-privacy-policy': {
         en: '/legal/privacy-policy',
-        de: '/legal/datenschutz'
+        de: '/legal/datenschutz',
       },
       'legal-terms': {
         en: '/legal/terms',
-        de: '/legal/nutzungsbedingungen'
+        de: '/legal/nutzungsbedingungen',
       },
     },
     detectBrowserLanguage: {
@@ -102,34 +97,62 @@ export default defineNuxtConfig({
     head: {
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1',
-      title: 'Olauda – Free School Management for Students',
+      title: 'Olauda',
       meta: [
-        { name: 'description', content: 'The free, ad-free school management system by students for students. Homework, timetable, groups, and more – all in one place.' },
-        { name: 'keywords', content: 'school dashboard, school management, homework, timetable, students, free, open source' },
+        {
+          name: 'description',
+          content:
+            'Homework, exams and timetable changes in one place your whole class shares. Free and without ads.',
+        },
+        {
+          name: 'keywords',
+          content: 'homework planner, timetable, schedule changes, class, school, students, free',
+        },
         { name: 'author', content: 'Olauda' },
-        { name: 'robots', content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1' },
+        {
+          name: 'robots',
+          content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1',
+        },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: 'Olauda – Free School Management for Students' },
-        { property: 'og:description', content: 'The free, ad-free school management system by students for students.' },
+        { property: 'og:title', content: 'Olauda' },
+        {
+          property: 'og:description',
+          content: 'Homework, exams and timetable changes in one place your whole class shares.',
+        },
         { property: 'og:image', content: 'https://olauda.com/og-image.png' },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '630' },
         { property: 'og:site_name', content: 'Olauda' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'Olauda – Free School Management' },
-        { name: 'twitter:description', content: 'The free school management system by students for students.' },
+        { name: 'twitter:title', content: 'Olauda' },
+        {
+          name: 'twitter:description',
+          content: 'Homework, exams and timetable changes in one place your whole class shares.',
+        },
         { name: 'twitter:image', content: 'https://olauda.com/og-image.png' },
         { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
-        { name: 'theme-color', content: '#0e0e0e', media: '(prefers-color-scheme: dark)' },
+        { name: 'theme-color', content: '#0f0f0f', media: '(prefers-color-scheme: dark)' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-        { name: 'google-site-verification', content: 'EWIYTbU2hlYorTqIulVfAyKjArTsWmgQ9O9g0Tb0L8c' },
+        {
+          name: 'google-site-verification',
+          content: 'EWIYTbU2hlYorTqIulVfAyKjArTsWmgQ9O9g0Tb0L8c',
+        },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+        {
+          rel: 'preload',
+          href: '/fonts/Satoshi-Variable.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: '',
+        },
       ],
       script: [
+        // Lets CSS hold the sample timetable back until the client has read the clock.
+        { innerHTML: "document.documentElement.classList.add('js')" },
         {
           src: 'https://cloud.umami.is/script.js',
           defer: true,
@@ -153,7 +176,8 @@ export default defineNuxtConfig({
                 '@id': 'https://olauda.com/#webapp',
                 url: 'https://app.olauda.com',
                 name: 'Olauda',
-                description: 'The free school management system by students for students',
+                description:
+                  'Homework, exams and timetable changes in one place your whole class shares',
                 applicationCategory: 'EducationalApplication',
                 operatingSystem: 'Web',
                 offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },

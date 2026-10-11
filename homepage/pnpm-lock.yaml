@@ -11,9 +11,6 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource-variable/noto-serif-display':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@lucide/vue':
         specifier: ^1.51.0
         version: 1.51.0(vue@3.5.43(typescript@5.9.3))
@@ -595,9 +592,6 @@ packages:
 
   '@fontsource-variable/inter@5.3.0':
     resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
-
-  '@fontsource-variable/noto-serif-display@5.3.0':
-    resolution: {integrity: sha512-xjCag3o0sBWYB+76irp7cHMIa3MvWqYdGSgFXDePAmezplEJeTbR8FHvf2tSNNqA09KeO9W3N+HDaehQxzg8yg==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -4987,8 +4981,6 @@ snapshots:
       levn: 0.4.1
 
   '@fontsource-variable/inter@5.3.0': {}
-
-  '@fontsource-variable/noto-serif-display@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

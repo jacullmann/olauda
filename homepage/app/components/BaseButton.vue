@@ -6,10 +6,10 @@ const props = withDefaults(
     href?: string;
     target?: string;
     type?: 'button' | 'submit' | 'reset';
-    variant?: 'action' | 'ghost';
-    size?: 'md' | 'lg';
+    /** The inverse variants sit on an action-coloured background. */
+    variant?: 'action' | 'ghost' | 'surface' | 'inverse' | 'inverse-ghost';
+    size?: 'sm' | 'md' | 'lg';
     icon?: Component;
-    iconPlacement?: 'leading' | 'trailing';
   }>(),
   {
     href: undefined,
@@ -18,7 +18,6 @@ const props = withDefaults(
     variant: 'ghost',
     size: 'md',
     icon: undefined,
-    iconPlacement: 'trailing',
   },
 );
 
@@ -28,11 +27,18 @@ const iconOnly = computed(() => Boolean(props.icon) && !slots.default);
 const variantClasses = {
   action: 'bg-action text-on-action hover:bg-action-hover',
   ghost: 'text-on-ghost hover:bg-ghost-hover',
+  surface: 'border border-ghost-border bg-surface text-on-ghost shadow-input hover:bg-ghost-hover',
+  inverse: 'bg-on-action text-action hover:bg-on-action/88',
+  'inverse-ghost': 'text-on-action hover:bg-on-action/12',
 } as const;
 
 const sizeClasses = computed(() => {
-  if (iconOnly.value) return 'size-10';
-  return props.size === 'lg' ? 'h-12 px-6 text-[0.9375rem]' : 'h-10 px-4.5 text-sm';
+  if (iconOnly.value) return { sm: 'size-8', md: 'size-10', lg: 'size-12' }[props.size];
+  return {
+    sm: 'h-8 px-3.5 text-sm/4',
+    md: 'h-10 px-5 text-sm/4',
+    lg: 'h-12 px-6 text-[0.9375rem]/5',
+  }[props.size];
 });
 
 const tagAttrs = computed(() =>
@@ -51,26 +57,9 @@ const tagAttrs = computed(() =>
     :is="href ? 'a' : 'button'"
     v-bind="tagAttrs"
     :class="[variantClasses[variant], sizeClasses]"
-    class="group/button touch-target relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full font-medium whitespace-nowrap select-none transition-colors duration-(--duration-hover)"
+    class="touch-target relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full font-medium whitespace-nowrap transition-colors duration-(--duration-hover) select-none"
   >
-    <component
-      :is="icon"
-      v-if="icon && iconPlacement === 'leading'"
-      :size="18"
-      :stroke-width="1.75"
-      aria-hidden="true"
-    />
+    <component :is="icon" v-if="icon" :size="size === 'sm' ? 16 : 18" aria-hidden="true" />
     <slot />
-    <component
-      :is="icon"
-      v-if="icon && iconPlacement === 'trailing'"
-      :size="18"
-      :stroke-width="1.75"
-      :class="
-        !iconOnly &&
-        'transition-transform duration-200 ease-out-quint group-hover/button:translate-x-0.5'
-      "
-      aria-hidden="true"
-    />
   </component>
 </template>

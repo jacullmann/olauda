@@ -1,10 +1,19 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter/opsz.css';
-@import '@fontsource-variable/noto-serif-display/wght.css';
-@import '@fontsource-variable/noto-serif-display/wght-italic.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant js (&:where(.js, .js *));
 
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Colour names and semantic roles mirror app/src/assets/css/style.css, so both
+   sites shift together when the app's palette changes. */
 @theme {
   --color-*: initial;
   --color-transparent: transparent;
@@ -16,164 +25,174 @@
   --color-smoke: oklch(0 0 0 / 13%);
   --color-onyx: oklch(0.1684 0 0);
   --color-charcoal: oklch(0.2768 0 0);
+  --color-charcoal-highlight: oklch(0.3171 0 0);
   --color-graphite: oklch(0.3753 0 0);
   --color-steel: oklch(0.5103 0 0);
   --color-ghost: oklch(0.6268 0 0);
   --color-ash: oklch(0.8452 0 0);
+  --color-cloud: oklch(0.8975 0 0);
   --color-white-highlight: oklch(0.9491 0 0);
   --color-mist: oklch(1 0 0 / 11%);
   --color-cobalt: oklch(0.57 0.235 262.881);
   --color-sapphire: oklch(0.623 0.214 259.815);
   --color-cinnabar: oklch(0.64 0.23 25.33);
   --color-coral: oklch(0.65 0.22 24.41);
-  --color-basil: oklch(0.755 0.225 145);
-  --color-pistachio: oklch(0.82 0.22 145);
 
   --color-canvas: var(--color-white);
-  --color-surface: oklch(0.9702 0 0);
+  --color-surface: var(--color-white);
+  --color-surface-highlight: oklch(0.9702 0 0);
   --color-on-ghost: var(--color-black);
   --color-on-ghost-muted: var(--color-steel);
   --color-on-ghost-subtle: var(--color-ghost);
   --color-ghost-border: var(--color-smoke);
   --color-ghost-hover: var(--color-vapor);
-  --color-tint: oklch(0 0 0 / 3%);
 
   --color-action: var(--color-black);
   --color-action-hover: var(--color-charcoal);
   --color-on-action: var(--color-white);
+  --color-on-action-muted: var(--color-ash);
 
   --color-accent: var(--color-cobalt);
   --color-on-accent: var(--color-white);
-
   --color-danger: var(--color-cinnabar);
-  --color-success: var(--color-basil);
+  --color-focus: var(--color-ghost);
 
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Noto Serif Display Variable', ui-serif, Georgia, serif;
+  --font-display: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
 
-  --text-display: clamp(2.75rem, 1.2rem + 6.6vw, 7.25rem);
-  --text-display--line-height: 0.94;
-  --text-display--letter-spacing: -0.032em;
-  --text-display--font-weight: 300;
-  --text-headline: clamp(2.375rem, 1.55rem + 3.1vw, 4.25rem);
-  --text-headline--line-height: 1;
-  --text-headline--letter-spacing: -0.026em;
-  --text-headline--font-weight: 320;
-  --text-title: clamp(1.75rem, 1.35rem + 1.5vw, 2.625rem);
-  --text-title--line-height: 1.08;
-  --text-title--letter-spacing: -0.02em;
-  --text-title--font-weight: 350;
-  --text-statement: clamp(1.625rem, 1.2rem + 1.7vw, 2.75rem);
-  --text-statement--line-height: 1.18;
-  --text-statement--letter-spacing: -0.018em;
-  --text-statement--font-weight: 360;
-  --text-lede: clamp(1.0625rem, 1rem + 0.25vw, 1.25rem);
-  --text-lede--line-height: 1.55;
-  --text-numeral: clamp(9rem, 3rem + 22vw, 21rem);
-  --text-numeral--line-height: 0.8;
-  --text-numeral--letter-spacing: -0.05em;
-  --text-numeral--font-weight: 200;
+  /* Display sizes follow the classic 18 / 21 / 24 / 36 / 48 / 72 scale and
+     stretch fluidly between its steps. */
+  --text-display: clamp(2.5rem, 1.45rem + 3.9vw, 4.5rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 700;
+  --text-lesson: clamp(1.875rem, 0.85rem + 4.4vw, 5rem);
+  --text-lesson--line-height: 1;
+  --text-lesson--letter-spacing: -0.035em;
+  --text-title: clamp(2rem, 1.45rem + 1.9vw, 3rem);
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 700;
+  --text-subtitle: 1.3125rem;
+  --text-subtitle--line-height: 1.25;
+  --text-subtitle--letter-spacing: -0.015em;
+  --text-subtitle--font-weight: 700;
+  --text-lede: clamp(1.125rem, 1.07rem + 0.25vw, 1.3125rem);
+  --text-lede--line-height: 1.5;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
   --text-label: 0.8125rem;
-  --text-label--line-height: 1.3;
-  --text-label--letter-spacing: 0.01em;
+  --text-label--line-height: 1.35;
 
-  --spacing-section: clamp(6rem, 3.5rem + 9vw, 11.5rem);
-  --spacing-intro: clamp(3.5rem, 2rem + 7vw, 9rem);
-  --spacing-figure: clamp(4rem, 2.5rem + 5vw, 7.5rem);
-  --spacing-gutter: clamp(1.25rem, 0.6rem + 2.4vw, 3rem);
+  --spacing-gutter: clamp(1rem, 0.4rem + 2.6vw, 2.5rem);
+  --spacing-section: clamp(5.5rem, 3rem + 9vw, 11rem);
   --spacing-header: 4rem;
-  --spacing-period: 5rem;
-  --spacing-double-period: calc(var(--spacing-period) * 2);
-  --spacing-break: 1.75rem;
 
-  --container-page: 80rem;
-  --container-prose: 38rem;
+  --container-page: 78rem;
+  --container-prose: 36rem;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  --radius-full: 999px;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2.25rem;
+  --radius-full: 9999px;
 
-  --shadow-menu: 0 18px 40px -12px oklch(0 0 0 / 22%);
+  --shadow-input: 0 1px 2px 0 oklch(0 0 0 / 5%);
+  --shadow-menu: 0 12px 24px -2px var(--color-shadow-heavy);
+  --shadow-focus-ring: 0 0 0 3px var(--focus-ring-color, var(--color-cloud));
 
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
-  --duration-hover: 120ms;
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: linear(
+    0,
+    0.039,
+    0.132,
+    0.254,
+    0.383,
+    0.506,
+    0.616,
+    0.711,
+    0.788,
+    0.849,
+    0.896,
+    0.93,
+    0.955,
+    0.973,
+    0.986,
+    0.995,
+    1.004,
+    1.013,
+    1.021,
+    1.026,
+    1.028,
+    1.027,
+    1.02,
+    1.009,
+    1
+  );
+  --duration-hover: 100ms;
 
   --z-header: 300;
-  --z-mobile-nav: 290;
+  --z-dock: 290;
   --z-notice: 1200;
 }
 
 :root {
-  --pattern-void: repeating-linear-gradient(
-    -45deg,
-    color-mix(in oklab, var(--color-danger) 16%, transparent) 0 1px,
-    transparent 1px 7px
-  );
+  --color-shadow-heavy: oklch(0 0 0 / 10%);
+  --dock-space: 0px;
 }
 
 @layer base {
   html.dark {
     --color-canvas: var(--color-onyx);
     --color-surface: var(--color-charcoal);
+    --color-surface-highlight: var(--color-charcoal-highlight);
     --color-on-ghost: var(--color-white);
     --color-on-ghost-muted: var(--color-ash);
-    --color-on-ghost-subtle: var(--color-ghost);
     --color-ghost-border: var(--color-mist);
     --color-ghost-hover: var(--color-mist);
-    --color-tint: oklch(1 0 0 / 4%);
-
     --color-action: var(--color-white);
     --color-action-hover: var(--color-white-highlight);
     --color-on-action: var(--color-onyx);
-
+    --color-on-action-muted: var(--color-graphite);
     --color-accent: var(--color-sapphire);
-
     --color-danger: var(--color-coral);
-    --color-success: var(--color-pistachio);
-
+    --color-focus: var(--color-ash);
+    --color-shadow-heavy: oklch(0 0 0 / 40%);
+    --focus-ring-color: var(--color-graphite);
     color-scheme: dark;
   }
 
   html {
-    scroll-behavior: smooth;
-    scroll-padding-top: calc(var(--spacing-header) + 1rem);
-    -webkit-text-size-adjust: 100%;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  body {
-    margin: 0;
     background-color: var(--color-canvas);
     color: var(--color-on-ghost);
     font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss03';
-    -webkit-tap-highlight-color: transparent;
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: calc(var(--spacing-header) + 1rem);
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-optical-sizing: auto;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    margin: 0;
-    color: var(--color-on-ghost);
+    font-family: var(--font-display);
     text-wrap: balance;
   }
 
   p {
-    margin: 0;
     text-wrap: pretty;
-  }
-
-  em {
-    font-style: italic;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
   }
 
   ::selection {
@@ -182,22 +201,8 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-on-ghost);
+    outline: 2px solid var(--color-accent);
     outline-offset: 3px;
-    border-radius: var(--radius-sm);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-    }
   }
 }
 
@@ -216,13 +221,14 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'cv11';
 }
 
-@utility link-underline {
+@utility link {
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
-  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+  text-decoration-color: var(--color-ghost-border);
   transition: text-decoration-color var(--duration-hover) ease;
 
   &:hover {
@@ -230,16 +236,70 @@
   }
 }
 
+/* Matches BaseButton in the app: a 48px hit area around smaller controls. */
 @utility touch-target {
   &::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    min-width: 3rem;
+    min-height: 3rem;
     width: 100%;
     height: 100%;
-    min-width: 44px;
-    min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes enter-focus {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+}
+
+@keyframes enter-rise {
+  from {
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+/* The app's entrance, reused for the one orchestrated moment on the homepage. */
+@utility animate-enter {
+  animation:
+    enter-focus 600ms var(--ease-settle) both,
+    enter-rise 1000ms var(--ease-spring) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Holds back content that waits for the client, but reveals it anyway if hydration
+   never happens, so a script failure can't leave the hero empty. */
+@keyframes pending-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility animate-pending {
+  animation: pending-reveal 1ms 3s both;
+}
+
+@keyframes now-line {
+  from {
+    scale: 0 1;
+  }
+}
+
+@utility animate-now-line {
+  animation: now-line 900ms var(--ease-settle) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0s !important;
   }
 }

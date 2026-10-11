@@ -1,45 +1,31 @@
 <script setup lang="ts">
-import { ArrowRight } from '@lucide/vue';
-
 const { t } = useI18n();
 const appLinks = useAppLinks();
 </script>
 
 <template>
-  <section class="page pt-intro">
-    <div class="page-grid gap-y-10">
-      <h1 class="col-span-12 font-serif text-display lg:col-span-10">
-        <i18n-t keypath="home.hero.title" scope="global">
-          <template #emphasis>
-            <em>{{ t('home.hero.title_emphasis') }}</em>
-          </template>
-        </i18n-t>
+  <section class="page pt-[clamp(2.5rem,1rem+6vw,7rem)]">
+    <div class="page-grid items-end gap-y-8">
+      <h1 class="col-span-12 max-w-[12ch] text-display lg:col-span-7">
+        {{ t('home.hero.title') }}
       </h1>
 
-      <div class="col-span-12 flex flex-col gap-8 md:col-span-7 lg:col-span-5 lg:col-start-7">
+      <div class="col-span-12 flex max-w-prose flex-col gap-7 lg:col-span-5">
         <p class="text-lede text-on-ghost-muted">{{ t('home.hero.lede') }}</p>
-        <div class="flex flex-wrap items-center gap-2">
-          <BaseButton
-            :href="appLinks.register"
-            target="_self"
-            variant="action"
-            size="lg"
-            :icon="ArrowRight"
-          >
-            {{ t('common.getStarted') }}
-          </BaseButton>
-          <BaseButton :href="appLinks.login" target="_self" size="lg">
-            {{ t('common.login') }}
-          </BaseButton>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <BaseButton :href="appLinks.register" target="_self" variant="action" size="lg">
+              {{ t('common.register') }}
+            </BaseButton>
+            <BaseButton :href="appLinks.login" target="_self" variant="surface" size="lg">
+              {{ t('common.login') }}
+            </BaseButton>
+          </div>
+          <p class="text-label text-on-ghost-muted">{{ t('home.hero.invite_hint') }}</p>
         </div>
       </div>
     </div>
 
-    <div class="mt-figure">
-      <HomeTimetablePoster />
-      <p class="mt-4 max-w-prose text-label text-on-ghost-subtle">
-        {{ t('home.hero.caption') }}
-      </p>
-    </div>
+    <HomeLiveDay class="mt-[clamp(3.5rem,2rem+5vw,7rem)]" />
   </section>
 </template>

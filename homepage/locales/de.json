@@ -1,581 +1,376 @@
 {
   "common": {
-    "theme": "Design",
-    "language": "Sprache",
     "login": "Anmelden",
-    "getStarted": "Loslegen",
+    "register": "Konto erstellen",
+    "theme": "Design",
     "light": "Hell",
     "dark": "Dunkel",
     "system": "System",
-    "back_home": "Zurück zur Startseite"
+    "language": "Sprache"
   },
   "nav": {
     "label": "Hauptnavigation",
     "home": "Olauda Startseite",
     "features": "Funktionen",
     "about": "Über uns",
-    "contact": "Kontakt",
-    "open_menu": "Menü öffnen",
-    "close_menu": "Menü schließen"
+    "contact": "Kontakt"
   },
   "pages": {
     "home": {
-      "title": "Olauda — die Schulwoche an einem Ort",
-      "description": "Hausaufgaben, Vertretungen und Ankündigungen für die ganze Klasse, gemeinsam aktuell gehalten. Kostenlos, ohne Werbung, von Schülern gemacht."
+      "title": "Olauda: Hausaufgaben und Stundenplanänderungen für deine ganze Klasse",
+      "description": "Hausaufgaben, Prüfungen und Stundenplanänderungen an einem Ort, den deine ganze Klasse teilt. Eine Person trägt es ein, alle sehen es. Kostenlos und ohne Werbung."
     },
     "features": {
-      "title": "Funktionen",
-      "description": "Aufgaben, Stundenplan, Ankündigungen, Chat, Gruppen und ein privater Bereich — alles, was Olauda kann, im Detail."
+      "title": "Funktionen — Olauda",
+      "description": "Aufgaben, Stundenplan, Planänderungen, Gruppen, Ankündigungen und private Aufgaben: alles, was Olauda kann, samt den Grenzen."
     },
     "about": {
-      "title": "Über uns",
-      "description": "Olauda wird von Schülern in Berlin entwickelt. Warum wir angefangen haben und worauf wir nicht verzichten."
+      "title": "Über uns — Olauda",
+      "description": "Warum es Olauda gibt, was wir damit nicht machen und wer dahintersteht."
     },
     "contact": {
-      "title": "Kontakt",
-      "description": "Fragen, Fehler, Ideen — schreib uns."
+      "title": "Kontakt — Olauda",
+      "description": "Fragen, Fehler oder Ideen: Schreib an kontakt{'@'}olauda.com oder finde uns auf Discord."
     },
     "not_found": {
       "title": "Seite nicht gefunden"
     }
   },
+  "subjects": {
+    "german": "Deutsch",
+    "maths": "Mathe",
+    "english": "Englisch",
+    "biology": "Biologie",
+    "history": "Geschichte",
+    "geography": "Erdkunde",
+    "physics": "Physik",
+    "chemistry": "Chemie",
+    "politics": "Politik",
+    "art": "Kunst",
+    "music": "Musik",
+    "sport": "Sport"
+  },
+  "days": {
+    "long": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"],
+    "short": ["Mo", "Di", "Mi", "Do", "Fr"]
+  },
   "home": {
-    "days": {
-      "mon": "Mo",
-      "tue": "Di",
-      "wed": "Mi",
-      "thu": "Do",
-      "fri": "Fr"
-    },
-    "subjects": {
-      "maths": "Mathe",
-      "german": "Deutsch",
-      "physics": "Physik",
-      "history": "Geschichte",
-      "chemistry": "Chemie",
-      "english": "Englisch",
-      "sport": "Sport",
-      "biology": "Biologie",
-      "computing": "Informatik",
-      "art": "Kunst",
-      "politics": "Politik",
-      "music": "Musik"
-    },
     "hero": {
-      "title": "Die Schulwoche, {emphasis}",
-      "title_emphasis": "an einem Ort.",
-      "lede": "Hausaufgaben, Vertretungen und Ankündigungen für die ganze Klasse — gemeinsam aktuell gehalten und für alle sichtbar, sobald sich etwas ändert.",
-      "timetable_label": "Beispiel-Stundenplan der Klasse 10b: Deutsch fällt am Montag aus, am Dienstag gibt es einen Raumwechsel, am Mittwoch eine Vertretung und am Donnerstag eine Klausur.",
-      "caption": "Klasse 10b, Kalenderwoche 39. Ausfälle, Raumwechsel und Vertretungen erscheinen bei allen im Stundenplan, sobald sie eingetragen sind.",
-      "break": "{minutes} Min.",
-      "cancelled": "Entfall",
-      "substitute": "Vertretung: Hr. Weber",
-      "exam": "Klausur"
+      "title": "Deine Klasse, immer auf demselben Stand.",
+      "lede": "Olauda sammelt Hausaufgaben, Prüfungen und Stundenplanänderungen an einem Ort, den deine ganze Klasse teilt. Eine Person trägt es ein, alle sehen es. Kostenlos und ohne Werbung.",
+      "invite_hint": "Du hast einen Einladungslink aus deiner Klasse? Öffne ihn einfach, dann bist du drin."
+    },
+    "day": {
+      "label": "Beispielstundenplan",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "pick_day": "Tag anzeigen",
+      "caption": "Eine Beispielwoche, die nach deiner Uhr läuft. Während der Schulzeit zeigt die blaue Linie, wo dein Tag gerade steht.",
+      "now": "Jetzt",
+      "next": "Als Nächstes",
+      "room": "Raum {room}",
+      "gym": "Halle",
+      "canceled": "Ausfall",
+      "instead_of": "statt {value}",
+      "break": "{minutes} Min. Pause",
+      "break_left": "Pause, noch {minutes} Min.",
+      "homework": "Hausaufgabe fällig: {title}",
+      "exam": "Prüfung: {title}",
+      "current_time": "Aktuelle Uhrzeit"
     },
     "tasks": {
-      "label": "Aufgaben",
-      "title": "Hausaufgaben werden einmal eingetragen. {emphasis} haben sie.",
-      "title_emphasis": "Alle",
-      "body": "Alle in der Klasse — oder nur, wem die Gruppe es erlaubt — tragen Hausaufgaben, Klausuren und Dalton-Aufgaben ein, mit Abgabedatum, Beschreibung und einem Foto von der Tafel oder dem Arbeitsblatt. Abhaken kann jeder für sich.",
-      "filter_label": "Aufgaben filtern",
-      "due": "bis {day}",
-      "added_by": "von {name}",
-      "kinds": {
-        "all": "Alle",
-        "homework": "Hausaufgabe",
-        "dalton": "Dalton",
-        "exam": "Klausur"
-      },
-      "lab_report": "Protokoll",
-      "vocabulary": "Vokabeln, Unit 4",
-      "essay": "Erörterung",
-      "items": {
-        "titration": {
-          "title": "Protokoll: Säure-Base-Titration"
-        },
-        "mechanics": {
-          "title": "Mechanik und Newton'sche Gesetze",
-          "note": "Formelsammlung S. 40–52 zugelassen."
-        },
-        "vocabulary": {
-          "title": "Vokabeln, Unit 4"
-        },
-        "essay": {
-          "title": "Erörterung: Digitalisierung an Schulen"
-        }
-      }
+      "reading": "Kapitel 4 lesen",
+      "vocab": "Vokabeln, Unit 5",
+      "essay": "erster Entwurf der Erörterung",
+      "maths_test": "quadratische Funktionen",
+      "worksheet": "Arbeitsblatt, Seite 34"
     },
-    "changes": {
-      "label": "Stundenplan",
-      "title": "Entfall, Raumwechsel, Vertretung — {emphasis}",
-      "title_emphasis": "du weißt es vor der ersten Stunde.",
-      "body": "Speicher deine Kurse, und dein Stundenplan zeigt nur deine Stunden. Vertretungen, Raumwechsel und Ausfälle stehen direkt in der betroffenen Stunde, und die nächste Stunde wartet schon im Dashboard.",
+    "everyone": {
+      "title": "Einmal eingetragen. Für alle da.",
+      "body": "Wer es zuerst hört, trägt es ein: die Hausaufgabe für Donnerstag, die ausgefallene Mathestunde, den Raumwechsel. Alle anderen sehen es sofort, ohne herumfragen zu müssen.",
       "items": {
-        "room": "Raum Info1 statt Bio1",
-        "substitute": "Hr. Weber vertritt Fr. Adler",
-        "cancelled": "Entfall"
-      },
-      "announcement": "Wegen der Hitze endet der Unterricht am Freitag nach der 4. Stunde.",
-      "announcement_caption": "Ankündigungen stehen für alle Mitglieder ganz oben in der App, bis sie wieder entfernt werden."
-    },
-    "groups": {
-      "label": "Gruppen",
-      "title": "Eine Person hält alles aktuell, die ganze Klasse hat es.",
-      "one": "Person trägt die Hausaufgabe ein.",
-      "thirty": "Mitschüler haben sie auf dem Handy.",
-      "details": {
+        "tasks": {
+          "title": "Hausaufgaben und Prüfungen",
+          "body": "Mit Datum, Beschreibung und Anhängen. Fotos, PDFs, Word-, PowerPoint- und Excel-Dateien lassen sich anhängen."
+        },
+        "changes": {
+          "title": "Planänderungen",
+          "body": "Ausfall, Vertretung und Raumwechsel stehen direkt im Stundenplan, für alle, die es betrifft."
+        },
+        "announcements": {
+          "title": "Ankündigungen",
+          "body": "Kurze Hinweise an die ganze Gruppe. Wichtige werden markiert, damit sie auffallen."
+        },
         "roles": {
-          "title": "Rollen und Rechte",
-          "body": "Mitglieder, Moderatoren und Admins. Jede Gruppe legt fest, wer Aufgaben eintragen, den Stundenplan bearbeiten, Ankündigungen schreiben oder den Chat moderieren darf."
-        },
-        "invites": {
-          "title": "Einladungslinks",
-          "body": "Link erstellen, verschicken, fertig. Jeder Link gilt für eine Person, läuft nach sieben Tagen von selbst ab und lässt sich jederzeit widerrufen."
-        },
-        "many": {
-          "title": "Mehrere Gruppen",
-          "body": "Klasse, Leistungskurse, AG — jede mit eigenen Aufgaben und eigenem Stundenplan, nur einen Wechsel entfernt."
+          "title": "Wer was ändern darf",
+          "body": "Besitzer, Admins, Moderatoren und Mitglieder. Du legst fest, welche Rolle Aufgaben anlegen, Änderungen eintragen oder posten darf."
         }
       }
     },
-    "extras": {
-      "label": "Außerdem",
-      "title": "Und die Dinge, die man vermissen würde, wenn sie fehlten.",
+    "roster": {
+      "label": "Beispiel: eine Änderung erreicht eine Klasse mit 28 Leuten",
+      "lesson": "Mathe, 3. Stunde",
+      "change": "Ausfall",
+      "save": "Änderung speichern",
+      "reset": "Rückgängig",
+      "idle": "Bisher weißt nur du es.",
+      "done": "Alle 28 sehen es jetzt."
+    },
+    "you": {
+      "title": "Geteilte Liste, eigene Haken.",
+      "body": "Hausaufgaben abhaken, Wichtiges anheften und Erledigtes archivieren ändert nur deine eigene Ansicht. Niemand sieht, was du schon fertig hast, und du bringst keine fremde Liste durcheinander.",
       "items": {
-        "chat": {
-          "title": "Gruppenchat",
-          "body": "Mit der Klasse schreiben, ohne extra Messenger. Auf Nachrichten antworten, sehen, wer gerade tippt — und niemand braucht die Handynummer der anderen."
+        "checks": {
+          "title": "Abgehakt, angeheftet, archiviert",
+          "body": "Dein Fortschritt bleibt bei dir. Erledigtes rückt aus dem Weg, wann du willst."
+        },
+        "courses": {
+          "title": "Nur deine Kurse",
+          "body": "In Abitur-Jahrgängen wählt jede Person einmal ihre Kurse. Stunden und Aufgaben der anderen bleiben ausgeblendet."
         },
         "private": {
-          "title": "Private Notizen",
-          "body": "Deine eigene Todo-Liste neben der der Klasse. Mit AES-256 verschlüsselt und nur für dich sichtbar."
-        },
-        "search": {
-          "title": "Alles durchsuchen",
-          "body": "Mit der Tastatur zu jeder Seite und jeder Aktion: Aufgabe anlegen, Gruppe wechseln oder jemanden einladen, ohne zur Maus zu greifen.",
-          "shortcut": "Strg K"
-        },
-        "devices": {
-          "title": "Auf jedem Gerät",
-          "body": "Läuft in jedem Browser, auf Handy, Tablet und Laptop. Nichts zu installieren, und was du auf einem Gerät abhakst, ist auf allen abgehakt."
+          "title": "Private Aufgaben",
+          "body": "Eine To-do-Liste nur für dich, verschlüsselt gespeichert. Nicht einmal die Admins deiner Gruppe können sie lesen."
         }
       }
     },
-    "principles": {
-      "label": "Warum",
-      "lead": "Olauda wird von Schülern in Berlin gemacht, weil die Werkzeuge unserer Schulen nicht gut genug waren.",
-      "rest": "Es ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Das ist kein Einführungsangebot, sondern der Sinn der Sache.",
-      "link": "Mehr über das Projekt"
+    "specimen": {
+      "label": "Beispiel einer Aufgabenliste",
+      "only_mine": "Nur meine",
+      "all": "Alle",
+      "hidden": "{count} Aufgabe aus anderen Kursen ausgeblendet | {count} Aufgaben aus anderen Kursen ausgeblendet",
+      "mark_done": "„{title}“ als erledigt markieren",
+      "private": "Privat",
+      "rows": {
+        "essay": "Erster Entwurf der Erörterung",
+        "test": "Test: quadratische Funktionen",
+        "lab": "Versuchsprotokoll Titration",
+        "reading": "Kapitel 4 lesen",
+        "worksheet": "Arbeitsblatt, Seite 34",
+        "gift": "Geschenk für Lena kaufen"
+      }
+    },
+    "setup": {
+      "title": "In vier Schritten startklar",
+      "steps": {
+        "create": {
+          "title": "Gruppe erstellen",
+          "body": "Wähl eine Standard-Gruppe für eine Klasse, die jede Stunde gemeinsam hat, oder eine Abitur-Gruppe fürs Kurssystem."
+        },
+        "timetable": {
+          "title": "Stundenplan eintragen",
+          "body": "Stunden, Pausen und Fächer, einmal für alle. Jeder Wochentag kann seinen eigenen Pausenplan haben."
+        },
+        "invite": {
+          "title": "Klasse einladen",
+          "body": "Teile den Einladungslink oder lass den QR-Code scannen. Links kannst du jederzeit zurückziehen."
+        },
+        "courses": {
+          "title": "Alle wählen ihre Kurse",
+          "body": "Jedes Mitglied wählt einmal seine Kurse. Ab dann sieht es nur noch, was es betrifft."
+        }
+      }
+    },
+    "faq": {
+      "title": "Bevor du dich anmeldest",
+      "items": [
+        {
+          "q": "Kostet das etwas?",
+          "a": "Nein. Es gibt kein Abo, keine Premium-Version und keine Werbung. Alle bekommen alles."
+        },
+        {
+          "q": "Müssen unsere Schule oder unsere Lehrkräfte mitmachen?",
+          "a": "Nein. Jede Person kann eine Gruppe für ihre Klasse oder ihren Jahrgang erstellen und die anderen einladen. Die Schule muss nichts einrichten."
+        },
+        {
+          "q": "Wer sieht, was ich eintrage?",
+          "a": "Aufgaben, Stundenplan und Ankündigungen sehen die Mitglieder der Gruppe. Deine Haken, angehefteten Aufgaben und privaten Aufgaben siehst nur du."
+        },
+        {
+          "q": "Wo liegen meine Daten?",
+          "a": "Auf Servern in Deutschland. Anhänge und E-Mails laufen über einige Dienstleister, die alle in der Datenschutzerklärung stehen. Private Aufgaben werden mit AES-256 verschlüsselt gespeichert."
+        },
+        {
+          "q": "Wie schütze ich mein Konto?",
+          "a": "Melde dich mit Passwort, Google oder Passkey an und schalte die Zwei-Faktor-Authentifizierung mit einer beliebigen Authenticator-App ein. Du siehst jedes Gerät, auf dem du angemeldet bist, und kannst es abmelden."
+        },
+        {
+          "q": "Ich bin unter 18. Darf ich Olauda nutzen?",
+          "a": "Ja, wenn deine Eltern oder Erziehungsberechtigten einverstanden sind. Das bestätigst du bei der Anmeldung."
+        },
+        {
+          "q": "Kann ich meine Daten mitnehmen oder löschen?",
+          "a": "Beides, wann immer du willst. In den Kontoeinstellungen exportierst du alles als ZIP-Datei, und dort löschst du dein Konto auch selbst."
+        }
+      ],
+      "more": "Noch etwas offen? Schreib an {email}."
+    },
+    "closing": {
+      "title": "Hol deine Klasse dazu.",
+      "body": "Konto erstellen, Gruppe einrichten und deiner Klasse den Link schicken. Mehr braucht es nicht."
     }
   },
-  "cta": {
-    "title": "Richte deine Klasse {emphasis}",
-    "title_emphasis": "heute Nachmittag ein.",
-    "button": "Loslegen — kostenlos",
-    "question": "Erst noch Fragen? Schreib an {email}"
-  },
   "features": {
-    "title": "Alles, was {name} {emphasis}",
-    "title_emphasis": "kann.",
-    "lede": "Ein vollständiger Rundgang durch die App. Jeder Teil ist bewusst kurz — Olauda soll ohne Anleitung verständlich sein.",
-    "index_label": "Auf dieser Seite",
-    "chapters": {
+    "title": "Alles, was Olauda kann",
+    "lede": "Eine vollständige Liste, samt Grenzen. Was hier fehlt, kann Olauda noch nicht.",
+    "index_label": "Abschnitte",
+    "sections": {
       "tasks": {
         "title": "Aufgaben",
-        "body": "Hausaufgaben, Klausuren und Dalton-Aufgaben der ganzen Gruppe stehen in einer Liste. Einer trägt eine Aufgabe einmal ein — Fach, Abgabedatum, Beschreibung, Anhänge — und alle haben sie. Gibt es für das Fach an dem Tag schon einen Eintrag, fragt die App nach, bevor ein Duplikat entsteht.",
+        "body": "Hausaufgaben, Prüfungen und Dalton-Aufträge der ganzen Gruppe stehen in einer Liste. Jemand trägt eine Aufgabe einmal ein, und alle haben sie. Gibt es dieselbe Aufgabe schon, wirst du gefragt, bevor ein Duplikat entsteht.",
         "items": [
-          "Hausaufgaben, Klausuren und Dalton, nach Art und Fach filterbar",
-          "Fotos, PDFs und Office-Dateien an jeder Aufgabe",
-          "Für sich selbst abhaken, ohne andere zu beeinflussen",
-          "Wichtiges anheften, Vergangenes landet im Archiv"
+          ["Arten", "Hausaufgaben, Prüfungen und, wenn deine Gruppe es nutzt, Dalton"],
+          ["Angaben", "Titel, Fach, Kurs, Datum und eine Beschreibung mit Formatierung"],
+          ["Anhänge", "Fotos bis 2 MB, PDF-, Word-, PowerPoint- und Excel-Dateien bis 5 MB"],
+          ["Notizen", "Eine gemeinsame Notiz pro Aufgabe, für alle, die sie schreiben dürfen"],
+          ["Filter", "Nach Art und Fach, Erledigtes und Archiviertes auf Wunsch ausgeblendet"],
+          ["Persönlich", "Abhaken, anheften und archivieren, ohne fremde Listen zu ändern"]
         ]
       },
       "timetable": {
         "title": "Stundenplan",
-        "body": "Admins bauen den Stundenplan einmal im visuellen Editor: Stunden, Räume, Pausen und Kurse. Speicher deine Kurse, und du siehst nur deine eigenen Stunden. Vertretungen, Raumwechsel und Ausfälle werden live eingetragen und erscheinen sofort bei allen, die sie betreffen.",
+        "body": "Der Stundenplan wird einmal für die Gruppe eingerichtet und sieht für alle gleich aus, nur dass jedes Mitglied seine eigenen Kurse sieht. Änderungen gelten für eine Woche und sind sofort sichtbar.",
         "items": [
-          "Wochenansicht am Computer, Tag für Tag am Handy",
-          "Nur die Kurse, die du belegst",
-          "Ausfälle, Vertretungen und Raumwechsel",
-          "Die nächste Stunde direkt im Dashboard"
-        ]
-      },
-      "announcements": {
-        "title": "Ankündigungen",
-        "body": "Moderatoren und Admins schreiben eine kurze Nachricht — ein Ausflug, früher Schluss, eine verschobene Klausur — und sie erscheint für alle Mitglieder ganz oben in der App. Wer sie noch nicht gelesen hat, bekommt eine Benachrichtigung.",
-        "items": [
-          "Für alle Mitglieder gleichzeitig",
-          "Drei Stufen: Info, Warnung und Wichtig",
-          "Mehrere gleichzeitig, einen Tipp voneinander entfernt",
-          "Benachrichtigung bei ungelesenen Ankündigungen"
-        ]
-      },
-      "chat": {
-        "title": "Gruppenchat",
-        "body": "Jede Gruppe hat ihren eigenen Chat, damit Hausaufgaben nicht mehr in der Messenger-Gruppe untergehen. Mitglieder erscheinen unter automatisch erzeugten Namen, niemand muss seine Handynummer teilen.",
-        "items": [
-          "Auf einzelne Nachrichten antworten",
-          "Sehen, wer gerade tippt",
-          "Nachrichten kopieren, melden und löschen",
-          "Festlegen, welche Rollen schreiben dürfen"
+          [
+            "Ansichten",
+            "Die ganze Woche auf großen Bildschirmen, ein Tag nach dem anderen auf dem Handy"
+          ],
+          ["Änderungen", "Ausfall, Vertretung, Raumwechsel und verschobene Stunden"],
+          [
+            "Hervorhebung",
+            "Die laufende oder nächste Stunde sticht heraus, auf dem Handy zeigt eine Markierung die Uhrzeit"
+          ],
+          ["Freistunden", "Mit Länge, auf Wunsch samt Pausen"],
+          ["Editor", "Stunden, Räume und Längen, mit Rückgängig und Wiederholen"],
+          ["Tagesablauf", "Beginn, Stundenlänge und Pausen, für jeden Wochentag einzeln"]
         ]
       },
       "groups": {
         "title": "Gruppen und Rollen",
-        "body": "Eine Gruppe ist eine Klasse, ein Kurs oder eine AG. Wer sie erstellt, ist Inhaber und legt fest, was Mitglieder, Moderatoren und Admins dürfen. Standardgruppen passen für die Klassen 1 bis 10, Abiturgruppen verwalten ganze Jahrgänge mit Grund- und Leistungskursen.",
+        "body": "Eine Gruppe ist eine Klasse, ein Jahrgang oder eine AG. Wer sie erstellt, besitzt sie und legt fest, was alle anderen dürfen.",
         "items": [
-          "Einladungslinks, die ablaufen und widerrufen werden können",
-          "Rollen mit feinen Berechtigungen",
-          "Fächer, Kurse und Stundenplan-Editor",
-          "Mitglieder entfernen und sperren",
-          "Abiturgruppen mit GK- und LK-Kursen",
-          "Dalton als optionale Gruppeneinstellung"
+          [
+            "Gruppenarten",
+            "Standard-Gruppen für Klassen, Abitur-Gruppen mit Grund-, Leistungs- und Zusatzkursen"
+          ],
+          [
+            "Einladungen",
+            "Links und QR-Codes, die nach sieben Tagen ablaufen und sich zurückziehen lassen"
+          ],
+          ["Rollen", "Besitzer, Admin, Moderator und Mitglied"],
+          [
+            "Berechtigungen",
+            "Dreizehn Stück, jede auf die niedrigste Rolle gesetzt, die sie nutzen darf"
+          ],
+          ["Mitglieder", "Leute entfernen oder sperren, wenn sie nicht wiederkommen sollen"]
+        ]
+      },
+      "announcements": {
+        "title": "Ankündigungen",
+        "body": "Ausflug, früher Schluss, verschobene Prüfung: Ankündigungen erscheinen oben in der App, bis jedes Mitglied sie gelesen hat.",
+        "items": [
+          ["Länge", "Bis zu 160 Zeichen, damit sie auf einen Blick lesbar bleiben"],
+          ["Wichtig", "Rot markiert, wenn es darauf ankommt"],
+          ["Mehrere", "Nacheinander angezeigt, alle auf einmal ausblendbar"]
         ]
       },
       "private": {
-        "title": "Privater Bereich",
-        "body": "Eine Todo-Liste, die nur dir gehört — Einkaufen, Training, das Buch, das du endlich fertig lesen wolltest. Private Aufgaben werden verschlüsselt gespeichert und sind nur für dich sichtbar; nicht einmal die Admins deiner Gruppe sehen sie.",
+        "title": "Private Aufgaben",
+        "body": "Eine To-do-Liste, die nur dir gehört: das Geschenk, das noch fehlt, das Buch, das du fertig lesen willst. Niemand sonst sieht sie, auch nicht die Admins deiner Gruppe.",
         "items": [
-          "Verschlüsselt mit AES-256-GCM",
-          "Nur für dich sichtbar",
-          "Per Drag-and-drop sortieren, bearbeiten und duplizieren",
-          "Abhaken, wenn erledigt"
+          ["Verschlüsselung", "Mit AES-256-GCM verschlüsselt gespeichert"],
+          ["Ordnung", "Durch Ziehen sortieren, duplizieren und abhaken"]
         ]
       },
       "search": {
         "title": "Suche und Tastenkürzel",
-        "body": "Drück überall in der App Strg K (⌘ K auf dem Mac), um die Schnellsuche zu öffnen. Ein paar Buchstaben tippen, und du springst zu einer Seite oder startest eine Aktion — ohne dich durch Menüs zu klicken.",
+        "body": "Drück Strg K, auf dem Mac ⌘ K, irgendwo in der App. Ein paar Buchstaben reichen, um zu einer Seite zu springen oder eine Aktion zu starten.",
         "items": [
-          "Öffnen mit Strg K oder ⌘ K",
-          "Seiten, Einstellungen und Aktionen",
-          "Alt N für eine neue Aufgabe, Alt P für eine private",
-          "Strg G zum Gruppenwechsel"
+          ["Schnellsuche", "Seiten, Einstellungen und Aktionen in einer Liste"],
+          ["Neue Aufgabe", "Alt N, oder Alt P für eine private"],
+          ["Gruppe wechseln", "Strg G"]
         ]
       },
       "account": {
         "title": "Konto und Sicherheit",
-        "body": "Dein Konto ist durch eine bestätigte E-Mail-Adresse, optionale Zwei-Faktor-Authentifizierung und eine Übersicht aller angemeldeten Geräte geschützt. Wenn du gehen willst, löschst du dein Konto selbst — ohne Antrag, ohne Wartezeit.",
+        "body": "Dein Konto ist durch eine bestätigte E-Mail-Adresse, optionale Zwei-Faktor-Authentifizierung und eine Übersicht aller angemeldeten Geräte geschützt.",
         "items": [
-          "E-Mail-Bestätigung",
-          "Zwei-Faktor-Authentifizierung mit jeder Authenticator-App",
-          "Mit Google anmelden",
-          "Aktive Sitzungen sehen und beenden",
-          "Vergessenes Passwort per E-Mail zurücksetzen",
-          "Konto jederzeit löschen"
+          ["Anmeldung", "Passwort, Google oder Passkey"],
+          ["Zwei-Faktor", "Mit jeder Authenticator-App, Wiederherstellungscodes zur Absicherung"],
+          ["Geräte", "Sehen, wo du angemeldet bist, und aus der Ferne abmelden"],
+          ["Deine Daten", "Jederzeit alles als ZIP-Datei exportieren"],
+          ["Konto löschen", "Selbst erledigen, ohne jemanden fragen zu müssen"],
+          ["Einstellungen", "Helles, dunkles oder System-Design, Deutsch oder Englisch"]
         ]
       }
     }
   },
   "about": {
-    "title": "Von Schülern gemacht, {emphasis}",
-    "title_emphasis": "die es selbst brauchten.",
-    "lede": "Olauda ist ein privates Projekt von Schülern aus Berlin. Wir haben das Werkzeug gebaut, das uns in der Schule gefehlt hat, und nutzen es jeden Tag.",
+    "title": "Warum es Olauda gibt",
+    "lede": "Hausaufgaben gingen in langen Nachrichtenverläufen unter. Vom Ausfall erfuhr man erst an der Klassentür. Olauda ist der eine Ort, an dem all das einmal aufgeschrieben wird.",
     "story": {
-      "label": "Geschichte",
-      "lead": "Hausaufgaben gingen in der Messenger-Gruppe unter. Vom Ausfall erfuhr man erst vor der Klassentür.",
-      "body": "Also haben wir gebaut, was uns fehlte: einen Ort, an dem Hausaufgaben, Klausuren und Stundenplanänderungen einmal eingetragen werden und alle sie sehen. Gewachsen ist es mit jedem echten Bedarf — Einladungslinks, Rollen und Rechte, ein Stundenplan-Editor, Kurse für Abiturjahrgänge, Dalton. Nichts davon kam dazu, weil es auf einer Funktionsliste gut aussieht."
+      "title": "Aus echten Bedürfnissen gewachsen",
+      "body": "Am Anfang stand eine gemeinsame Hausaufgabenliste. Einladungslinks, Rollen, ein Stundenplan-Editor, Kurse für Abitur-Jahrgänge und Dalton kamen dazu, jeweils weil eine Klasse es wirklich gebraucht hat. Nichts davon wurde eingebaut, um eine Funktionsliste zu füllen."
     },
     "principles": {
-      "label": "Grundsätze",
-      "items": {
-        "free": {
-          "title": "Kostenlos, ohne Werbung",
-          "body": "Keine Abos, keine Premium-Stufe, keine Werbung. Alle bekommen das ganze Produkt, und daran ändert sich nichts."
-        },
-        "private": {
-          "title": "Privat als Standard",
-          "body": "Private Aufgaben werden verschlüsselt gespeichert, Passwörter nur als Hash. Wir verkaufen keine Daten, zeigen keine Werbung und erfassen nicht mehr, als der Dienst zum Laufen braucht."
-        },
-        "students": {
-          "title": "Von Schülern",
-          "body": "Wir sind selbst Schüler und nutzen Olauda jeden Tag. Deshalb bauen wir, was wir wirklich brauchen — nicht, was in einer Verkaufspräsentation gut klingt."
-        },
-        "simple": {
-          "title": "Nur, was hilft",
-          "body": "Jede Funktion muss ein echtes Problem im Schulalltag lösen. Was das nicht tut, fliegt raus."
-        }
-      }
+      "title": "Was wir nicht machen",
+      "items": [
+        ["Geld verlangen", "Kein Abo, keine Premium-Version. Alle bekommen das ganze Produkt."],
+        ["Werbung zeigen", "Es gibt keine Werbung, und es wird keine geben."],
+        [
+          "Daten verkaufen",
+          "Wir erheben, was der Dienst zum Laufen braucht, und sonst nichts. Private Aufgaben sind verschlüsselt, Passwörter liegen nur als Hash vor."
+        ],
+        [
+          "Aufblähen",
+          "Jede Funktion muss ein echtes Problem in der Schule lösen. Was das nicht tut, fliegt raus."
+        ]
+      ]
     },
     "team": {
-      "label": "Team",
-      "body": "Olauda wird von einer kleinen Gruppe Schüler in Berlin gebaut und betrieben, in unserer Freizeit und ohne Firma dahinter. Du willst mithelfen oder hast eine Idee? Schreib uns — wir freuen uns.",
-      "place": "Berlin, Deutschland"
+      "title": "Wer dahintersteht",
+      "body": "Olauda ist ein unabhängiges Projekt, gebaut und betrieben von einem kleinen Team in seiner Freizeit. Dahinter steckt keine Firma und kein Investor. Du willst mithelfen oder hast eine Idee? Wir freuen uns, von dir zu hören."
     }
   },
   "contact": {
-    "title": "Schreib {emphasis}",
-    "title_emphasis": "uns.",
-    "lede": "Fragen, Fehler, Ideen für neue Funktionen — wir lesen alles und antworten so schnell wir können.",
+    "title": "Schreib uns",
+    "lede": "Fragen, Fehler, Ideen für neue Funktionen: Wir lesen alles und antworten so schnell wir können.",
     "email_label": "E-Mail",
     "channels": {
       "discord": {
         "title": "Discord",
-        "body": "Mit anderen Nutzern reden, Ideen teilen und uns direkt erreichen.",
+        "body": "Tausch dich mit anderen aus, die Olauda nutzen, teile Ideen und erreiche uns direkt.",
         "link": "Server beitreten"
       },
       "status": {
         "title": "Systemstatus",
-        "body": "Prüfen, ob gerade etwas ausgefallen ist, bevor du uns schreibst.",
+        "body": "Schau nach, ob etwas ausgefallen ist, bevor du uns schreibst.",
         "link": "Status ansehen"
       },
       "bugs": {
-        "title": "Fehler gefunden?",
-        "body": "Schreib uns, was du gemacht hast, was du erwartet hast und was stattdessen passiert ist. Ein Screenshot hilft."
+        "title": "Einen Fehler gefunden?",
+        "body": "Erzähl uns, was du gemacht hast, was du erwartet hast und was stattdessen passiert ist. Ein Screenshot hilft."
       }
     }
   },
   "not_found": {
-    "label": "404",
     "title": "Freistunde.",
-    "body": "Diese Seite gibt es nicht — oder sie ist ausgefallen.",
+    "body": "Diese Seite gibt es nicht. Vielleicht ist sie umgezogen, oder im Link steckt ein Tippfehler.",
     "link": "Zurück zur Startseite"
   },
   "cookie": {
-    "text": "Wir verwenden nur technisch notwendige Cookies. Die Reichweite messen wir mit Umami, ohne Cookies und ohne Profile.",
+    "text": "Wir verwenden nur Cookies, die die Seite zum Funktionieren braucht. Besuche zählen wir mit Umami, ohne Cookies und ohne Profile.",
     "link": "Datenschutz",
     "dismiss": "Okay"
   },
   "footer": {
-    "tagline": "Die Schulwoche an einem Ort. Kostenlos und ohne Werbung, von Schülern gemacht.",
-    "product": "Produkt",
-    "project": "Projekt",
+    "tagline": "Hausaufgaben und Planänderungen, geteilt mit deiner Klasse.",
+    "product": "Olauda",
     "legal": "Rechtliches",
     "imprint": "Impressum",
     "privacy": "Datenschutz",
     "terms": "Nutzungsbedingungen",
     "status": "Status",
-    "made_in": "Gemacht in Berlin"
-  },
-  "legal": {
-    "imprint": {
-      "title": "Impressum",
-      "description": "Rechtliche Informationen zu Olauda.",
-      "responsible": "Verantwortliche Person",
-      "contact": "Kontakt",
-      "contact_label": "E-Mail: ",
-      "disclaimer": {
-        "title": "Haftungsausschluss",
-        "text": "Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich."
-      }
-    },
-    "privacy": {
-      "title": "Datenschutzerklärung",
-      "description": "Welche Daten Olauda verarbeitet, wofür und welche Rechte du hast.",
-      "sections": [
-        {
-          "title": "Überblick",
-          "paragraphs": [
-            "Diese Datenschutzerklärung gilt für die Website olauda.com und die App unter app.olauda.com. Sie erklärt, welche personenbezogenen Daten wir verarbeiten, wofür wir sie brauchen, wie lange wir sie speichern und welche Rechte du hast.",
-            "Stand: 9. Oktober 2026"
-          ]
-        },
-        {
-          "title": "Verantwortlicher",
-          "paragraphs": [
-            "Verantwortlich für die Datenverarbeitung ist Deniz Keskin, Berlin. Du erreichst uns per E-Mail an kontakt{'@'}olauda.com.",
-            "Olauda ist ein privates, nicht-kommerzielles Projekt. Wir verkaufen keine Daten, zeigen keine Werbung und geben Daten nicht zu Werbezwecken weiter."
-          ]
-        },
-        {
-          "title": "Aufruf von Website und App",
-          "paragraphs": [
-            "Wenn du die Website oder die App aufrufst, verarbeitet unser Server deine IP-Adresse, Datum und Uhrzeit, die aufgerufene Adresse und die Kennung deines Browsers (User-Agent). Ohne diese Daten können wir die Seiten nicht ausliefern und Angriffe nicht abwehren.",
-            "Damit niemand Passwörter und Zwei-Faktor-Codes durchprobieren oder über uns massenhaft E-Mails verschicken kann, begrenzen wir die Zahl der Anfragen pro IP-Adresse, bei IPv6 pro Netz (/64-Präfix). Die Zähler dafür liegen nur im Arbeitsspeicher und verfallen nach kurzer Zeit.",
-            "Server und Datenbank betreibt für uns die Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, in Rechenzentren in Deutschland. Hetzner verarbeitet die Daten in unserem Auftrag.",
-            "Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und funktionierenden Angebot (Art. 6 Abs. 1 lit. f DSGVO)."
-          ]
-        },
-        {
-          "title": "Dein Konto",
-          "paragraphs": [
-            "Für ein Konto brauchen wir deine E-Mail-Adresse und ein Passwort. Das Passwort speichern wir nur als Hash (Argon2), nie im Klartext. Außerdem speichern wir zu deinem Konto:"
-          ],
-          "items": [
-            "deine Einstellungen (Sprache, Farbschema, Personalisierung) und deine Kurswahl,",
-            "den Zeitpunkt der Registrierung und der letzten Anmeldung,",
-            "ob die Zwei-Faktor-Authentifizierung aktiv ist, das dafür nötige Geheimnis (verschlüsselt) und deine Wiederherstellungscodes (nur als Hash), jeweils mit dem Zeitpunkt, zu dem sie erstellt und verwendet wurden,",
-            "deine Passkeys: ihren öffentlichen Schlüssel, ihre Kennung und ihren Namen sowie wann sie hinzugefügt und zuletzt verwendet wurden. Der private Schlüssel verlässt dein Gerät nie,",
-            "bei Anmeldung mit Google deine Google-Konto-ID und die E-Mail-Adresse dieses Google-Kontos."
-          ],
-          "outro": [
-            "Wir schicken dir nur E-Mails, die für dein Konto nötig sind: den Bestätigungscode nach der Registrierung, Codes zum Zurücksetzen oder Festlegen deines Passworts und Sicherheitshinweise, sobald sich etwas am Schutz deines Kontos ändert, zum Beispiel wenn dein Passwort geändert wird, die Zwei-Faktor-Authentifizierung ein- oder ausgeschaltet wird oder ein Passkey oder ein Google-Konto hinzukommt oder entfernt wird. Newsletter oder Werbung verschicken wir nicht.",
-            "Ohne E-Mail-Adresse können wir kein Konto anlegen. Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO)."
-          ]
-        },
-        {
-          "title": "Gruppen und Inhalte",
-          "paragraphs": [
-            "In Gruppen verarbeiten wir die Inhalte, die du und andere Mitglieder anlegen: Aufgaben und Klausuren mit Beschreibungen, Bildern und Dateien, Ankündigungen, Stundenplan und Vertretungen sowie Chatnachrichten. Dazu speichern wir deine Mitgliedschaft, deine Rolle und wann du die Gruppe zuletzt geöffnet hast, damit wir dir neue Inhalte anzeigen können.",
-            "Andere Mitglieder sehen dich nur unter einem zufällig erzeugten Namen, nicht unter deiner E-Mail-Adresse. Sie sehen aber alles, was du in der Gruppe veröffentlichst.",
-            "Private Aufgaben speichern wir verschlüsselt (AES-256-GCM). Die Verschlüsselung geschieht auf unserem Server: Sie schützt die Daten in der Datenbank, ist aber keine Ende-zu-Ende-Verschlüsselung.",
-            "Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO)."
-          ]
-        },
-        {
-          "title": "Bilder und Dateien",
-          "paragraphs": [
-            "Bilder und Dateien, die du an Aufgaben anhängst, und Gruppenbilder speichern wir bei der Cloudinary Inc. (USA). Beim Hochladen prüft zuerst unser Server Art und Größe der Datei und gibt sie erst dann an Cloudinary weiter. Jede Datei ist über eine zufällig erzeugte Adresse abrufbar; wer diese Adresse kennt, kann die Datei öffnen. Dateien, die nicht mehr verwendet werden, etwa weil die Aufgabe gelöscht oder das Gruppenbild ersetzt wurde, löschen wir automatisch, spätestens nach etwa einem Tag.",
-            "Cloudinary verarbeitet die Daten in unserem Auftrag. Die Übermittlung in die USA stützt sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework, unter dem Cloudinary zertifiziert ist (Art. 45 DSGVO)."
-          ]
-        },
-        {
-          "title": "Vorschau von Office-Dateien",
-          "paragraphs": [
-            "Word-, PowerPoint- und Excel-Dateien, die an Aufgaben hängen, zeigt die App mit dem Office-Viewer von Microsoft an (Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Irland). Öffnest du eine solche Datei, lädt dein Browser die Vorschau von Servern von Microsoft. Microsoft erhält dabei deine IP-Adresse, die Kennung deines Browsers und die Adresse der Datei und ruft die Datei selbst ab, um sie darzustellen.",
-            "Microsoft verarbeitet diese Daten in eigener Verantwortung; es gilt die Datenschutzerklärung von Microsoft. Dabei können Daten an die Microsoft Corporation in den USA übermittelt werden, die unter dem EU-US Data Privacy Framework zertifiziert ist (Art. 45 DSGVO).",
-            "Rechtsgrundlage ist unser berechtigtes Interesse daran, Dokumente direkt in der App anzeigen zu können, ohne dass du sie herunterladen und eine passende Software installiert haben musst (Art. 6 Abs. 1 lit. f DSGVO). Bilder und PDF-Dateien zeigen wir ohne Microsoft an."
-          ]
-        },
-        {
-          "title": "E-Mail-Versand",
-          "paragraphs": [
-            "E-Mails verschicken wir über die Resend, Inc. (USA). Resend erhält dafür deine E-Mail-Adresse und den Inhalt der jeweiligen E-Mail. Resend verarbeitet die Daten in unserem Auftrag und ist unter dem EU-US Data Privacy Framework zertifiziert (Art. 45 DSGVO)."
-          ]
-        },
-        {
-          "title": "Anmeldung mit Google",
-          "paragraphs": [
-            "Du kannst dich mit deinem Google-Konto registrieren und anmelden. Dazu leiten wir dich zu Google weiter (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Google übermittelt uns deine Google-Konto-ID, deine E-Mail-Adresse und ob Google sie bestätigt hat. Weitere Daten fragen wir nicht ab.",
-            "Was Google bei der Anmeldung verarbeitet, regelt Googles eigene Datenschutzerklärung. Dabei können Daten an die Google LLC in den USA übermittelt werden, die unter dem EU-US Data Privacy Framework zertifiziert ist.",
-            "Die Anmeldung mit Google ist freiwillig; du kannst dich genauso mit E-Mail-Adresse und Passwort registrieren. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO."
-          ]
-        },
-        {
-          "title": "Anmeldungen und Sicherheit",
-          "paragraphs": ["Zum Schutz deines Kontos und des Dienstes speichern wir:"],
-          "items": [
-            "für jede Anmeldung (Sitzung) IP-Adresse, Browserkennung und Zeitpunkte. In den Kontoeinstellungen zeigen wir dir daraus deine angemeldeten Geräte mit ungefährem Ort. Den Ort ermitteln wir mit einer Datenbank auf unserem eigenen Server, die IP-Adresse geben wir dafür nicht weiter;",
-            "ein Sicherheitsprotokoll mit IP-Adresse und Browserkennung: Anmeldungen, fehlgeschlagene Anmeldeversuche und Abmeldungen, Änderungen an Passwort, Passkeys, Zwei-Faktor-Authentifizierung und der Verknüpfung mit Google, den Export und die Löschung deines Kontos, das Erstellen und Löschen von Gruppen, Einladungen, Änderungen an Mitgliedschaften, Rollen und Gruppenrechten sowie alle Aktionen von Admins."
-          ],
-          "outro": [
-            "So erkennen und verhindern wir Missbrauch und unbefugte Zugriffe. Rechtsgrundlage ist unser berechtigtes Interesse an der Sicherheit des Dienstes (Art. 6 Abs. 1 lit. f DSGVO).",
-            "Für die Ortsbestimmung verwenden wir GeoLite2-Daten von MaxMind: This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com."
-          ]
-        },
-        {
-          "title": "Aktivitätsprotokoll",
-          "paragraphs": [
-            "Wir protokollieren, welche Aktionen in deinem Konto stattfinden, zum Beispiel das Öffnen der App (mit Browserkennung), das Anlegen, Bearbeiten oder Abhaken von Aufgaben und Änderungen an Einstellungen. Gespeichert werden dabei nur Art, Zeitpunkt und Kennungen der betroffenen Einträge, keine Inhalte.",
-            "Wir nutzen das Protokoll, um Fehler und Missbrauch aufzuklären und um zu sehen, wie viele Personen den Dienst nutzen. Einsehen können es nur wir als Betreiber. Rechtsgrundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)."
-          ]
-        },
-        {
-          "title": "Meldungen",
-          "paragraphs": [
-            "Wenn du eine Aufgabe oder Nachricht meldest, speichern wir den gemeldeten Inhalt, deine Begründung, deine E-Mail-Adresse und die E-Mail-Adresse der Person, die den Inhalt erstellt hat. So können wir die Meldung prüfen und bei Bedarf nachfragen. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO)."
-          ]
-        },
-        {
-          "title": "Reichweitenmessung",
-          "paragraphs": [
-            "Um zu verstehen, welche Seiten genutzt werden, verwenden wir auf der Website und in der App Umami Cloud (Umami Software, Inc., USA). Die Daten werden auf Servern in der EU (Deutschland) gespeichert.",
-            "Erfasst werden die aufgerufene Seite und ihr Titel, die verweisende Seite, Browser, Betriebssystem, Gerätetyp, Bildschirmgröße, Sprache und Land. In der App entfernen wir vorher Suchparameter und den geheimen Teil von Einladungslinks.",
-            "Umami setzt keine Cookies und verfolgt dich nicht über andere Websites hinweg; deine IP-Adresse wird nach Angaben von Umami nicht gespeichert. Wir sehen nur zusammengefasste Statistiken.",
-            "Rechtsgrundlage ist unser berechtigtes Interesse daran, unser Angebot zu verbessern (Art. 6 Abs. 1 lit. f DSGVO). Du kannst dem jederzeit widersprechen."
-          ]
-        },
-        {
-          "title": "Cookies und lokale Speicherung",
-          "paragraphs": [
-            "Wir verwenden nur Cookies und lokalen Speicher, die für den Betrieb technisch nötig sind oder eine Einstellung speichern, die du gewählt hast (§ 25 Abs. 2 Nr. 2 TDDDG). Tracking- oder Werbe-Cookies setzen wir nicht."
-          ],
-          "items": [
-            "App, Anmeldung: access_token (15 Minuten), refresh_token (7 Tage), csrf_token (30 Tage, Schutz vor gefälschten Anfragen), mfa_pending_token (5 Minuten, während der Zwei-Faktor-Abfrage), oauth_state_token und oauth_pending_token (10 bzw. 15 Minuten, während der Anmeldung mit Google).",
-            "App, lokaler Speicher im Browser: Sprache, Farbschema, Zeitpunkt der letzten Sitzungsverlängerung und, bis du angemeldet bist, ein geöffneter Einladungslink (höchstens 24 Stunden).",
-            "Website: i18n_locale (Sprache, 1 Jahr), nuxt-homepage-color-mode (Farbschema, 1 Jahr), cookie_notice_dismissed (Hinweis geschlossen, 180 Tage)."
-          ]
-        },
-        {
-          "title": "Speicherdauer",
-          "items": [
-            "Kontodaten speichern wir, bis du dein Konto löschst.",
-            "Unbestätigte Registrierungen löschen wir, sobald ihr Bestätigungscode nach 2 Tagen abgelaufen ist.",
-            "Codes zum Zurücksetzen oder Festlegen des Passworts sind 30 Minuten gültig. Wir löschen sie nach 24 Stunden; bis dahin begrenzen wir mit ihnen, wie viele Codes eine E-Mail-Adresse erhält.",
-            "Sitzungsdaten mit IP-Adresse und Browserkennung löschen wir etwa 7 Tage nach ihrer letzten Nutzung.",
-            "Das Aktivitätsprotokoll löschen wir nach 30 Tagen, das Sicherheitsprotokoll nach 90 Tagen. Angriffe auf ein Konto fallen oft erst Wochen später auf, deshalb bewahren wir es länger auf.",
-            "Chatnachrichten löschen wir nach 7 Tagen automatisch.",
-            "Aufgaben und Klausuren in Gruppen löschen wir automatisch 90 Tage nach ihrem Fälligkeitsdatum.",
-            "Stundenplanänderungen wie Vertretungen und Ausfälle löschen wir automatisch 90 Tage nach dem Tag, für den sie gelten.",
-            "Meldungen speichern wir, bis wir sie bearbeitet haben.",
-            "Alle anderen Inhalte in Gruppen bleiben gespeichert, bis du, die Gruppenadmins oder wir sie löschen oder die Gruppe gelöscht wird."
-          ]
-        },
-        {
-          "title": "Löschung deines Kontos",
-          "paragraphs": [
-            "Du kannst dein Konto jederzeit in den Kontoeinstellungen löschen. Wenn du Eigentümer einer Gruppe bist, musst du sie vorher übertragen oder löschen.",
-            "Beim Löschen entfernen wir sofort deine Kontodaten, Sitzungen, Gruppenmitgliedschaften, Chatnachrichten, privaten Aufgaben, die Verknüpfung mit Google und dein Aktivitätsprotokoll.",
-            "Aufgaben und Ankündigungen, die du in Gruppen erstellt hast, bleiben für die Gruppe erhalten, sind aber nicht mehr deinem Konto zugeordnet. Einträge im Sicherheitsprotokoll löschen wir nach Ablauf ihrer Frist von 90 Tagen, Meldungen nach ihrer Bearbeitung."
-          ]
-        },
-        {
-          "title": "Deine Rechte",
-          "paragraphs": ["Nach der DSGVO hast du gegenüber uns das Recht auf:"],
-          "items": [
-            "Auskunft über deine gespeicherten Daten (Art. 15 DSGVO),",
-            "Berichtigung unrichtiger Daten (Art. 16 DSGVO),",
-            "Löschung deiner Daten (Art. 17 DSGVO),",
-            "Einschränkung der Verarbeitung (Art. 18 DSGVO),",
-            "Datenübertragbarkeit (Art. 20 DSGVO),",
-            "Widerspruch gegen Verarbeitungen, die auf unserem berechtigten Interesse beruhen (Art. 21 DSGVO)."
-          ],
-          "outro": [
-            "Eine Kopie aller Daten zu deinem Konto kannst du jederzeit selbst in den Kontoeinstellungen unter „Konto“ als ZIP-Datei herunterladen. Sie enthält deine Daten in einem maschinenlesbaren Format (JSON) und die Angaben nach Art. 15 DSGVO.",
-            "Für alle anderen Anliegen schreib uns an kontakt{'@'}olauda.com.",
-            "Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO). Für uns zuständig ist die Berliner Beauftragte für Datenschutz und Informationsfreiheit, Alt-Moabit 59–61, 10555 Berlin.",
-            "Eine automatisierte Entscheidungsfindung oder ein Profiling findet nicht statt."
-          ]
-        },
-        {
-          "title": "Änderungen",
-          "paragraphs": [
-            "Wir passen diese Datenschutzerklärung an, wenn sich der Dienst oder die Rechtslage ändert. Die aktuelle Fassung findest du immer auf dieser Seite."
-          ]
-        }
-      ]
-    },
-    "terms": {
-      "title": "Nutzungsbedingungen",
-      "description": "Die Regeln für die Nutzung von Olauda.",
-      "acceptance": {
-        "title": "Zustimmung zu den Bedingungen",
-        "text": "Durch die Nutzung von Olauda stimmst du diesen Bedingungen zu. Wenn du nicht zustimmst, bitte die Nutzung des Dienstes einstellen."
-      },
-      "service": {
-        "title": "Der Dienst",
-        "text": "Olauda stellt eine kostenlose, webbasierte Schulverwaltungsplattform bereit. Wir behalten uns vor, Funktionen jederzeit zu ändern oder einzustellen, mit Ankündigung soweit möglich."
-      },
-      "account": {
-        "title": "Dein Konto",
-        "item0": "Du musst eine gültige E-Mail-Adresse angeben, um ein Konto zu erstellen.",
-        "item1": "Du bist dafür verantwortlich, deine Zugangsdaten sicher zu verwahren.",
-        "item2": "Du musst mindestens 18 Jahre alt sein oder die Zustimmung deiner Erziehungsberechtigten haben, um diesen Dienst zu nutzen.",
-        "item3": "Ein Konto pro Person. Teile dein Konto nicht mit anderen."
-      },
-      "conduct": {
-        "title": "Zulässige Nutzung",
-        "intro": "Du stimmst zu, Olauda nicht zu verwenden, um:",
-        "item0": "Illegale, schädliche oder beleidigende Inhalte hochzuladen oder zu teilen.",
-        "item1": "Unbefugten Zugriff auf andere Konten oder Systeme zu erlangen.",
-        "item2": "Den Dienst oder seine Infrastruktur zu stören.",
-        "item3": "Den Dienst ohne vorherige schriftliche Genehmigung kommerziell zu nutzen."
-      },
-      "termination": {
-        "title": "Kündigung",
-        "text": "Wir behalten uns das Recht vor, Konten zu sperren oder zu kündigen, die gegen diese Bedingungen verstoßen. Du kannst dein Konto jederzeit löschen."
-      },
-      "availability": {
-        "title": "Verfügbarkeit",
-        "text": "Wir garantieren keine ständige Verfügbarkeit des Dienstes und keine dauerhafte Speicherung deiner Daten."
-      },
-      "changes": {
-        "title": "Änderungen dieser Bedingungen",
-        "text": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren."
-      },
-      "governing": {
-        "title": "Anwendbares Recht",
-        "text": "Diese Bedingungen unterliegen dem deutschen Recht. Etwaige Streitigkeiten werden vor den zuständigen deutschen Gerichten gelöst."
-      }
-    }
+    "rights": "© {year} Olauda"
   }
 }

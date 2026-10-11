@@ -15,5 +15,6 @@ useHead({
       <slot />
     </main>
     <HomepageFooter />
+    <MobileDock />
   </div>
 </template>

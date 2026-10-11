@@ -13,7 +13,7 @@ const themes = [
 
 <template>
   <div
-    class="flex gap-0.5 rounded-full bg-ghost-hover p-1"
+    class="flex gap-0.5 rounded-full border border-ghost-border bg-surface p-0.5 shadow-input"
     role="group"
     :aria-label="t('common.theme')"
   >
@@ -24,15 +24,15 @@ const themes = [
       class="flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors"
       :class="
         colorMode.preference === theme.value
-          ? 'bg-canvas text-on-ghost shadow-[0_1px_2px_oklch(0_0_0/12%)]'
-          : 'text-on-ghost-subtle hover:text-on-ghost'
+          ? 'bg-action text-on-action'
+          : 'text-on-ghost-muted hover:text-on-ghost'
       "
       :title="t(`common.${theme.value}`)"
       :aria-label="t(`common.${theme.value}`)"
       :aria-pressed="colorMode.preference === theme.value"
       @click="colorMode.preference = theme.value"
     >
-      <component :is="theme.icon" :size="15" :stroke-width="1.75" aria-hidden="true" />
+      <component :is="theme.icon" :size="15" aria-hidden="true" />
     </button>
   </div>
 </template>
