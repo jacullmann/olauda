@@ -39,11 +39,11 @@ const { exporting, downloadDataExport } = useDataExport();
       </div>
     </section>
 
-    <section class="flex flex-col gap-4 max-w-160">
-      <h3 class="text-danger!">
+    <section class="flex flex-col max-w-160">
+      <h3 class="text-danger! mb-2!">
         {{ t('auth.account_settings.danger_zone.title') }}
       </h3>
-      <p class="m-0!">
+      <p class="mt-0!">
         {{ t('auth.account_settings.danger_zone.description') }}
       </p>
       <div>

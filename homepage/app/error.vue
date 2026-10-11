@@ -6,7 +6,7 @@ const props = defineProps<{ error: NuxtError }>();
 const { t } = useI18n();
 const localePath = useLocalePath();
 
-useSeoMeta({ title: () => `${t('pages.not_found.title')} — schul-dashboard`, robots: 'noindex' });
+useSeoMeta({ title: () => `${t('pages.not_found.title')} — Olauda`, robots: 'noindex' });
 </script>
 
 <template>

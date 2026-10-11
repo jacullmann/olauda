@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use webauthn_rs::{Webauthn, WebauthnBuilder};
 
 /// Shown by the browser and the passkey manager next to the account name.
-const RP_NAME: &str = "schul-dashboard";
+const RP_NAME: &str = "Olauda";
 
 pub fn relying_party(config: &WebauthnConfig) -> anyhow::Result<Webauthn> {
     WebauthnBuilder::new(&config.rp_id, &config.rp_origin)

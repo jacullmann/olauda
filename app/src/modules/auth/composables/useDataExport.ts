@@ -8,7 +8,7 @@ const DATA_EXPORT_URL = '/user/data-export';
 
 // Mirrors the server's name; Content-Disposition is not exposed cross-origin.
 function exportFileName(): string {
-  return `schul-dashboard-export-${new Date().toISOString().slice(0, 10)}.zip`;
+  return `olauda-export-${new Date().toISOString().slice(0, 10)}.zip`;
 }
 
 function saveFile(blob: Blob, fileName: string) {

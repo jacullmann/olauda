@@ -2,7 +2,7 @@
 const { t } = useI18n();
 
 useSeoMeta({
-  title: `${t('legal.terms.title')} — schul-dashboard`,
+  title: `${t('legal.terms.title')} — Olauda`,
   description: t('legal.terms.description'),
   robots: 'noindex, follow',
 });

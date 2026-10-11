@@ -77,7 +77,7 @@ async function onDelete() {
 }
 
 watchEffect(() => {
-  if (user.value) document.title = `${user.value.username} | Dashboard`;
+  if (user.value) document.title = `${user.value.username} | Olauda`;
 });
 </script>
 

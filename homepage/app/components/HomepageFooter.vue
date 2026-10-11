@@ -46,7 +46,7 @@ const columns = computed(() => [
           :aria-label="t('nav.home')"
         >
           <img src="/favicon.svg" alt="" class="size-6" width="24" height="24" />
-          <span class="text-[0.9375rem] font-semibold tracking-[-0.01em]">schul-dashboard</span>
+          <span class="text-[0.9375rem] font-semibold tracking-[-0.01em]">Olauda</span>
         </NuxtLink>
         <p class="max-w-[22rem] text-[0.9375rem] leading-relaxed text-on-ghost-muted">
           {{ t('footer.tagline') }}
@@ -85,9 +85,7 @@ const columns = computed(() => [
       <div
         class="col-span-12 flex flex-wrap items-center gap-x-8 gap-y-5 border-t border-ghost-border pt-6 text-[0.8125rem] text-on-ghost-subtle"
       >
-        <p class="mr-auto">
-          © {{ new Date().getFullYear() }} schul-dashboard · {{ t('footer.made_in') }}
-        </p>
+        <p class="mr-auto">© {{ new Date().getFullYear() }} Olauda · {{ t('footer.made_in') }}</p>
         <LanguageSwitch />
         <ThemeSwitch />
       </div>

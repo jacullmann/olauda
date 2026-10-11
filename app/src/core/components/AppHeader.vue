@@ -276,7 +276,7 @@ defineExpose({ groupButton: groupButtonRef });
         :class="searchHandoverClasses"
       >
         <AppLogo aria-hidden="true" />
-        <span class="logo-text truncate">schul-dashboard</span>
+        <span class="logo-text truncate">Olauda</span>
       </router-link>
 
       <div

@@ -10,7 +10,7 @@
 import type { RouteLocationNamedRaw } from 'vue-router';
 import { inviteRoute } from './routes';
 
-const STORAGE_KEY = 'schul-dashboard:pending-invite';
+const STORAGE_KEY = 'olauda:pending-invite';
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 // Mirrors the server's token format (32 random bytes, hex-encoded).
 const TOKEN_PATTERN = /^[0-9a-f]{64}$/;

@@ -14,7 +14,7 @@ const STEP_SECS: u64 = 30;
 /// One step either side of the current one, so a code typed just as it rolls
 /// over, or on a device whose clock drifts a little, still counts.
 const SKEW_STEPS: u64 = 1;
-const ISSUER: &str = "Schul-Dashboard";
+const ISSUER: &str = "Olauda";
 const SECRET_BYTES: usize = 20;
 const BASE32: base32::Alphabet = base32::Alphabet::Rfc4648 { padding: false };
 

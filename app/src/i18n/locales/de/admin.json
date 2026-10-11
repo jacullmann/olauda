@@ -134,12 +134,12 @@
       },
       "shutdown": {
         "label": "Shutdown-Modus",
-        "hint": "Nur Superadmins können das Dashboard nutzen. Alle anderen werden zur Anmeldung geschickt, bleiben aber angemeldet und können danach direkt weitermachen."
+        "hint": "Nur Superadmins können Olauda nutzen. Alle anderen werden zur Anmeldung geschickt, bleiben aber angemeldet und können danach direkt weitermachen."
       },
       "registration_held": "Im Shutdown-Modus immer geschlossen.",
       "shutdown_modal": {
         "title": "Shutdown-Modus aktivieren?",
-        "content": "Alle außer Superadmins verlieren sofort den Zugriff auf das Dashboard und können sich weder anmelden noch registrieren.",
+        "content": "Alle außer Superadmins verlieren sofort den Zugriff auf Olauda und können sich weder anmelden noch registrieren.",
         "submit": "Aktivieren"
       },
       "error": "Zugangseinstellungen konnten nicht geladen werden.",

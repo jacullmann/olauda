@@ -134,12 +134,12 @@
       },
       "shutdown": {
         "label": "Shutdown mode",
-        "hint": "Only superadmins can use the dashboard. Everyone else is sent to the sign-in page but stays signed in and can carry on right after."
+        "hint": "Only superadmins can use Olauda. Everyone else is sent to the sign-in page but stays signed in and can carry on right after."
       },
       "registration_held": "Always closed in shutdown mode.",
       "shutdown_modal": {
         "title": "Turn on shutdown mode?",
-        "content": "Everyone except superadmins immediately loses access to the dashboard and can neither sign in nor sign up.",
+        "content": "Everyone except superadmins immediately loses access to Olauda and can neither sign in nor sign up.",
         "submit": "Turn on"
       },
       "error": "Could not load the access settings.",

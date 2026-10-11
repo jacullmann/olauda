@@ -107,7 +107,7 @@ impl Config {
                 .unwrap_or_else(|_| "hausaufgaben".into()),
             resend_api_key: require("RESEND_API_KEY")?,
             email_from: std::env::var("EMAIL_FROM")
-                .unwrap_or_else(|_| "schul-dashboard <noreply@schul-dashboard.com>".into()),
+                .unwrap_or_else(|_| "Olauda <noreply@schul-dashboard.com>".into()),
             geoip_service_url: std::env::var("GEOIP_SERVICE_URL")
                 .unwrap_or_else(|_| "http://geoip-service:8080".into()),
             hetzner: hetzner_from_env()?,

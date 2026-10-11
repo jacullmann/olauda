@@ -147,7 +147,7 @@ function openImageMenu(event: MouseEvent, img: Attachment) {
 }
 
 watchEffect(() => {
-  if (item.value) document.title = `${item.value.title} | Dashboard`;
+  if (item.value) document.title = `${item.value.title} | Olauda`;
 });
 
 // Files dropped anywhere on the task's view are attached to it.

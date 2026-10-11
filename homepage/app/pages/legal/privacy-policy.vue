@@ -11,7 +11,7 @@ interface RawSection {
 const { t, tm, rt } = useI18n();
 
 useSeoMeta({
-  title: `${t('legal.privacy.title')} — schul-dashboard`,
+  title: `${t('legal.privacy.title')} — Olauda`,
   description: t('legal.privacy.description'),
   robots: 'noindex, follow',
 });

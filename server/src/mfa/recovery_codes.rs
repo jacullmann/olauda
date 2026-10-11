@@ -22,7 +22,7 @@ const SYMBOLS_PER_CODE: usize = 10;
 const GROUP_LEN: usize = 5;
 /// Domain separation: the key is the account-key pepper, which also derives
 /// encryption keys, so its use here must never produce the same output.
-const HMAC_CONTEXT: &[u8] = b"schul-dashboard/mfa-recovery-code/v1\0";
+const HMAC_CONTEXT: &[u8] = b"olauda/mfa-recovery-code/v1\0";
 
 /// Hashes recovery codes with the server secret.
 #[derive(Clone)]

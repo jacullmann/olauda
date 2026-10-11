@@ -33,7 +33,7 @@ impl AppState {
     pub fn new(db: PgPool, config: Config) -> anyhow::Result<Self> {
         let http = Client::builder()
             .timeout(std::time::Duration::from_secs(10))
-            .user_agent("schul-dashboard-api/v2")
+            .user_agent("olauda-api/v2")
             .build()
             .expect("Failed to build HTTP client");
 

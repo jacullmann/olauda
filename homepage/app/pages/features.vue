@@ -2,7 +2,7 @@
 const { t, tm, rt } = useI18n();
 
 useSeoMetaWithI18n({
-  title: () => `${t('pages.features.title')} — schul-dashboard`,
+  title: () => `${t('pages.features.title')} — Olauda`,
   description: () => t('pages.features.description'),
   keywords: 'features, tasks, timetable, substitutions, announcements, group chat, private notes',
 });
@@ -31,7 +31,7 @@ function chapterItems(chapter: (typeof chapters)[number]) {
       <h1 class="col-span-12 font-serif text-display lg:col-span-10">
         <i18n-t keypath="features.title" scope="global">
           <template #name>
-            <span class="whitespace-nowrap">schul-dashboard</span>
+            <span class="whitespace-nowrap">Olauda</span>
           </template>
           <template #emphasis>
             <em>{{ t('features.title_emphasis') }}</em>

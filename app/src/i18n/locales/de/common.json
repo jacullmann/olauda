@@ -36,7 +36,7 @@
     "quotes": [
       "I miss the old Kanye",
       "Kopf hoch. Nur noch {daysToHoliday} Tage bis zu den Ferien",
-      "Einfach. Besser. Organisiert. Dashboard!",
+      "Einfach. Besser. Organisiert. Olauda!",
       "Papier ist von gestern. Mach es digital!",
       "#EatTheRich",
       "Auch schlechte Tage haben nur 24 Stunden",
@@ -52,14 +52,14 @@
       "I have a dream",
       "Weil Menschen Fehler machen.",
       "Lade dein Chaos in die Cloud hoch!",
-      "Verbring mehr Zeit mit deiner Familie – schul-dashboard",
+      "Verbring mehr Zeit mit deiner Familie – Olauda",
       "Nie ohne Seife waschen",
       "Jetzt im Kino!",
       "Ho ho ho!",
       "Ohne Fruchtfleisch!",
       "Pasteurisiert und homogenisiert!",
       "Ohne Zusatzstoffe!",
-      "0 Kalorien – schul-dashboard",
+      "0 Kalorien – Olauda",
       "All unsere Milch kommt von organischen Kühen!",
       "100% Tierleidfrei",
       "Diese Website enthält kein echtes Tierfleisch.",
@@ -83,9 +83,9 @@
       "Schmeckt besser, als es aussieht.",
       "Ich lerne, also bin ich.",
       "Alle wollen die Welt verändern, aber keiner sich selbst.",
-      "Dashboard benutzen oder Dashboard nicht benutzen, das ist hier die Frage.",
+      "Olauda benutzen oder Olauda nicht benutzen, das ist hier die Frage.",
       "I'm going to make him an offer he can't refuse",
-      "Ein kleiner Schritt für die Menschheit, ein großer für einen Schüler – Dashboard",
+      "Ein kleiner Schritt für die Menschheit, ein großer für einen Schüler – Olauda",
       "ähm... sozusagen",
       "Can't tell me nothing",
       "This is family business and this is for the family that can't be with us",
@@ -111,7 +111,7 @@
       "It's all wrong, it's alright",
       "There is a light that never goes out",
       "I was looking for a job and then I found a job",
-      "Dashboard, you're much too fast, little red corvette",
+      "Olauda, you're much too fast, little red corvette",
       "Pourin bubbly",
       "One more time",
       "Ground control to Major Tom",
@@ -170,7 +170,7 @@
     "system": "System",
     "theme": "Design"
   },
-  "title": "schul-dashboard",
+  "title": "Olauda",
   "titles": {
     "abbr": {
       "mr": "Hr.",
@@ -267,7 +267,7 @@
     "restored": "Wieder online",
     "unreachable": {
       "title": "Server nicht erreichbar",
-      "message": "Das Dashboard antwortet gerade nicht, vielleicht wird es aktualisiert. Deine Anmeldung bleibt erhalten.",
+      "message": "Olauda antwortet gerade nicht, vielleicht wird es aktualisiert. Deine Anmeldung bleibt erhalten.",
       "retry": "Erneut versuchen"
     }
   },

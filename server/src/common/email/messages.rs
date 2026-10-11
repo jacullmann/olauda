@@ -25,7 +25,7 @@ impl LegalFooter {
                 imprint_url: "https://schul-dashboard.com/de/legal/impressum",
                 contact_label: "Kontakt",
                 automated_notice: "Diese E-Mail wurde automatisch versendet. Bitte antworte nicht darauf.",
-                sender: "schul-dashboard · Berlin, Deutschland",
+                sender: "Olauda · Berlin, Deutschland",
             },
             Locale::En => Self {
                 privacy_label: "Privacy Policy",
@@ -34,7 +34,7 @@ impl LegalFooter {
                 imprint_url: "https://schul-dashboard.com/legal/imprint",
                 contact_label: "Contact",
                 automated_notice: "This email was sent automatically. Please don't reply to it.",
-                sender: "schul-dashboard · Berlin, Germany",
+                sender: "Olauda · Berlin, Germany",
             },
         }
     }
@@ -56,30 +56,30 @@ impl Message {
         match locale {
             Locale::De => Self {
                 locale,
-                subject: format!("{code} ist dein schul-dashboard-Bestätigungscode"),
-                preheader: "Dein Code, um dein schul-dashboard-Konto zu aktivieren.",
+                subject: format!("{code} ist dein Olauda-Bestätigungscode"),
+                preheader: "Dein Code, um dein Olauda-Konto zu aktivieren.",
                 heading: "Nur noch ein letzter Schritt",
                 paragraphs: &[
-                    "Willkommen beim schul-dashboard. Gib diesen Code auf der schul-dashboard-Seite ein, um deine E-Mail-Adresse zu bestätigen:",
+                    "Willkommen bei Olauda. Gib diesen Code auf der Olauda-Seite ein, um deine E-Mail-Adresse zu bestätigen:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("Der Code ist {valid_hours} Stunden gültig.")),
                 disclaimer: Some(
-                    "Du hast dich nicht beim schul-dashboard registriert? Dann kannst du diese E-Mail einfach ignorieren.",
+                    "Du hast dich nicht bei Olauda registriert? Dann kannst du diese E-Mail einfach ignorieren.",
                 ),
             },
             Locale::En => Self {
                 locale,
-                subject: format!("{code} is your schul-dashboard verification code"),
-                preheader: "Your code to activate your schul-dashboard account.",
+                subject: format!("{code} is your Olauda verification code"),
+                preheader: "Your code to activate your Olauda account.",
                 heading: "Just one last step",
                 paragraphs: &[
-                    "Welcome to schul-dashboard. Enter this code on the schul-dashboard page to confirm your email address:",
+                    "Welcome to Olauda. Enter this code on the Olauda page to confirm your email address:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("The code is valid for {valid_hours} hours.")),
                 disclaimer: Some(
-                    "Didn't sign up for schul-dashboard? You can safely ignore this email.",
+                    "Didn't sign up for Olauda? You can safely ignore this email.",
                 ),
             },
         }
@@ -93,7 +93,7 @@ impl Message {
                 preheader: "Dein Code zum Zurücksetzen deines Passworts.",
                 heading: "Passwort zurücksetzen",
                 paragraphs: &[
-                    "Gib diesen Code auf der schul-dashboard-Seite ein, um ein neues Passwort festzulegen:",
+                    "Gib diesen Code auf der Olauda-Seite ein, um ein neues Passwort festzulegen:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("Der Code ist {valid_minutes} Minuten gültig.")),
@@ -107,7 +107,7 @@ impl Message {
                 preheader: "Your code to reset your password.",
                 heading: "Reset your password",
                 paragraphs: &[
-                    "Enter this code on the schul-dashboard page to choose a new password:",
+                    "Enter this code on the Olauda page to choose a new password:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("The code is valid for {valid_minutes} minutes.")),
@@ -126,7 +126,7 @@ impl Message {
                 preheader: "Dein Code, um ein Passwort für dein Konto festzulegen.",
                 heading: "Passwort festlegen",
                 paragraphs: &[
-                    "Gib diesen Code auf der schul-dashboard-Seite ein, um ein Passwort für dein Konto festzulegen:",
+                    "Gib diesen Code auf der Olauda-Seite ein, um ein Passwort für dein Konto festzulegen:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("Der Code ist {valid_minutes} Minuten gültig.")),
@@ -140,7 +140,7 @@ impl Message {
                 preheader: "Your code to set a password for your account.",
                 heading: "Set your password",
                 paragraphs: &[
-                    "Enter this code on the schul-dashboard page to set a password for your account:",
+                    "Enter this code on the Olauda page to set a password for your account:",
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("The code is valid for {valid_minutes} minutes.")),
@@ -205,7 +205,7 @@ impl SecurityNotice {
         {
             (Self::PasswordChanged, Locale::De) => (
                 "Dein Passwort wurde geändert",
-                "Das Passwort deines schul-dashboard-Kontos wurde geändert.",
+                "Das Passwort deines Olauda-Kontos wurde geändert.",
                 &[
                     "Soeben wurde das Passwort deines Kontos geändert. Alle anderen Geräte wurden abgemeldet.",
                     ADVICE_DE,
@@ -213,7 +213,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordChanged, Locale::En) => (
                 "Your password was changed",
-                "The password of your schul-dashboard account was changed.",
+                "The password of your Olauda account was changed.",
                 &[
                     "The password of your account was just changed. All other devices were signed out.",
                     ADVICE_EN,
@@ -221,7 +221,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordSet, Locale::De) => (
                 "Für dein Konto wurde ein Passwort festgelegt",
-                "Dein schul-dashboard-Konto hat jetzt ein Passwort.",
+                "Dein Olauda-Konto hat jetzt ein Passwort.",
                 &[
                     "Soeben wurde für dein Konto ein Passwort festgelegt. Du kannst dich jetzt auch mit E-Mail-Adresse und Passwort anmelden.",
                     ADVICE_DE,
@@ -229,7 +229,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordSet, Locale::En) => (
                 "A password was set for your account",
-                "Your schul-dashboard account now has a password.",
+                "Your Olauda account now has a password.",
                 &[
                     "A password was just set for your account. You can now also sign in with your email address and password.",
                     ADVICE_EN,
@@ -237,7 +237,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordRemoved, Locale::De) => (
                 "Das Passwort deines Kontos wurde entfernt",
-                "Dein schul-dashboard-Konto hat kein Passwort mehr.",
+                "Dein Olauda-Konto hat kein Passwort mehr.",
                 &[
                     "Soeben wurde das Passwort deines Kontos entfernt. Du meldest dich jetzt mit einem Passkey oder mit Google an. Alle anderen Geräte wurden abgemeldet.",
                     ADVICE_DE,
@@ -245,7 +245,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordRemoved, Locale::En) => (
                 "The password of your account was removed",
-                "Your schul-dashboard account no longer has a password.",
+                "Your Olauda account no longer has a password.",
                 &[
                     "The password of your account was just removed. You now sign in with a passkey or with Google. All other devices were signed out.",
                     ADVICE_EN,
@@ -253,7 +253,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordReset, Locale::De) => (
                 "Dein Passwort wurde zurückgesetzt",
-                "Das Passwort deines schul-dashboard-Kontos wurde zurückgesetzt.",
+                "Das Passwort deines Olauda-Kontos wurde zurückgesetzt.",
                 &[
                     "Soeben wurde das Passwort deines Kontos mit einem per E-Mail versandten Code zurückgesetzt. Alle Geräte wurden abgemeldet. Zwei-Faktor-Authentifizierung und Passkeys bleiben unverändert.",
                     ADVICE_DE,
@@ -261,7 +261,7 @@ impl SecurityNotice {
             ),
             (Self::PasswordReset, Locale::En) => (
                 "Your password was reset",
-                "The password of your schul-dashboard account was reset.",
+                "The password of your Olauda account was reset.",
                 &[
                     "The password of your account was just reset with a code sent by email. All devices were signed out. Two-factor authentication and passkeys stay as they were.",
                     ADVICE_EN,
@@ -269,7 +269,7 @@ impl SecurityNotice {
             ),
             (Self::TwoFactorEnabled, Locale::De) => (
                 "Zwei-Faktor-Authentifizierung aktiviert",
-                "Dein schul-dashboard-Konto ist jetzt mit einem zweiten Faktor geschützt.",
+                "Dein Olauda-Konto ist jetzt mit einem zweiten Faktor geschützt.",
                 &[
                     "Soeben wurde für dein Konto die Zwei-Faktor-Authentifizierung aktiviert. Bewahre deine Wiederherstellungscodes sicher auf: Mit ihnen meldest du dich an, falls du keinen Zugriff auf deine Authenticator-App hast.",
                     ADVICE_DE,
@@ -277,7 +277,7 @@ impl SecurityNotice {
             ),
             (Self::TwoFactorEnabled, Locale::En) => (
                 "Two-factor authentication turned on",
-                "Your schul-dashboard account is now protected by a second factor.",
+                "Your Olauda account is now protected by a second factor.",
                 &[
                     "Two-factor authentication was just turned on for your account. Keep your recovery codes somewhere safe: they let you sign in if you cannot use your authenticator app.",
                     ADVICE_EN,
@@ -285,7 +285,7 @@ impl SecurityNotice {
             ),
             (Self::TwoFactorDisabled, Locale::De) => (
                 "Zwei-Faktor-Authentifizierung deaktiviert",
-                "Dein schul-dashboard-Konto ist nicht mehr mit einem zweiten Faktor geschützt.",
+                "Dein Olauda-Konto ist nicht mehr mit einem zweiten Faktor geschützt.",
                 &[
                     "Soeben wurde die Zwei-Faktor-Authentifizierung deines Kontos deaktiviert. Deine Wiederherstellungscodes sind damit ungültig.",
                     ADVICE_DE,
@@ -293,7 +293,7 @@ impl SecurityNotice {
             ),
             (Self::TwoFactorDisabled, Locale::En) => (
                 "Two-factor authentication turned off",
-                "Your schul-dashboard account is no longer protected by a second factor.",
+                "Your Olauda account is no longer protected by a second factor.",
                 &[
                     "Two-factor authentication was just turned off for your account. Your recovery codes no longer work.",
                     ADVICE_EN,
@@ -317,7 +317,7 @@ impl SecurityNotice {
             ),
             (Self::RecoveryCodesRegenerated, Locale::De) => (
                 "Neue Wiederherstellungscodes erstellt",
-                "Für dein schul-dashboard-Konto wurden neue Wiederherstellungscodes erstellt.",
+                "Für dein Olauda-Konto wurden neue Wiederherstellungscodes erstellt.",
                 &[
                     "Soeben wurden für dein Konto neue Wiederherstellungscodes erstellt. Die bisherigen Codes funktionieren nicht mehr.",
                     ADVICE_DE,
@@ -325,7 +325,7 @@ impl SecurityNotice {
             ),
             (Self::RecoveryCodesRegenerated, Locale::En) => (
                 "New recovery codes created",
-                "New recovery codes were created for your schul-dashboard account.",
+                "New recovery codes were created for your Olauda account.",
                 &[
                     "New recovery codes were just created for your account. Your previous codes no longer work.",
                     ADVICE_EN,
@@ -333,7 +333,7 @@ impl SecurityNotice {
             ),
             (Self::RecoveryCodeUsed { .. }, Locale::De) => (
                 "Wiederherstellungscode verwendet",
-                "Für dein schul-dashboard-Konto wurde ein Wiederherstellungscode verwendet.",
+                "Für dein Olauda-Konto wurde ein Wiederherstellungscode verwendet.",
                 &[
                     "Soeben wurde für dein Konto ein Wiederherstellungscode anstelle der Authenticator-App verwendet. Jeder Code funktioniert nur einmal.",
                     ADVICE_DE,
@@ -341,7 +341,7 @@ impl SecurityNotice {
             ),
             (Self::RecoveryCodeUsed { .. }, Locale::En) => (
                 "Recovery code used",
-                "A recovery code was used for your schul-dashboard account.",
+                "A recovery code was used for your Olauda account.",
                 &[
                     "A recovery code was just used for your account instead of the authenticator app. Each code works only once.",
                     ADVICE_EN,
@@ -349,7 +349,7 @@ impl SecurityNotice {
             ),
             (Self::PasskeyAdded, Locale::De) => (
                 "Neuer Passkey hinzugefügt",
-                "Deinem schul-dashboard-Konto wurde ein Passkey hinzugefügt.",
+                "Deinem Olauda-Konto wurde ein Passkey hinzugefügt.",
                 &[
                     "Soeben wurde deinem Konto ein neuer Passkey hinzugefügt. Mit ihm kann man sich ohne Passwort anmelden.",
                     ADVICE_DE,
@@ -357,7 +357,7 @@ impl SecurityNotice {
             ),
             (Self::PasskeyAdded, Locale::En) => (
                 "New passkey added",
-                "A passkey was added to your schul-dashboard account.",
+                "A passkey was added to your Olauda account.",
                 &[
                     "A new passkey was just added to your account. It can be used to sign in without a password.",
                     ADVICE_EN,
@@ -365,7 +365,7 @@ impl SecurityNotice {
             ),
             (Self::PasskeyRemoved, Locale::De) => (
                 "Passkey entfernt",
-                "Aus deinem schul-dashboard-Konto wurde ein Passkey entfernt.",
+                "Aus deinem Olauda-Konto wurde ein Passkey entfernt.",
                 &[
                     "Soeben wurde ein Passkey aus deinem Konto entfernt. Mit ihm ist keine Anmeldung mehr möglich.",
                     ADVICE_DE,
@@ -373,7 +373,7 @@ impl SecurityNotice {
             ),
             (Self::PasskeyRemoved, Locale::En) => (
                 "Passkey removed",
-                "A passkey was removed from your schul-dashboard account.",
+                "A passkey was removed from your Olauda account.",
                 &[
                     "A passkey was just removed from your account. It can no longer be used to sign in.",
                     ADVICE_EN,
@@ -381,7 +381,7 @@ impl SecurityNotice {
             ),
             (Self::GoogleLinked, Locale::De) => (
                 "Google-Konto verknüpft",
-                "Dein schul-dashboard-Konto wurde mit einem Google-Konto verknüpft.",
+                "Dein Olauda-Konto wurde mit einem Google-Konto verknüpft.",
                 &[
                     "Soeben wurde dein Konto mit einem Google-Konto verknüpft. Damit kann man sich über Google anmelden.",
                     ADVICE_DE,
@@ -389,7 +389,7 @@ impl SecurityNotice {
             ),
             (Self::GoogleLinked, Locale::En) => (
                 "Google account linked",
-                "Your schul-dashboard account was linked to a Google account.",
+                "Your Olauda account was linked to a Google account.",
                 &[
                     "Your account was just linked to a Google account, which can now be used to sign in.",
                     ADVICE_EN,
@@ -397,7 +397,7 @@ impl SecurityNotice {
             ),
             (Self::GoogleUnlinked, Locale::De) => (
                 "Google-Konto getrennt",
-                "Die Verknüpfung deines schul-dashboard-Kontos mit Google wurde aufgehoben.",
+                "Die Verknüpfung deines Olauda-Kontos mit Google wurde aufgehoben.",
                 &[
                     "Soeben wurde die Verknüpfung deines Kontos mit Google aufgehoben. Eine Anmeldung über Google ist nicht mehr möglich.",
                     ADVICE_DE,
@@ -405,7 +405,7 @@ impl SecurityNotice {
             ),
             (Self::GoogleUnlinked, Locale::En) => (
                 "Google account unlinked",
-                "Your schul-dashboard account was unlinked from Google.",
+                "Your Olauda account was unlinked from Google.",
                 &[
                     "Your account was just unlinked from Google. Signing in with Google is no longer possible.",
                     ADVICE_EN,

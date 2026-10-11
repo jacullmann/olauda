@@ -11,7 +11,7 @@
   },
   "nav": {
     "label": "Hauptnavigation",
-    "home": "schul-dashboard Startseite",
+    "home": "Olauda Startseite",
     "features": "Funktionen",
     "about": "Über uns",
     "contact": "Kontakt",
@@ -20,16 +20,16 @@
   },
   "pages": {
     "home": {
-      "title": "schul-dashboard — die Schulwoche an einem Ort",
+      "title": "Olauda — die Schulwoche an einem Ort",
       "description": "Hausaufgaben, Vertretungen und Ankündigungen für die ganze Klasse, gemeinsam aktuell gehalten. Kostenlos, ohne Werbung, von Schülern gemacht."
     },
     "features": {
       "title": "Funktionen",
-      "description": "Aufgaben, Stundenplan, Ankündigungen, Chat, Gruppen und ein privater Bereich — alles, was schul-dashboard kann, im Detail."
+      "description": "Aufgaben, Stundenplan, Ankündigungen, Chat, Gruppen und ein privater Bereich — alles, was Olauda kann, im Detail."
     },
     "about": {
       "title": "Über uns",
-      "description": "schul-dashboard wird von Schülern in Berlin entwickelt. Warum wir angefangen haben und worauf wir nicht verzichten."
+      "description": "Olauda wird von Schülern in Berlin entwickelt. Warum wir angefangen haben und worauf wir nicht verzichten."
     },
     "contact": {
       "title": "Kontakt",
@@ -163,7 +163,7 @@
     },
     "principles": {
       "label": "Warum",
-      "lead": "schul-dashboard wird von Schülern in Berlin gemacht, weil die Werkzeuge unserer Schulen nicht gut genug waren.",
+      "lead": "Olauda wird von Schülern in Berlin gemacht, weil die Werkzeuge unserer Schulen nicht gut genug waren.",
       "rest": "Es ist kostenlos, zeigt keine Werbung und verkauft keine Daten. Das ist kein Einführungsangebot, sondern der Sinn der Sache.",
       "link": "Mehr über das Projekt"
     }
@@ -177,7 +177,7 @@
   "features": {
     "title": "Alles, was {name} {emphasis}",
     "title_emphasis": "kann.",
-    "lede": "Ein vollständiger Rundgang durch die App. Jeder Teil ist bewusst kurz — schul-dashboard soll ohne Anleitung verständlich sein.",
+    "lede": "Ein vollständiger Rundgang durch die App. Jeder Teil ist bewusst kurz — Olauda soll ohne Anleitung verständlich sein.",
     "index_label": "Auf dieser Seite",
     "chapters": {
       "tasks": {
@@ -269,7 +269,7 @@
   "about": {
     "title": "Von Schülern gemacht, {emphasis}",
     "title_emphasis": "die es selbst brauchten.",
-    "lede": "schul-dashboard ist ein privates Projekt von Schülern aus Berlin. Wir haben das Werkzeug gebaut, das uns in der Schule gefehlt hat, und nutzen es jeden Tag.",
+    "lede": "Olauda ist ein privates Projekt von Schülern aus Berlin. Wir haben das Werkzeug gebaut, das uns in der Schule gefehlt hat, und nutzen es jeden Tag.",
     "story": {
       "label": "Geschichte",
       "lead": "Hausaufgaben gingen in der Messenger-Gruppe unter. Vom Ausfall erfuhr man erst vor der Klassentür.",
@@ -288,7 +288,7 @@
         },
         "students": {
           "title": "Von Schülern",
-          "body": "Wir sind selbst Schüler und nutzen schul-dashboard jeden Tag. Deshalb bauen wir, was wir wirklich brauchen — nicht, was in einer Verkaufspräsentation gut klingt."
+          "body": "Wir sind selbst Schüler und nutzen Olauda jeden Tag. Deshalb bauen wir, was wir wirklich brauchen — nicht, was in einer Verkaufspräsentation gut klingt."
         },
         "simple": {
           "title": "Nur, was hilft",
@@ -298,7 +298,7 @@
     },
     "team": {
       "label": "Team",
-      "body": "schul-dashboard wird von einer kleinen Gruppe Schüler in Berlin gebaut und betrieben, in unserer Freizeit und ohne Firma dahinter. Du willst mithelfen oder hast eine Idee? Schreib uns — wir freuen uns.",
+      "body": "Olauda wird von einer kleinen Gruppe Schüler in Berlin gebaut und betrieben, in unserer Freizeit und ohne Firma dahinter. Du willst mithelfen oder hast eine Idee? Schreib uns — wir freuen uns.",
       "place": "Berlin, Deutschland"
     }
   },
@@ -349,7 +349,7 @@
   "legal": {
     "imprint": {
       "title": "Impressum",
-      "description": "Rechtliche Informationen zu schul-dashboard.",
+      "description": "Rechtliche Informationen zu Olauda.",
       "responsible": "Verantwortliche Person",
       "contact": "Kontakt",
       "contact_label": "E-Mail: ",
@@ -360,7 +360,7 @@
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "description": "Welche Daten schul-dashboard verarbeitet, wofür und welche Rechte du hast.",
+      "description": "Welche Daten Olauda verarbeitet, wofür und welche Rechte du hast.",
       "sections": [
         {
           "title": "Überblick",
@@ -373,7 +373,7 @@
           "title": "Verantwortlicher",
           "paragraphs": [
             "Verantwortlich für die Datenverarbeitung ist Deniz Keskin, Berlin. Du erreichst uns per E-Mail an kontakt{'@'}schul-dashboard.com.",
-            "schul-dashboard ist ein privates, nicht-kommerzielles Projekt. Wir verkaufen keine Daten, zeigen keine Werbung und geben Daten nicht zu Werbezwecken weiter."
+            "Olauda ist ein privates, nicht-kommerzielles Projekt. Wir verkaufen keine Daten, zeigen keine Werbung und geben Daten nicht zu Werbezwecken weiter."
           ]
         },
         {
@@ -536,14 +536,14 @@
     },
     "terms": {
       "title": "Nutzungsbedingungen",
-      "description": "Die Regeln für die Nutzung von schul-dashboard.",
+      "description": "Die Regeln für die Nutzung von Olauda.",
       "acceptance": {
         "title": "Zustimmung zu den Bedingungen",
-        "text": "Durch die Nutzung von schul-dashboard stimmst du diesen Bedingungen zu. Wenn du nicht zustimmst, bitte die Nutzung des Dienstes einstellen."
+        "text": "Durch die Nutzung von Olauda stimmst du diesen Bedingungen zu. Wenn du nicht zustimmst, bitte die Nutzung des Dienstes einstellen."
       },
       "service": {
         "title": "Der Dienst",
-        "text": "schul-dashboard stellt eine kostenlose, webbasierte Schulverwaltungsplattform bereit. Wir behalten uns vor, Funktionen jederzeit zu ändern oder einzustellen, mit Ankündigung soweit möglich."
+        "text": "Olauda stellt eine kostenlose, webbasierte Schulverwaltungsplattform bereit. Wir behalten uns vor, Funktionen jederzeit zu ändern oder einzustellen, mit Ankündigung soweit möglich."
       },
       "account": {
         "title": "Dein Konto",
@@ -554,7 +554,7 @@
       },
       "conduct": {
         "title": "Zulässige Nutzung",
-        "intro": "Du stimmst zu, schul-dashboard nicht zu verwenden, um:",
+        "intro": "Du stimmst zu, Olauda nicht zu verwenden, um:",
         "item0": "Illegale, schädliche oder beleidigende Inhalte hochzuladen oder zu teilen.",
         "item1": "Unbefugten Zugriff auf andere Konten oder Systeme zu erlangen.",
         "item2": "Den Dienst oder seine Infrastruktur zu stören.",

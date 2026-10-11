@@ -15,7 +15,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const toast = useToast();
 
-const FILE_NAME = 'schul-dashboard-recovery-codes.txt';
+const FILE_NAME = 'olauda-recovery-codes.txt';
 const COPIED_FEEDBACK_MS = 2000;
 
 const copied = ref(false);

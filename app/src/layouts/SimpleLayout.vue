@@ -44,7 +44,7 @@ provide(SCROLL_LAYOUT_TO_TOP, () => {
         <BaseScrollFade v-show="isScrolled" class="inset-0 -bottom-4" />
         <div class="flex items-center justify-center gap-3 text-2xl font-bold">
           <AppLogo class="shrink-0" aria-hidden="true" />
-          schul-dashboard
+          Olauda
           <!-- TODO: implement theme and language switch -->
         </div>
       </header>

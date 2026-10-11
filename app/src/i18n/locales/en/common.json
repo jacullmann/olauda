@@ -36,7 +36,7 @@
     "quotes": [
       "I miss the old Kanye",
       "Keep your head up. Only {daysToHoliday} days left until the holidays",
-      "Easy. Better. Organized. Dashboard!",
+      "Easy. Better. Organized. Olauda!",
       "Paper is a thing of the past. Go digital!",
       "#EatTheRich",
       "Even bad days only have 24 hours",
@@ -52,14 +52,14 @@
       "I have a dream",
       "Because humans make mistakes.",
       "Upload your chaos to the cloud!",
-      "Spend more time with your family—schul-dashboard",
+      "Spend more time with your family—Olauda",
       "Never wash without soap",
       "Now playing in cinemas!",
       "Ho ho ho!",
       "No pulp!",
       "Pasteurized and homogenized!",
       "Without additives!",
-      "0 calories—schul-dashboard",
+      "0 calories—Olauda",
       "All our milk comes from organic cows!",
       "100% cruelty-free",
       "This website contains no real animal meat.",
@@ -83,9 +83,9 @@
       "Tastes better than it looks.",
       "I learn, so I am.",
       "Everyone thinks of changing the world, but no one thinks of changing himself.",
-      "To use dashboard, or not to use dashboard, that is the question",
+      "To use Olauda, or not to use Olauda, that is the question",
       "I'm going to make him an offer he can't refuse",
-      "One small step for man, one giant leap for studentkind—schul-dashboard",
+      "One small step for man, one giant leap for studentkind—Olauda",
       "um... sort of",
       "Can't tell me nothing",
       "This is family business and this is for the family that can't be with us",
@@ -111,7 +111,7 @@
       "It's all wrong, it's alright",
       "There is a light that never goes out",
       "I was looking for a job and then I found a job",
-      "Dashboard, you're much too fast, little red corvette",
+      "Olauda, you're much too fast, little red corvette",
       "Pourin bubbly",
       "One more time",
       "Ground control to Major Tom",
@@ -170,7 +170,7 @@
     "system": "System",
     "theme": "Theme"
   },
-  "title": "schul-dashboard",
+  "title": "Olauda",
   "titles": {
     "abbr": {
       "mr": "Mr.",
@@ -267,7 +267,7 @@
     "restored": "Back online",
     "unreachable": {
       "title": "Server unreachable",
-      "message": "The dashboard is not responding right now, it may be updating. You stay signed in.",
+      "message": "Olauda is not responding right now, it may be updating. You stay signed in.",
       "retry": "Try again"
     }
   },

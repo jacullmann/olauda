@@ -19,7 +19,7 @@ const DATA_FILE: &str = "data.json";
 
 pub fn file_name(exported_at: DateTime<Utc>) -> String {
     format!(
-        "schul-dashboard-export-{}.zip",
+        "olauda-export-{}.zip",
         exported_at.format("%Y-%m-%d")
     )
 }
@@ -90,7 +90,7 @@ mod tests {
     #[test]
     fn file_names_carry_the_export_date() {
         let at = Utc.with_ymd_and_hms(2026, 10, 6, 23, 59, 0).unwrap();
-        assert_eq!(file_name(at), "schul-dashboard-export-2026-10-06.zip");
+        assert_eq!(file_name(at), "olauda-export-2026-10-06.zip");
     }
 
     #[test]

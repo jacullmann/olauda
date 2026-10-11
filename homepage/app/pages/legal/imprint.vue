@@ -2,7 +2,7 @@
 const { t } = useI18n();
 
 useSeoMeta({
-  title: `${t('legal.imprint.title')} — schul-dashboard`,
+  title: `${t('legal.imprint.title')} — Olauda`,
   description: t('legal.imprint.description'),
   robots: 'noindex, follow',
 });
@@ -12,7 +12,7 @@ useSeoMeta({
   <LegalPage :title="t('legal.imprint.title')" :description="t('legal.imprint.description')">
     <LegalSection :title="t('legal.imprint.responsible')">
       <address class="not-italic text-on-ghost-muted leading-[1.8] text-base">
-        schul-dashboard<br />
+        Olauda<br />
         Deniz Keskin<br />
         Berlin<br />
         Germany

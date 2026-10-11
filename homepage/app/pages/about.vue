@@ -2,7 +2,7 @@
 const { t } = useI18n();
 
 useSeoMetaWithI18n({
-  title: () => `${t('pages.about.title')} — schul-dashboard`,
+  title: () => `${t('pages.about.title')} — Olauda`,
   description: () => t('pages.about.description'),
   keywords: 'about, mission, student project, school management, Berlin',
   structuredData: {

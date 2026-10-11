@@ -4,7 +4,7 @@ import { ArrowUpRight } from '@lucide/vue';
 const { t } = useI18n();
 
 useSeoMetaWithI18n({
-  title: () => `${t('pages.contact.title')} — schul-dashboard`,
+  title: () => `${t('pages.contact.title')} — Olauda`,
   description: () => t('pages.contact.description'),
   keywords: 'contact, support, email, discord',
 });

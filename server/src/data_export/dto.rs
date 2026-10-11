@@ -7,7 +7,7 @@ use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
 
-pub const FORMAT: &str = "schul-dashboard/data-export";
+pub const FORMAT: &str = "olauda/data-export";
 pub const FORMAT_VERSION: u32 = 2;
 
 #[derive(Debug, Serialize)]

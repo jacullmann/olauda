@@ -374,7 +374,7 @@ const {
  */
 const OPEN_DURING_COURSE_SETUP = new Set(['group-course-setup', 'group-admin']);
 
-const CHUNK_RELOAD_KEY = 'schul-dashboard:chunk-reload';
+const CHUNK_RELOAD_KEY = 'olauda:chunk-reload';
 const CHUNK_RELOAD_COOLDOWN_MS = 10_000;
 
 function isChunkLoadError(error: unknown): boolean {
@@ -451,8 +451,8 @@ router.beforeEach(async (to, from) => {
   const titleKey =
     typeof to.meta.title === 'function' ? to.meta.title() : to.meta.title;
   document.title = titleKey
-    ? `${i18n.global.t(titleKey)} | Dashboard`
-    : 'Dashboard';
+    ? `${i18n.global.t(titleKey)} | Olauda`
+    : 'Olauda';
 
   if (to.meta.requiresSuperAdmin) {
     if (!userStore.initialized) await userStore.fetchUser();

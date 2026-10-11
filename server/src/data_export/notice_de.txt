@@ -1,4 +1,4 @@
-schul-dashboard: Auskunft über deine gespeicherten Daten
+Olauda: Auskunft über deine gespeicherten Daten
 =========================================================
 
 Erstellt am: {exported_at} (UTC)

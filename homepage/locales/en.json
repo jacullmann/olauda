@@ -11,7 +11,7 @@
   },
   "nav": {
     "label": "Main",
-    "home": "schul-dashboard home",
+    "home": "Olauda home",
     "features": "Features",
     "about": "About",
     "contact": "Contact",
@@ -20,16 +20,16 @@
   },
   "pages": {
     "home": {
-      "title": "schul-dashboard — the school week, in one place",
+      "title": "Olauda — the school week, in one place",
       "description": "Homework, timetable changes and announcements for your whole class, kept up to date together. Free, without ads, made by students."
     },
     "features": {
       "title": "Features",
-      "description": "Tasks, timetable, announcements, chat, groups and a private space — everything schul-dashboard does, in detail."
+      "description": "Tasks, timetable, announcements, chat, groups and a private space — everything Olauda does, in detail."
     },
     "about": {
       "title": "About",
-      "description": "schul-dashboard is built by students in Berlin. Why we started, and what we won't compromise on."
+      "description": "Olauda is built by students in Berlin. Why we started, and what we won't compromise on."
     },
     "contact": {
       "title": "Contact",
@@ -163,7 +163,7 @@
     },
     "principles": {
       "label": "Why",
-      "lead": "schul-dashboard is made by students in Berlin, because the tools our schools gave us weren't good enough.",
+      "lead": "Olauda is made by students in Berlin, because the tools our schools gave us weren't good enough.",
       "rest": "It's free, it shows no ads, and it doesn't sell anyone's data. That isn't a launch offer — it's the point.",
       "link": "About the project"
     }
@@ -177,7 +177,7 @@
   "features": {
     "title": "Everything {name} {emphasis}",
     "title_emphasis": "does.",
-    "lede": "A complete tour of the app. Each part is short on purpose — schul-dashboard is meant to be understood without a manual.",
+    "lede": "A complete tour of the app. Each part is short on purpose — Olauda is meant to be understood without a manual.",
     "index_label": "On this page",
     "chapters": {
       "tasks": {
@@ -269,7 +269,7 @@
   "about": {
     "title": "Made by students {emphasis}",
     "title_emphasis": "who needed it.",
-    "lede": "schul-dashboard is a private project run by students in Berlin. We built the tool we were missing at school, and we use it every day.",
+    "lede": "Olauda is a private project run by students in Berlin. We built the tool we were missing at school, and we use it every day.",
     "story": {
       "label": "Story",
       "lead": "Homework got lost in a messenger group. Cancelled lessons were news at the classroom door.",
@@ -288,7 +288,7 @@
         },
         "students": {
           "title": "By students",
-          "body": "We're students ourselves and use schul-dashboard every day, so we build what we actually need — not what sounds good in a sales pitch."
+          "body": "We're students ourselves and use Olauda every day, so we build what we actually need — not what sounds good in a sales pitch."
         },
         "simple": {
           "title": "Only what helps",
@@ -298,7 +298,7 @@
     },
     "team": {
       "label": "Team",
-      "body": "schul-dashboard is built and run by a small group of students in Berlin, in our free time and with no company behind it. Want to help or have an idea? Write to us — we're happy to hear from you.",
+      "body": "Olauda is built and run by a small group of students in Berlin, in our free time and with no company behind it. Want to help or have an idea? Write to us — we're happy to hear from you.",
       "place": "Berlin, Germany"
     }
   },
@@ -349,7 +349,7 @@
   "legal": {
     "imprint": {
       "title": "Imprint",
-      "description": "Legal information about schul-dashboard.",
+      "description": "Legal information about Olauda.",
       "responsible": "Responsible Party",
       "contact": "Contact",
       "contact_label": "Email: ",
@@ -360,7 +360,7 @@
     },
     "privacy": {
       "title": "Privacy Policy",
-      "description": "What data schul-dashboard processes, why, and what rights you have.",
+      "description": "What data Olauda processes, why, and what rights you have.",
       "sections": [
         {
           "title": "Overview",
@@ -373,7 +373,7 @@
           "title": "Controller",
           "paragraphs": [
             "The controller responsible for data processing is Deniz Keskin, Berlin, Germany. You can reach us by email at kontakt{'@'}schul-dashboard.com.",
-            "schul-dashboard is a private, non-commercial project. We do not sell data, show ads or share data for advertising."
+            "Olauda is a private, non-commercial project. We do not sell data, show ads or share data for advertising."
           ]
         },
         {
@@ -536,14 +536,14 @@
     },
     "terms": {
       "title": "Terms of Service",
-      "description": "The rules for using schul-dashboard.",
+      "description": "The rules for using Olauda.",
       "acceptance": {
         "title": "Acceptance of Terms",
-        "text": "By using schul-dashboard, you agree to these terms. If you do not agree, please discontinue use of the service."
+        "text": "By using Olauda, you agree to these terms. If you do not agree, please discontinue use of the service."
       },
       "service": {
         "title": "The Service",
-        "text": "schul-dashboard provides a free, web-based school management platform. We reserve the right to modify or discontinue features at any time, with notice where possible."
+        "text": "Olauda provides a free, web-based school management platform. We reserve the right to modify or discontinue features at any time, with notice where possible."
       },
       "account": {
         "title": "Your Account",
@@ -554,7 +554,7 @@
       },
       "conduct": {
         "title": "Acceptable Use",
-        "intro": "You agree not to use schul-dashboard to:",
+        "intro": "You agree not to use Olauda to:",
         "item0": "Upload or share illegal, harmful, or abusive content.",
         "item1": "Attempt to gain unauthorised access to other accounts or systems.",
         "item2": "Interfere with the service or its infrastructure.",
