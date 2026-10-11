@@ -468,7 +468,7 @@ impl GroupService {
         .await?;
 
         if ban.is_some() {
-            return Err(AppError::forbidden("You have been banned from this group."));
+            return Err(AppError::BannedFromGroup);
         }
 
         // Joining twice keeps the existing membership and its role.

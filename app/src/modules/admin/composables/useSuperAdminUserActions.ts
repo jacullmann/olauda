@@ -58,7 +58,7 @@ export function useSuperAdminUserActions(user: Ref<SuperAdminUser | null>) {
       {
         submitText: t(`admin.users.actions.${action}`),
         danger: action === 'ban',
-        errorKey: 'admin.errors.action_failed',
+        errorKey: `admin.users.errors.${action}`,
       },
       () =>
         action === 'ban'
@@ -82,7 +82,7 @@ export function useSuperAdminUserActions(user: Ref<SuperAdminUser | null>) {
       {
         submitText: t('admin.users.actions.reset_mfa'),
         danger: true,
-        errorKey: 'admin.errors.action_failed',
+        errorKey: 'admin.users.errors.reset_mfa',
       },
       () => api.delete(`/admin/users/${target.id}/mfa`),
     );

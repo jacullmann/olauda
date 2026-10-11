@@ -30,5 +30,12 @@
   "next_week": "Next week",
   "today": "Today",
   "day_end": "End of day",
-  "substitutions_load_failed": "Schedule changes couldn't be loaded."
+  "errors": {
+    "load": "Couldn't load the schedule.",
+    "load_changes": "Couldn't load the schedule changes.",
+    "save_change": "Couldn't save the change.",
+    "delete_change": "Couldn't delete the change.",
+    "save": "Couldn't save the schedule. No changes were applied.",
+    "save_unavailable": "The schedule can't be saved right now. No changes were applied. Try again later."
+  }
 }

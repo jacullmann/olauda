@@ -576,7 +576,7 @@ watch(
       class="mb-2"
       @retry="retrySubstitutions"
     >
-      {{ t('schedule.substitutions_load_failed') }}
+      {{ t('schedule.errors.load_changes') }}
     </BaseLoadError>
 
     <ScheduleGrid

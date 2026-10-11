@@ -76,8 +76,8 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
   function quotaMessage({ limit, max, remaining }: ImageQuotaViolation) {
     const scope = limit === 'perUploader' ? 'own' : 'task';
     return remaining === 0
-      ? t(`tasks.images.upload.quota.${scope}_reached`, { max })
-      : t(`tasks.images.upload.quota.${scope}_exceeded`, { max, remaining });
+      ? t(`tasks.images.errors.${scope}_quota_reached`, { max })
+      : t(`tasks.images.errors.${scope}_quota_exceeded`, { max, remaining });
   }
 
   async function uploadFiles(
@@ -121,7 +121,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
     const oversized = prepared.find(({ file }) => file.size > maxBytesOf(file));
     if (oversized) {
       failUpload(
-        t('tasks.images.upload.file_too_large', {
+        t('tasks.images.errors.file_too_large', {
           name: oversized.original.name,
           max: maxBytesOf(oversized.file) / BYTES_PER_MB,
         }),
@@ -165,17 +165,17 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
         uploadSuccess.value = true;
         progressToast.settle(t('tasks.images.upload.success'));
       } else if (uploaded > 0) {
-        uploadError.value = t('tasks.images.upload.partial', {
+        uploadError.value = t('tasks.images.errors.upload_partial', {
           uploaded,
           total: preparedFiles.length,
         });
         progressToast.settle(uploadError.value, { type: 'warning' });
       } else {
-        uploadError.value = t('tasks.images.upload.failed');
+        uploadError.value = t('tasks.images.errors.upload');
         progressToast.settle(uploadError.value, { type: 'error' });
       }
     } catch {
-      uploadError.value = t('tasks.images.upload.failed');
+      uploadError.value = t('tasks.images.errors.upload');
       progressToast.settle(uploadError.value, { type: 'error' });
     } finally {
       uploading.value = false;
@@ -218,7 +218,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
         images.value = images.value.filter((i) => i.id !== file.id);
         toast.success(t('tasks.images.delete_modal.success'));
       } catch {
-        uploadError.value = t('tasks.images.delete_modal.error');
+        uploadError.value = t('tasks.images.errors.delete');
       }
     } else {
       images.value = images.value.filter((i) => i.id !== file.id);

@@ -97,7 +97,7 @@ export function useTaskImages({
       await refreshTask(task.id);
       toast.success(t('tasks.images.delete_modal.success'), 3000);
     } catch {
-      toast.error(t('tasks.images.delete_modal.error'), 4000);
+      toast.error(t('tasks.images.errors.delete'), 4000);
     } finally {
       deletingImage.value = false;
     }

@@ -129,7 +129,7 @@ watch(params, () => {
       <BaseSpinner on="ghost" size="24px" />
     </div>
     <BaseLoadError v-else-if="state === 'failed'" @retry="reload">
-      {{ t(`${I18N_BASE}.error`) }}
+      {{ t(`${I18N_BASE}.errors.load`) }}
     </BaseLoadError>
     <p
       v-else-if="!entries.length"
@@ -184,7 +184,7 @@ watch(params, () => {
               variant="ghost"
               @click="loadMore"
             >
-              {{ t(`${I18N_BASE}.load_more_failed`) }}
+              {{ t(`${I18N_BASE}.load_more`) }}
             </BaseButton>
             <BaseSpinner v-else on="ghost" size="20px" />
           </div>

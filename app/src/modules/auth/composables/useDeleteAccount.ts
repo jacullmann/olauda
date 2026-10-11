@@ -24,12 +24,11 @@ export function useDeleteAccount(emit: {
         toast.success(t('auth.delete_account.success'));
         emit('deleted');
       } else {
-        const err = res?.data?.error || t('common.errors.unknown');
-        errorMsg.value = err;
-        emit('error', err);
+        errorMsg.value = t('auth.delete_account.errors.delete');
+        emit('error', errorMsg.value);
       }
     } catch (e: unknown) {
-      const msg = authErrorMessage(e, t('common.errors.delete'));
+      const msg = authErrorMessage(e, t('auth.delete_account.errors.delete'));
       errorMsg.value = msg;
       if (msg) emit('error', msg);
     } finally {

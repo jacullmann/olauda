@@ -62,7 +62,7 @@ export function useSuperAdminGroups() {
       if (res.ok && res.token) {
         inviteModal.open({ groupId: group.id, token: res.token });
       } else {
-        toast.error(res.error ?? t('auth.groups.errors.invite_failed'));
+        toast.error(res.error ?? t('groups.errors.create_invite'));
       }
     } finally {
       invitingGroupId.value = null;
@@ -94,7 +94,7 @@ export function useSuperAdminGroups() {
       deleteModalOpen.value = false;
       list.refresh();
     } catch {
-      toast.error(t('admin.groups.errors.delete'));
+      toast.error(t('groups.errors.delete'));
     } finally {
       deletingGroup.value = false;
     }

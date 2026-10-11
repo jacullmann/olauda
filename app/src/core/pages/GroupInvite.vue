@@ -56,7 +56,6 @@ async function loadInvite(token: string) {
     memberCount.value = res.memberCount || 0;
     ok.value = true;
   } else {
-    if (res.error) toast.error(res.error);
     clearPendingInvite();
   }
   loading.value = false;
@@ -87,7 +86,7 @@ async function handleJoin() {
         params: { groupId: res.groupId },
       });
     } else {
-      toast.error(res.error || t('auth.groups.invite.join_failed'));
+      toast.error(res.error ?? t('groups.errors.join'));
     }
   } finally {
     joining.value = false;

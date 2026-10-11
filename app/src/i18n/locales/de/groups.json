@@ -12,14 +12,11 @@
     "general": {
       "avatar": {
         "errors": {
-          "invalid_file": "Bitte wähle eine gültige Bilddatei aus.",
-          "read_failed": "Datei konnte nicht gelesen werden.",
-          "upload_failed": "Hochladen fehlgeschlagen",
-          "save_failed": "Gruppenbild konnte nicht hochgeladen werden.",
-          "delete_failed": "Gruppenbild konnte nicht gelöscht werden.",
-          "update_success": "Gruppenbild aktualisiert",
-          "delete_success": "Gruppenbild gelöscht",
-          "save_group_picture": "Gruppenbild konnte nicht gespeichert werden"
+          "invalid_file": "Wähle eine Bilddatei aus.",
+          "read": "Die Datei konnte nicht gelesen werden.",
+          "upload": "Das Bild konnte nicht hochgeladen werden.",
+          "save": "Das Gruppenbild konnte nicht gespeichert werden.",
+          "delete": "Das Gruppenbild konnte nicht entfernt werden."
         },
         "delete_modal": {
           "title": "Gruppenbild löschen?",
@@ -37,15 +34,14 @@
           "title": "Bild anpassen",
           "hint": "Zieh das Bild zum Ausrichten. Benutze das Mausrad oder den Schieberegler zum Zoomen.",
           "image_alt": "Bild zum Zuschneiden"
-        }
+        },
+        "update_success": "Gruppenbild aktualisiert",
+        "delete_success": "Gruppenbild gelöscht"
       },
       "delete_group": {
         "warning_text": "Das Löschen der Gruppe ist endgültig und kann nicht rückgängig gemacht werden. Alle damit verbundenen Daten (Aufgaben, Stundenplan, Ankündigungen etc.) werden für alle Mitglieder gelöscht.",
         "danger_zone_title": "Gefahrenzone",
         "button": "Gruppe löschen"
-      },
-      "errors": {
-        "unauthorized": "Du hast keine Berechtigung, die Einstellungen zu ändern."
       },
       "appearance": {
         "name_placeholder": "Neuer Gruppenname"
@@ -69,8 +65,7 @@
           "message_regular": "Stunden behalten ihren Kurs, neue Fächer nutzen aber wieder die Kategorien Pflicht-, Wahl- und Zusatzfach und Kurse verlieren ihren GK/LK/ZK-Typ. Bestehende Fächer behalten ihre Kategorie, bis du sie bearbeitest.",
           "message_abitur": "Jedes Fach wird kursbasiert und jeder Kurs bekommt den Typ GK oder LK – unter einem Zusatzkurs ZK. Bestehende Fächer und Stunden bleiben unverändert, bis du sie bearbeitest."
         },
-        "success": "Gruppentyp aktualisiert",
-        "failed": "Gruppentyp konnte nicht geändert werden"
+        "success": "Gruppentyp aktualisiert"
       },
       "dalton": {
         "toggle_title": "Dalton",
@@ -79,8 +74,13 @@
           "title": "Dalton deaktivieren?",
           "message": "Alle Daltonstunden werden aus dem Stundenplan entfernt und es können keine neuen Daltonaufträge erstellt werden. Bestehende Daltonaufträge und die Dalton-Markierungen der Fächer bleiben erhalten."
         },
-        "success": "Dalton-Einstellung aktualisiert",
-        "failed": "Dalton-Einstellung konnte nicht geändert werden"
+        "success": "Dalton-Einstellung aktualisiert"
+      },
+      "no_permission": "Du hast keine Berechtigung, diese Einstellungen zu ändern.",
+      "errors": {
+        "save_group_type": "Der Gruppentyp konnte nicht geändert werden.",
+        "save_dalton": "Die Dalton-Einstellung konnte nicht geändert werden.",
+        "save_name": "Der Gruppenname konnte nicht gespeichert werden."
       }
     },
     "members": {
@@ -154,13 +154,22 @@
         "title": "Eigene Rolle herabsetzen?",
         "message": "Du kannst dir diese Rolle danach nicht selbst zurückgeben. Dafür brauchst du jemanden mit einer höheren Rolle.",
         "submit": "Herabsetzen"
+      },
+      "errors": {
+        "load": "Die Mitglieder konnten nicht geladen werden.",
+        "change_role": "Die Rolle konnte nicht geändert werden.",
+        "remove": "Das Mitglied konnte nicht entfernt werden.",
+        "transfer_ownership": "Der Besitz konnte nicht übertragen werden.",
+        "load_banned": "Die gesperrten Mitglieder konnten nicht geladen werden.",
+        "unban": "Die Sperre konnte nicht aufgehoben werden.",
+        "load_invites": "Die Einladungslinks konnten nicht geladen werden.",
+        "revoke_invite": "Der Einladungslink konnte nicht widerrufen werden."
       }
     },
     "permissions": {
       "errors": {
-        "load_failed": "Berechtigungen konnten nicht geladen werden",
-        "update_success": "Berechtigung aktualisiert",
-        "save_failed": "Berechtigung konnte nicht gespeichert werden"
+        "load": "Die Berechtigungen konnten nicht geladen werden.",
+        "save": "Die Berechtigung konnte nicht gespeichert werden."
       },
       "title": "Berechtigungen",
       "info": {
@@ -236,7 +245,8 @@
         "all": "Alle",
         "moderators": "Moderatoren",
         "admins": "Admins"
-      }
+      },
+      "update_success": "Berechtigung aktualisiert"
     },
     "schedule": {
       "info": {
@@ -319,8 +329,6 @@
         "save_all_button": "Änderungen speichern",
         "cancel_button": "Abbrechen",
         "success_save_all": "Stundenplan gespeichert",
-        "save_all_failed": "Der Stundenplan konnte nicht gespeichert werden. Es wurden keine Änderungen übernommen.",
-        "save_service_unavailable": "Der Stundenplan kann gerade nicht gespeichert werden. Es wurden keine Änderungen übernommen. Bitte versuche es später erneut.",
         "add_lesson_slot": "Stunde hinzufügen",
         "course_hint": "Ohne Kurs gilt die Stunde für die ganze Gruppe.",
         "no_subjects": "Diese Gruppe hat keine Fächer. Richte sie in den Einstellungen ein, um Stunden hinzuzufügen.",
@@ -359,22 +367,15 @@
       "course_type_label": "Kursart",
       "course_type_forced_zk": "Jeder Kurs eines Zusatzkurs-Fachs ist ein ZK.",
       "errors": {
-        "load_failed": "Fächer konnten nicht geladen werden",
-        "create_success": "Fach erstellt",
-        "create_failed": "Fach konnte nicht erstellt werden",
-        "update_success": "Fach aktualisiert",
-        "update_failed": "Fach konnte nicht aktualisiert werden",
-        "delete_success": "Fach gelöscht",
-        "delete_failed": "Fach konnte nicht gelöscht werden",
-        "course_create_success": "Kurs erstellt",
-        "course_create_failed": "Kurs konnte nicht erstellt werden",
-        "course_update_success": "Kurs aktualisiert",
-        "course_update_failed": "Kurs konnte nicht aktualisiert werden",
-        "course_delete_success": "Kurs gelöscht",
-        "course_delete_failed": "Kurs konnte nicht gelöscht werden",
-        "name_taken": "Dieser Name ist bereits vergeben.",
-        "invalid_input": "Bitte prüfe deine Eingabe.",
-        "delete_referenced": "Das Fach wird noch im Stundenplan oder von Kursen verwendet. Entferne zuerst die Stunden und Kurse dieses Fachs."
+        "load": "Die Fächer konnten nicht geladen werden.",
+        "create": "Das Fach konnte nicht erstellt werden.",
+        "update": "Das Fach konnte nicht gespeichert werden.",
+        "delete": "Das Fach konnte nicht gelöscht werden.",
+        "create_course": "Der Kurs konnte nicht erstellt werden.",
+        "update_course": "Der Kurs konnte nicht gespeichert werden.",
+        "delete_course": "Der Kurs konnte nicht gelöscht werden.",
+        "name_taken": "Dieser Name ist schon vergeben.",
+        "subject_in_use": "Das Fach wird noch im Stundenplan oder von Kursen verwendet. Entferne zuerst seine Stunden und Kurse."
       },
       "delete_modal": {
         "title": "Dieses Fach löschen?",
@@ -398,34 +399,25 @@
       "courses_count_plural": "{count} Kurse",
       "category_mismatch": "Dieses Fach ist noch als „{category}“ gespeichert – eine Kategorie des anderen Gruppentyps. Beim Speichern wird die ausgewählte Kategorie übernommen.",
       "dalton_label": "Daltonfach",
-      "dalton_badge": "Daltonfach"
+      "dalton_badge": "Daltonfach",
+      "create_success": "Fach erstellt",
+      "update_success": "Fach aktualisiert",
+      "delete_success": "Fach gelöscht",
+      "course_create_success": "Kurs erstellt",
+      "course_update_success": "Kurs aktualisiert",
+      "course_delete_success": "Kurs gelöscht"
     },
     "title": "Gruppeneinstellungen",
     "messages": {
-      "load_members_failed": "Mitglieder konnten nicht geladen werden",
       "role_updated": "Rolle aktualisiert",
-      "role_update_failed": "Rolle konnte nicht geändert werden",
       "member_removed_banned": "Mitglied entfernt und gebannt",
       "member_removed": "Mitglied entfernt",
-      "member_remove_failed": "Mitglied konnte nicht entfernt werden",
-      "load_banned_failed": "Gesperrte Nutzer konnten nicht geladen werden",
       "ban_reverted": "Sperre aufgehoben",
-      "ban_revert_failed": "Sperre konnte nicht aufgehoben werden",
-      "load_schedule_failed": "Stundenplan konnte nicht geladen werden",
-      "load_changes_failed": "Änderungen konnten nicht geladen werden",
-      "change_save_failed": "Änderung konnte nicht gespeichert werden",
-      "change_delete_failed": "Änderung konnte nicht gelöscht werden",
       "announcement_deleted": "Ankündigung gelöscht",
-      "announcement_delete_failed": "Ankündigung konnte nicht gelöscht werden",
       "group_name_updated": "Gruppenname aktualisiert",
-      "group_name_save_failed": "Gruppenname konnte nicht gespeichert werden",
       "group_deleted": "Gruppe gelöscht",
-      "group_delete_failed": "Gruppe konnte nicht gelöscht werden",
       "ownership_transferred": "Besitz übertragen",
-      "ownership_transfer_failed": "Übertragung fehlgeschlagen",
-      "load_invites_failed": "Einladungen konnten nicht geladen werden",
-      "invite_revoked": "Einladung widerrufen",
-      "invite_revoke_failed": "Einladung konnte nicht widerrufen werden"
+      "invite_revoked": "Einladung widerrufen"
     },
     "group_fallback": "Gruppe",
     "announcements": {
@@ -460,5 +452,15 @@
     "irreversible": "Das Löschen ist endgültig und kann nicht rückgängig gemacht werden.",
     "confirmation_label": "Gib zur Bestätigung den Gruppennamen {name} ein:",
     "submit": "Endgültig löschen"
+  },
+  "errors": {
+    "create": "Die Gruppe konnte nicht erstellt werden.",
+    "join": "Du konntest der Gruppe nicht beitreten.",
+    "banned": "Du wurdest aus dieser Gruppe gesperrt.",
+    "leave": "Du konntest die Gruppe nicht verlassen.",
+    "owner_cannot_leave": "Als Besitzer kannst du die Gruppe nicht verlassen. Übertrage den Besitz oder lösche die Gruppe.",
+    "create_invite": "Der Einladungslink konnte nicht erstellt werden.",
+    "renew_invite": "Der Einladungslink konnte nicht erneuert werden.",
+    "delete": "Die Gruppe konnte nicht gelöscht werden."
   }
 }

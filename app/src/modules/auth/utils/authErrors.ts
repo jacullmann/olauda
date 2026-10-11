@@ -23,8 +23,7 @@ export const AuthErrorCode = {
 
 const MESSAGE_KEYS: Record<string, string> = {
   [AuthErrorCode.InvalidCredentials]: 'auth.errors.invalid_credentials',
-  [AuthErrorCode.EmailAlreadyRegistered]:
-    'auth.errors.email_already_registered',
+  [AuthErrorCode.EmailAlreadyRegistered]: 'auth.errors.email_taken',
   [AuthErrorCode.EmailThrottled]: 'auth.errors.email_throttled',
   [AuthErrorCode.LastSignInMethod]: 'auth.errors.last_sign_in_method',
   [AuthErrorCode.RegistrationPaused]: 'auth.errors.registration_paused',

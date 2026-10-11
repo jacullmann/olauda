@@ -53,7 +53,7 @@ async function copyLink() {
       copied.value = false;
     }, 3000);
   } catch {
-    toast.error(t('auth.groups.errors.copy_failed'));
+    toast.error(t('common.errors.copy_link'));
   }
 }
 
@@ -66,12 +66,12 @@ async function regenerate() {
     if (res.ok && res.token) {
       currentToken.value = res.token;
       copied.value = false;
-      toast.success(t('groups.settings.permissions.errors.update_success'));
+      toast.success(t('auth.groups.invite.renewed'));
     } else {
-      toast.error(res.error || t('auth.groups.errors.regenerate_failed'));
+      toast.error(res.error || t('groups.errors.renew_invite'));
     }
   } catch {
-    toast.error(t('auth.groups.errors.regenerate_failed'));
+    toast.error(t('groups.errors.renew_invite'));
   } finally {
     regenerating.value = false;
   }

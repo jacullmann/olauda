@@ -12,14 +12,11 @@
     "general": {
       "avatar": {
         "errors": {
-          "invalid_file": "Please select a valid image file.",
-          "read_failed": "Failed to read file.",
-          "upload_failed": "Upload failed",
-          "save_failed": "Failed to upload group picture.",
-          "delete_failed": "Failed to delete group picture.",
-          "update_success": "Group picture updated",
-          "delete_success": "Group picture deleted",
-          "save_group_picture": "Failed to save group picture"
+          "invalid_file": "Choose an image file.",
+          "read": "Couldn't read the file.",
+          "upload": "Couldn't upload the picture.",
+          "save": "Couldn't save the group picture.",
+          "delete": "Couldn't remove the group picture."
         },
         "delete_modal": {
           "title": "Delete Group Picture?",
@@ -37,15 +34,14 @@
           "title": "Adjust image",
           "hint": "Drag the image to position it. Use the mouse wheel or the slider to zoom.",
           "image_alt": "Image to crop"
-        }
+        },
+        "update_success": "Group picture updated",
+        "delete_success": "Group picture deleted"
       },
       "delete_group": {
         "warning_text": "Deleting the group is permanent and cannot be undone. All associated data (tasks, schedule, announcements, etc.) will be deleted for all users.",
         "danger_zone_title": "Danger Zone",
         "button": "Delete group"
-      },
-      "errors": {
-        "unauthorized": "You do not have permission to change the settings."
       },
       "appearance": {
         "name_placeholder": "New group name"
@@ -69,8 +65,7 @@
           "message_regular": "Lessons keep the course they are scheduled for, but new subjects use the core, elective and extra categories again and courses lose their GK/LK/ZK type. Existing subjects keep their category until you edit them.",
           "message_abitur": "Every subject becomes course-based and each course gets a GK or LK type, or ZK below an additional subject. Existing subjects and lessons stay as they are until you edit them."
         },
-        "success": "Group type updated",
-        "failed": "Failed to update the group type"
+        "success": "Group type updated"
       },
       "dalton": {
         "toggle_title": "Dalton",
@@ -79,8 +74,13 @@
           "title": "Disable Dalton?",
           "message": "All Dalton lessons are removed from the schedule and no new Dalton tasks can be created. Existing Dalton tasks and the Dalton flags on subjects are kept."
         },
-        "success": "Dalton setting updated",
-        "failed": "Failed to update the Dalton setting"
+        "success": "Dalton setting updated"
+      },
+      "no_permission": "You don't have permission to change these settings.",
+      "errors": {
+        "save_group_type": "Couldn't change the group type.",
+        "save_dalton": "Couldn't change the Dalton setting.",
+        "save_name": "Couldn't save the group name."
       }
     },
     "members": {
@@ -154,13 +154,22 @@
         "title": "Lower your own role?",
         "message": "You cannot give this role back to yourself afterwards. Someone with a higher role will have to do that.",
         "submit": "Lower role"
+      },
+      "errors": {
+        "load": "Couldn't load the members.",
+        "change_role": "Couldn't change the role.",
+        "remove": "Couldn't remove the member.",
+        "transfer_ownership": "Couldn't transfer ownership.",
+        "load_banned": "Couldn't load the banned members.",
+        "unban": "Couldn't lift the ban.",
+        "load_invites": "Couldn't load the invite links.",
+        "revoke_invite": "Couldn't revoke the invite link."
       }
     },
     "permissions": {
       "errors": {
-        "load_failed": "Failed to load permissions",
-        "update_success": "Permission updated",
-        "save_failed": "Failed to save permission"
+        "load": "Couldn't load the permissions.",
+        "save": "Couldn't save the permission."
       },
       "title": "Permissions",
       "info": {
@@ -236,7 +245,8 @@
         "all": "All",
         "moderators": "Moderators",
         "admins": "Admins"
-      }
+      },
+      "update_success": "Permission updated"
     },
     "schedule": {
       "info": {
@@ -319,8 +329,6 @@
         "save_all_button": "Save Changes",
         "cancel_button": "Cancel",
         "success_save_all": "Schedule saved",
-        "save_all_failed": "The schedule could not be saved. No changes were applied.",
-        "save_service_unavailable": "The schedule can't be saved right now. No changes were applied. Please try again later.",
         "add_lesson_slot": "Add lesson",
         "course_hint": "Without a course the lesson applies to the whole group.",
         "undo": "Undo (Ctrl+Z)",
@@ -359,22 +367,15 @@
       "course_type_label": "Course type",
       "course_type_forced_zk": "Every course of an additional subject is a ZK.",
       "errors": {
-        "load_failed": "Failed to load subjects",
-        "create_success": "Subject created",
-        "create_failed": "Failed to create",
-        "update_success": "Subject updated",
-        "update_failed": "Failed to update",
-        "delete_success": "Subject deleted",
-        "delete_failed": "Failed to delete",
-        "course_create_success": "Course created",
-        "course_create_failed": "Failed to create course",
-        "course_update_success": "Course updated",
-        "course_update_failed": "Failed to update course",
-        "course_delete_success": "Course deleted",
-        "course_delete_failed": "Failed to delete course",
+        "load": "Couldn't load the subjects.",
+        "create": "Couldn't create the subject.",
+        "update": "Couldn't save the subject.",
+        "delete": "Couldn't delete the subject.",
+        "create_course": "Couldn't create the course.",
+        "update_course": "Couldn't save the course.",
+        "delete_course": "Couldn't delete the course.",
         "name_taken": "This name is already taken.",
-        "invalid_input": "Please check your input.",
-        "delete_referenced": "The subject is still used in the schedule or by courses. Remove its lessons and courses first."
+        "subject_in_use": "The subject is still used in the schedule or by courses. Remove its lessons and courses first."
       },
       "delete_modal": {
         "title": "Delete this subject?",
@@ -398,34 +399,25 @@
       "courses_count_plural": "{count} Courses",
       "category_mismatch": "This subject is still saved as \"{category}\", a category of the other group type. Saving moves it to the selected category.",
       "dalton_label": "Dalton subject",
-      "dalton_badge": "Dalton subject"
+      "dalton_badge": "Dalton subject",
+      "create_success": "Subject created",
+      "update_success": "Subject updated",
+      "delete_success": "Subject deleted",
+      "course_create_success": "Course created",
+      "course_update_success": "Course updated",
+      "course_delete_success": "Course deleted"
     },
     "title": "Group Settings",
     "messages": {
-      "load_members_failed": "Failed to load members",
       "role_updated": "Role updated",
-      "role_update_failed": "Failed to change role",
       "member_removed_banned": "Member removed and banned",
       "member_removed": "Member removed",
-      "member_remove_failed": "Failed to remove member",
-      "load_banned_failed": "Failed to load banned users",
       "ban_reverted": "Ban lifted",
-      "ban_revert_failed": "Failed to lift ban",
-      "load_schedule_failed": "Failed to load schedule",
-      "load_changes_failed": "Failed to load changes",
-      "change_save_failed": "Failed to save change",
-      "change_delete_failed": "Failed to delete change",
       "announcement_deleted": "Announcement deleted",
-      "announcement_delete_failed": "Failed to delete announcement",
       "group_name_updated": "Group name updated",
-      "group_name_save_failed": "Failed to save group name",
       "group_deleted": "Group deleted",
-      "group_delete_failed": "Failed to delete group",
       "ownership_transferred": "Ownership transferred",
-      "ownership_transfer_failed": "Transfer failed",
-      "load_invites_failed": "Failed to load invites",
-      "invite_revoked": "Invite revoked",
-      "invite_revoke_failed": "Failed to revoke invite"
+      "invite_revoked": "Invite revoked"
     },
     "group_fallback": "Group",
     "announcements": {
@@ -460,5 +452,15 @@
     "irreversible": "Deleting is permanent and cannot be undone.",
     "confirmation_label": "To confirm, type the group name {name}:",
     "submit": "Delete permanently"
+  },
+  "errors": {
+    "create": "Couldn't create the group.",
+    "join": "Couldn't join the group.",
+    "banned": "You've been banned from this group.",
+    "leave": "Couldn't leave the group.",
+    "owner_cannot_leave": "As the owner, you can't leave the group. Transfer ownership or delete the group.",
+    "create_invite": "Couldn't create an invite link.",
+    "renew_invite": "Couldn't renew the invite link.",
+    "delete": "Couldn't delete the group."
   }
 }

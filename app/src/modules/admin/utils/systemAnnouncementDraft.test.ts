@@ -45,7 +45,7 @@ describe('validation', () => {
     expect(toSaveRequest(draft({ content: ' \n ' }), now)).toEqual({
       ok: false,
       field: 'content',
-      error: 'empty',
+      error: 'text_missing',
     });
   });
 
@@ -56,7 +56,7 @@ describe('validation', () => {
     expect(toSaveRequest(draft({ content: 'a'.repeat(161) }), now)).toEqual({
       ok: false,
       field: 'content',
-      error: 'too_long',
+      error: 'text_too_long',
     });
   });
 
@@ -72,11 +72,11 @@ describe('validation', () => {
   it('needs both date and time', () => {
     expect(
       toSaveRequest(draft({ scheduled: true, startDate: '' }), now),
-    ).toEqual({ ok: false, field: 'start', error: 'incomplete' });
+    ).toEqual({ ok: false, field: 'start', error: 'date_missing' });
     expect(toSaveRequest(draft({ expires: true, endTime: '' }), now)).toEqual({
       ok: false,
       field: 'end',
-      error: 'incomplete',
+      error: 'date_missing',
     });
   });
 

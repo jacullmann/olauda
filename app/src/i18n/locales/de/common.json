@@ -25,13 +25,6 @@
     "content": "Deine Eingaben gehen verloren.",
     "confirm": "Verwerfen"
   },
-  "errors": {
-    "delete": "Löschen fehlgeschlagen",
-    "load": "Laden fehlgeschlagen",
-    "rate_limited": "Zu viele Anfragen. Bitte warte kurz und versuche es dann erneut.",
-    "unknown": "Unbekannter Fehler",
-    "update": "Aktualisieren fehlgeschlagen"
-  },
   "footer": {
     "quotes": [
       "I miss the old Kanye",
@@ -274,5 +267,9 @@
   "search_results": {
     "empty_title": "Keine Ergebnisse für „{query}“",
     "empty_message": "Überprüfe die Schreibweise oder starte eine neue Suche."
+  },
+  "errors": {
+    "rate_limited": "Zu viele Versuche. Warte kurz und versuche es dann erneut.",
+    "copy_link": "Der Link konnte nicht kopiert werden."
   }
 }

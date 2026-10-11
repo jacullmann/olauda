@@ -8,6 +8,7 @@ import {
   AuthErrorCode,
   authErrorMessage,
 } from '@/modules/auth/utils/authErrors';
+import { MIN_PASSWORD_LENGTH } from '@/modules/auth/utils/password';
 
 /** Subset of `BaseInput`'s exposed API that these forms rely on. */
 interface FocusableInput {
@@ -54,18 +55,18 @@ export function useLogin(
     let ok = true;
 
     if (!email.value?.trim()) {
-      errors.email = t('auth.login.errors.email_missing');
+      errors.email = t('auth.errors.email_missing');
       ok = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-      errors.email = t('auth.login.errors.email_wrong');
+      errors.email = t('auth.errors.email_invalid');
       ok = false;
     }
 
     if (!password.value) {
-      errors.password = t('auth.login.errors.password_missing');
+      errors.password = t('auth.errors.password_missing');
       ok = false;
-    } else if (password.value.length < 8) {
-      errors.password = t('auth.login.errors.password_short');
+    } else if (password.value.length < MIN_PASSWORD_LENGTH) {
+      errors.password = t('auth.errors.password_too_short');
       ok = false;
     }
 
@@ -101,7 +102,7 @@ export function useLogin(
           password: password.value,
         };
       } else {
-        formError.value = authErrorMessage(e, t('common.errors.unknown'));
+        formError.value = authErrorMessage(e, t('auth.errors.sign_in'));
       }
     } finally {
       submitting.value = false;

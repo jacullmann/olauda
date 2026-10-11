@@ -94,7 +94,7 @@ watchEffect(() => {
       {{ t(`${I18N_BASE}.not_found`) }}
     </BaseEmptyState>
     <BaseLoadError v-else-if="state === 'failed'" @retry="reload">
-      {{ t('admin.users.errors.load_details') }}
+      {{ t('admin.users.errors.load_user') }}
     </BaseLoadError>
     <div
       v-else-if="user"

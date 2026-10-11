@@ -35,11 +35,11 @@ export function useGroupMenuActions() {
       if (res.ok && res.token) {
         inviteModal.open({ groupId: groupId, token: res.token });
       } else {
-        toast.error(res.error || t('auth.groups.errors.invite_failed'));
+        toast.error(res.error || t('groups.errors.create_invite'));
       }
     } catch (err) {
       console.error('Failed to generate invite link:', err);
-      toast.error(t('auth.groups.errors.invite_failed'));
+      toast.error(t('groups.errors.create_invite'));
     } finally {
       pending.value = false;
     }
@@ -55,7 +55,7 @@ export function useGroupMenuActions() {
     ownerId: string | null;
   }) {
     if (group.ownerId === user.value?.id) {
-      toast.error(t('auth.groups.errors.owner_cannot_leave'));
+      toast.error(t('groups.errors.owner_cannot_leave'));
       return;
     }
 
@@ -76,7 +76,7 @@ export function useGroupMenuActions() {
       await router.push({ name: 'groups' });
     } catch (err) {
       console.error('Failed to leave group:', err);
-      toast.error(t('auth.groups.errors.leave_failed'));
+      toast.error(t('groups.errors.leave'));
     } finally {
       pending.value = false;
     }

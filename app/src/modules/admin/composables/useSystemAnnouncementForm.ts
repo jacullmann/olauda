@@ -47,7 +47,10 @@ export function useSystemAnnouncementForm(
       }
       return true;
     } catch (e) {
-      submitError.value = apiErrorMessage(e, t('common.errors.unknown'));
+      submitError.value = apiErrorMessage(
+        e,
+        t('admin.announcements.errors.save'),
+      );
       return false;
     } finally {
       submitting.value = false;

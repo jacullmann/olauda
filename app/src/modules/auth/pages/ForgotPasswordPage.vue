@@ -126,7 +126,7 @@ async function onPasswordReset(resetEmail: string) {
 
         <template v-else-if="step === 'code'">
           <p class="mx-0! my-0!">
-            {{ t('auth.login.reset.errors.code_sent') }}
+            {{ t('auth.login.reset.code_sent') }}
             {{ t('auth.login.reset.step2.description') }}
           </p>
           <BaseFormGroup id="reset-code" :error="errors.code">

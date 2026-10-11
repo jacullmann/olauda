@@ -1,15 +1,16 @@
 import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/api';
-import { apiErrorMessage, isRateLimited } from '@/api/errors';
+import { apiErrorMessage, apiErrorStatus } from '@/api/errors';
 import { useCooldown } from '@/common/composables/useCooldown';
 import type { ForgotPasswordErrors } from '@/modules/auth/types';
 import {
   EMAIL_CODE_LENGTH,
   RESEND_COOLDOWN_MS,
 } from '@/modules/auth/utils/emailCode';
+import { isStrongPassword } from '@/modules/auth/utils/password';
 
-const MIN_PASSWORD_LENGTH = 8;
+const BAD_REQUEST = 400;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type ForgotPasswordStep = 'email' | 'code' | 'password';
@@ -74,7 +75,7 @@ export function useForgotPassword(
 
   async function requestCode() {
     if (!EMAIL_PATTERN.test(normalizedEmail.value)) {
-      errors.email = t('auth.login.reset.errors.invalid_email');
+      errors.email = t('auth.errors.email_invalid');
       return;
     }
     if (cooldownSeconds.value > 0) return;
@@ -85,15 +86,13 @@ export function useForgotPassword(
       code.value = '';
       step.value = 'code';
     } catch (e: unknown) {
-      error.value = isRateLimited(e)
-        ? t('common.errors.rate_limited')
-        : apiErrorMessage(e, t('auth.login.reset.errors.request_failed'));
+      error.value = apiErrorMessage(e, t('auth.errors.send_code'));
     }
   }
 
   async function verifyCode() {
     if (code.value.length !== EMAIL_CODE_LENGTH) {
-      errors.code = t('auth.login.reset.errors.invalid_code');
+      errors.code = t('auth.errors.code_missing');
       return;
     }
     try {
@@ -104,39 +103,40 @@ export function useForgotPassword(
       resetToken = data.resetToken;
       step.value = 'password';
     } catch (e: unknown) {
-      error.value = apiErrorMessage(
-        e,
-        t('auth.login.reset.errors.code_expired'),
-      );
+      error.value = apiErrorMessage(e, t('auth.errors.code_invalid'));
     }
   }
 
   function validatePassword(): boolean {
-    errors.password =
-      password.value.length < MIN_PASSWORD_LENGTH
-        ? t('auth.login.reset.errors.password_short')
-        : undefined;
+    errors.password = isStrongPassword(password.value)
+      ? undefined
+      : t('auth.errors.new_password_weak');
     errors.confirm =
       password.value !== password2.value
-        ? t('auth.login.reset.errors.password_mismatch')
+        ? t('auth.errors.confirm_mismatch')
         : undefined;
     return !errors.password && !errors.confirm;
+  }
+
+  function startOverExpired() {
+    resetToken = '';
+    step.value = 'email';
+    error.value = t('auth.login.reset.errors.expired');
   }
 
   async function resetPassword() {
     if (!validatePassword()) return;
     if (!resetToken) {
-      step.value = 'email';
-      error.value = t('auth.login.reset.errors.no_token');
+      startOverExpired();
       return;
     }
     try {
       await api.post('/auth/reset', { resetToken, password: password.value });
     } catch (e: unknown) {
-      error.value = apiErrorMessage(
-        e,
-        t('auth.login.reset.errors.reset_failed'),
-      );
+      // The password passed the same checks as on the server, so a refusal
+      // means the reset token ran out.
+      if (apiErrorStatus(e) === BAD_REQUEST) startOverExpired();
+      else error.value = apiErrorMessage(e, t('auth.login.reset.errors.reset'));
       return;
     }
     await onReset(normalizedEmail.value);

@@ -45,16 +45,11 @@
       "due_date": "Datum",
       "edit_task": "Aufgabe bearbeiten",
       "errors": {
-        "course_missing": "Wähle einen Kurs aus",
-        "custom_long": "Der Fachname ist zu lang (max. {max} Zeichen)",
-        "custom_missing": "Gib einen Fachnamen ein",
-        "date_new": "Das Datum liegt zu weit in der Zukunft",
-        "date_old": "Das Datum liegt zu weit in der Vergangenheit",
-        "description_long": "Die Beschreibung ist zu lang (max. {max} Zeichen)",
-        "title_long": "Der Titel ist zu lang (max. {max} Zeichen)",
-        "title_missing": "Füge einen Titel hinzu",
-        "check_input": "Bitte überprüfe deine Eingaben.",
-        "unexpected": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."
+        "course_missing": "Wähle einen Kurs aus.",
+        "custom_subject_missing": "Gib ein Fach ein.",
+        "custom_subject_too_long": "Das Fach darf höchstens {max} Zeichen lang sein.",
+        "due_date_too_late": "Das Datum liegt zu weit in der Zukunft.",
+        "due_date_too_early": "Das Datum liegt zu weit in der Vergangenheit."
       },
       "images": "Bilder",
       "new_task": "Neue Aufgabe",
@@ -84,15 +79,13 @@
           "illegal_placeholder": "Beschreibung…",
           "name": "Melden",
           "title": "Diese Aufgabe melden?",
-          "success": "Aufgabe gemeldet.",
-          "error": "Aufgabe konnte nicht gemeldet werden: {error}"
+          "success": "Aufgabe gemeldet."
         },
         "share": "Teilen",
         "unarchive": "Wiederherstellen",
         "unpin": "Lösen",
         "upload_images": "Bilder hinzufügen",
-        "share_copied": "Link in die Zwischenablage kopiert",
-        "share_failed": "Teilen fehlgeschlagen."
+        "share_copied": "Link in die Zwischenablage kopiert"
       },
       "view": {
         "no_tasks": "Keine Aufgaben",
@@ -100,21 +93,17 @@
         "no_tasks_message": "Füge eine neue Aufgabe hinzu oder ",
         "not_found": "Aufgabe nicht gefunden",
         "not_found_message": "Diese Aufgabe wurde gelöscht oder ist nicht mehr verfügbar.",
-        "load_failed": "Aufgabe konnte nicht geladen werden",
         "load_failed_message": "Prüfe deine Verbindung und versuche es noch einmal.",
-        "list_load_failed": "Aufgaben konnten nicht geladen werden",
         "all_tasks": "Alle Aufgaben",
-        "drop_files": "Loslassen, um Dateien anzuhängen"
-      },
-      "errors": {
-        "status_failed": "Status konnte nicht gespeichert werden."
+        "drop_files": "Loslassen, um Dateien anzuhängen",
+        "load_failed": "Die Aufgabe konnte nicht geladen werden",
+        "list_load_failed": "Die Aufgaben konnten nicht geladen werden"
       }
     },
     "notes": {
       "no_notes": "Keine Notiz vorhanden",
       "note": "Notiz",
       "saved": "Notiz gespeichert.",
-      "save_failed": "Notiz konnte nicht gespeichert werden.",
       "placeholder": "Notiz hinzufügen…"
     },
     "reset_filters": "Filter zurücksetzen",
@@ -150,8 +139,6 @@
   },
   "private_tasks": {
     "delete_confirm": "Möchtest du diese private Aufgabe wirklich löschen?",
-    "error_duplicate": "Aufgabe konnte nicht dupliziert werden",
-    "error_load": "Private Aufgaben konnten nicht geladen werden",
     "form_placeholders": [
       { "title": "Einkaufen gehen…", "description": "6 Eier, Milch, Brot…" },
       {
@@ -212,13 +199,12 @@
     "title": "Private Aufgaben",
     "form": {
       "new_title": "Neue private Aufgabe",
-      "edit_title": "Private Aufgabe bearbeiten",
-      "errors": {
-        "title_missing": "Ein Titel ist erforderlich.",
-        "title_long": "Der Titel ist zu lang (max. {max} Zeichen).",
-        "description_long": "Die Beschreibung ist zu lang (max. {max} Zeichen).",
-        "unexpected": "Ein unerwarteter Fehler ist aufgetreten"
-      }
+      "edit_title": "Private Aufgabe bearbeiten"
+    },
+    "errors": {
+      "duplicate": "Die Aufgabe konnte nicht dupliziert werden.",
+      "load": "Deine privaten Aufgaben konnten nicht geladen werden.",
+      "reorder": "Die neue Reihenfolge konnte nicht gespeichert werden."
     }
   },
   "report": {
@@ -231,8 +217,7 @@
       "title": "Diese Aufgabe löschen?",
       "message": "Die Aufgabe wird mit allen dazugehörigen Dateien unwiderruflich gelöscht.",
       "submit": "Aufgabe löschen",
-      "success": "Aufgabe gelöscht.",
-      "error": "Aufgabe konnte nicht gelöscht werden."
+      "success": "Aufgabe gelöscht."
     }
   },
   "notes": {
@@ -240,8 +225,11 @@
       "title": "Notiz löschen?",
       "message": "Bist du sicher, dass du diese Notiz unwiderruflich löschen möchtest?",
       "submit": "Notiz löschen",
-      "success": "Notiz gelöscht.",
-      "error": "Notiz konnte nicht gelöscht werden."
+      "success": "Notiz gelöscht."
+    },
+    "errors": {
+      "save": "Die Notiz konnte nicht gespeichert werden.",
+      "delete": "Die Notiz konnte nicht gelöscht werden."
     }
   },
   "images": {
@@ -249,23 +237,33 @@
       "title": "Dieses Bild löschen?",
       "message": "Wenn du dieses Bild löschst, wird es unwiderruflich entfernt.",
       "submit": "Bild löschen",
-      "success": "Bild gelöscht.",
-      "error": "Bild konnte nicht gelöscht werden."
+      "success": "Bild gelöscht."
     },
     "upload": {
-      "failed": "Bilder konnten nicht hochgeladen werden",
-      "file_too_large": "„{name}“ ist zu groß, erlaubt sind maximal {max} MB. Es wurde nichts hochgeladen.",
-      "partial": "{uploaded} von {total} Bildern hochgeladen",
       "progress": "Bilder werden hochgeladen",
-      "quota": {
-        "own_exceeded": "Du kannst noch {remaining} von maximal {max} Bildern zu dieser Aufgabe hochladen. Es wurde nichts hochgeladen – bitte wähle weniger Dateien aus.",
-        "own_reached": "Du hast bereits die maximale Anzahl von {max} Bildern zu dieser Aufgabe hochgeladen.",
-        "task_exceeded": "Eine Aufgabe kann maximal {max} Bilder enthalten, hier passen noch {remaining}. Es wurde nichts hochgeladen – bitte wähle weniger Dateien aus.",
-        "task_reached": "Diese Aufgabe enthält bereits die maximale Anzahl von {max} Bildern.",
-        "type_exceeded": "Für diesen Aufgabentyp sind maximal {max} Bilder erlaubt. Bitte entferne die überzähligen Bilder."
-      },
       "success": "Bilder hochgeladen"
     },
-    "document": "Dokument"
+    "document": "Dokument",
+    "errors": {
+      "delete": "Das Bild konnte nicht gelöscht werden.",
+      "upload": "Die Bilder konnten nicht hochgeladen werden.",
+      "upload_partial": "Nur {uploaded} von {total} Bildern wurden hochgeladen.",
+      "file_too_large": "„{name}“ ist zu groß. Bilder dürfen höchstens {max} MB groß sein. Es wurde nichts hochgeladen.",
+      "own_quota_reached": "Du hast schon die maximale Anzahl von {max} Bildern zu dieser Aufgabe hochgeladen.",
+      "own_quota_exceeded": "Zu viele Bilder. Du kannst dieser Aufgabe noch {remaining} hinzufügen (max. {max}). Es wurde nichts hochgeladen.",
+      "task_quota_reached": "Diese Aufgabe hat schon die maximale Anzahl von {max} Bildern.",
+      "task_quota_exceeded": "Zu viele Bilder. Diese Aufgabe hat noch Platz für {remaining} (max. {max}). Es wurde nichts hochgeladen.",
+      "type_quota_exceeded": "Dieser Aufgabentyp erlaubt höchstens {max} Bilder. Entferne die überzähligen."
+    }
+  },
+  "errors": {
+    "load": "Die Aufgaben konnten nicht geladen werden.",
+    "title_missing": "Gib einen Titel ein.",
+    "title_too_long": "Der Titel darf höchstens {max} Zeichen lang sein.",
+    "description_too_long": "Die Beschreibung darf höchstens {max} Zeichen lang sein.",
+    "save": "Die Aufgabe konnte nicht gespeichert werden.",
+    "report": "Die Aufgabe konnte nicht gemeldet werden.",
+    "save_status": "Der Status konnte nicht gespeichert werden.",
+    "delete": "Die Aufgabe konnte nicht gelöscht werden."
   }
 }

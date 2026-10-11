@@ -42,11 +42,11 @@ async function submit() {
   submitError.value = '';
 
   if (!annContent.value.trim()) {
-    contentError.value = t('announcements.form.errors.empty');
+    contentError.value = t('announcements.form.errors.text_missing');
     return;
   }
   if (annContent.value.trim().length > ANNOUNCEMENT_MAX_CHARS) {
-    contentError.value = t('announcements.form.errors.too_long', {
+    contentError.value = t('announcements.form.errors.text_too_long', {
       max: ANNOUNCEMENT_MAX_CHARS,
     });
     return;
@@ -60,14 +60,7 @@ async function submit() {
     });
     emit('success');
   } catch (e: unknown) {
-    const err = e as {
-      response?: { data?: { error?: string } };
-      message?: string;
-    };
-    submitError.value = apiErrorMessage(
-      err,
-      err.message ?? t('common.errors.unknown'),
-    );
+    submitError.value = apiErrorMessage(e, t('announcements.errors.publish'));
   } finally {
     submitting.value = false;
   }

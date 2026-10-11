@@ -39,7 +39,7 @@ export function useTaskActions(
       toast.success(t('tasks.actions.delete_modal.success'));
       return true;
     } catch (e) {
-      toast.error(apiErrorMessage(e, t('tasks.actions.delete_modal.error')));
+      toast.error(apiErrorMessage(e, t('tasks.errors.delete')));
       return false;
     }
   }
@@ -61,7 +61,6 @@ export function useTaskActions(
     if (!task) return;
     const reason = reportReason.value;
     cancelReport();
-    toast.success('Melde...');
 
     try {
       await api.post(groupPath(groupId, '/items/reports'), {
@@ -71,11 +70,7 @@ export function useTaskActions(
       });
       toast.success(t('tasks.list.tasks.menu.report.success'));
     } catch (e) {
-      toast.error(
-        t('tasks.list.tasks.menu.report.error', {
-          error: apiErrorMessage(e, ''),
-        }),
-      );
+      toast.error(apiErrorMessage(e, t('tasks.errors.report')));
     }
   }
 
@@ -95,7 +90,7 @@ export function useTaskActions(
       await navigator.clipboard.writeText(shareUrl);
       toast.success(t('tasks.list.tasks.menu.share_copied'));
     } catch {
-      toast.error(t('tasks.list.tasks.menu.share_failed'));
+      toast.error(t('common.errors.copy_link'));
     }
   }
 

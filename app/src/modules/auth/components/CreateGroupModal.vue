@@ -82,7 +82,7 @@ function onFileSelected(e: Event) {
     input.value = '';
   };
   reader.onerror = () => {
-    toast.error(t('groups.settings.general.avatar.errors.read_failed'));
+    toast.error(t('groups.settings.general.avatar.errors.read'));
   };
   reader.readAsDataURL(file);
 }
@@ -92,15 +92,9 @@ async function onCropConfirmed(blob: Blob) {
   savingAvatar.value = true;
 
   try {
-    avatar.value = await uploadGroupAvatar(blob).catch(() => {
-      throw new Error(t('groups.settings.general.avatar.errors.upload_failed'));
-    });
-  } catch (err) {
-    toast.error(
-      err instanceof Error && err.message
-        ? err.message
-        : t('groups.settings.general.avatar.errors.save_failed'),
-    );
+    avatar.value = await uploadGroupAvatar(blob);
+  } catch {
+    toast.error(t('groups.settings.general.avatar.errors.upload'));
   } finally {
     savingAvatar.value = false;
   }
@@ -147,10 +141,10 @@ async function submit() {
         params: { groupId: res.groupId },
       });
     } else {
-      errorMsg.value = res.error || t('auth.groups.errors.create_failed');
+      errorMsg.value = res.error;
     }
   } catch (err: unknown) {
-    errorMsg.value = apiErrorMessage(err, t('common.errors.unknown'));
+    errorMsg.value = apiErrorMessage(err, t('groups.errors.create'));
   } finally {
     submitting.value = false;
   }

@@ -61,7 +61,7 @@ export function usePasskeys() {
       signalAcceptedPasskeys();
     } catch (err: unknown) {
       loadFailed.value = true;
-      toast.error(passkeyErrorMessage(err, 'auth.passkeys.errors.load_failed'));
+      toast.error(passkeyErrorMessage(err, 'auth.passkeys.errors.load'));
     } finally {
       loading.value = false;
     }
@@ -90,7 +90,7 @@ export function usePasskeys() {
       return {
         ok: false,
         dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.add_failed'),
+        error: passkeyErrorMessage(err, 'auth.passkeys.errors.add'),
       };
     }
   }
@@ -109,7 +109,7 @@ export function usePasskeys() {
       return {
         ok: false,
         dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.rename_failed'),
+        error: passkeyErrorMessage(err, 'auth.passkeys.errors.rename'),
       };
     }
   }
@@ -125,7 +125,7 @@ export function usePasskeys() {
       return {
         ok: false,
         dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.remove_failed'),
+        error: passkeyErrorMessage(err, 'auth.passkeys.errors.remove'),
       };
     }
   }

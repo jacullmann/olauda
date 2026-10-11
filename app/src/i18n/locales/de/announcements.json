@@ -12,8 +12,8 @@
   },
   "form": {
     "errors": {
-      "empty": "Eine Ankündigung darf nicht leer sein.",
-      "too_long": "Die Ankündigung ist zu lang (max. {max} Zeichen)."
+      "text_missing": "Die Ankündigung darf nicht leer sein.",
+      "text_too_long": "Die Ankündigung darf höchstens {max} Zeichen lang sein."
     },
     "title": "Neue Ankündigung",
     "content_label": "Ankündigung",
@@ -26,5 +26,9 @@
   },
   "system": {
     "source": "Info von Olauda"
+  },
+  "errors": {
+    "publish": "Die Ankündigung konnte nicht veröffentlicht werden.",
+    "delete": "Die Ankündigung konnte nicht gelöscht werden."
   }
 }

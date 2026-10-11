@@ -3,11 +3,12 @@ import { useI18n } from 'vue-i18n';
 import api from '@/api/api.ts';
 import type { SetPasswordErrors } from '@/modules/auth/types';
 import { useUserStore } from '@/stores/userStore';
-import { apiErrorCode, apiErrorMessage, isRateLimited } from '@/api/errors';
+import { apiErrorStatus } from '@/api/errors';
+import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { EMAIL_CODE_LENGTH } from '@/modules/auth/utils/emailCode';
+import { isStrongPassword } from '@/modules/auth/utils/password';
 
-const MIN_PASSWORD_LENGTH = 8;
-const EMAIL_CODE_THROTTLED = 'EMAIL_CODE_THROTTLED';
+const BAD_REQUEST = 400;
 
 type SetPasswordStep = 'request' | 'confirm';
 
@@ -36,20 +37,20 @@ export function useSetPassword(onSuccess: () => void) {
     errors.code =
       code.value.length === EMAIL_CODE_LENGTH
         ? undefined
-        : t('auth.login.reset.errors.invalid_code');
+        : t('auth.errors.code_missing');
 
     if (!newPassword.value) {
-      errors.new = t('auth.change_password.errors.new_missing');
-    } else if (newPassword.value.length < MIN_PASSWORD_LENGTH) {
-      errors.new = t('auth.login.reset.errors.password_short');
+      errors.new = t('auth.errors.new_password_missing');
+    } else if (!isStrongPassword(newPassword.value)) {
+      errors.new = t('auth.errors.new_password_weak');
     } else {
       errors.new = undefined;
     }
 
     if (!newPassword2.value) {
-      errors.confirm = t('auth.change_password.errors.confirm_missing');
+      errors.confirm = t('auth.errors.confirm_missing');
     } else if (newPassword.value !== newPassword2.value) {
-      errors.confirm = t('auth.change_password.errors.confirm_wrong');
+      errors.confirm = t('auth.errors.confirm_mismatch');
     } else {
       errors.confirm = undefined;
     }
@@ -57,21 +58,12 @@ export function useSetPassword(onSuccess: () => void) {
     return !errors.code && !errors.new && !errors.confirm;
   }
 
-  // The address's own code budget and the per-network limit both answer 429.
-  function requestCodeError(e: unknown): string {
-    if (apiErrorCode(e) === EMAIL_CODE_THROTTLED) {
-      return t('auth.set_password.errors.throttled');
-    }
-    if (isRateLimited(e)) return t('common.errors.rate_limited');
-    return apiErrorMessage(e, t('auth.set_password.errors.request_failed'));
-  }
-
   async function requestCode() {
     try {
       await api.post('/auth/set-password/code');
       step.value = 'confirm';
     } catch (e: unknown) {
-      error.value = requestCodeError(e);
+      error.value = authErrorMessage(e, t('auth.errors.send_code'));
     }
   }
 
@@ -86,7 +78,12 @@ export function useSetPassword(onSuccess: () => void) {
       userStore.updateUser({ hasPassword: true });
       onSuccess();
     } catch (e: unknown) {
-      error.value = apiErrorMessage(e, t('auth.set_password.errors.failed'));
+      // The password passed the same checks as on the server, so a refusal
+      // can only be the code.
+      error.value =
+        apiErrorStatus(e) === BAD_REQUEST
+          ? t('auth.errors.code_invalid')
+          : authErrorMessage(e, t('auth.set_password.errors.set'));
     }
   }
 

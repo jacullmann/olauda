@@ -57,16 +57,16 @@ export function useGroupScheduleAdmin() {
       );
       lessons.value = data;
     } catch {
-      toast.error(t('groups.settings.messages.load_schedule_failed'));
+      toast.error(t('schedule.errors.load'));
     } finally {
       loadingLessons.value = false;
     }
   }
 
   function scheduleSaveError(error: unknown): string {
-    const fallback = t('groups.settings.schedule.editor.save_all_failed');
+    const fallback = t('schedule.errors.save');
     if (isAxiosError(error) && error.response?.status === 405) {
-      return t('groups.settings.schedule.editor.save_service_unavailable');
+      return t('schedule.errors.save_unavailable');
     }
     return apiErrorMessage(error, fallback);
   }

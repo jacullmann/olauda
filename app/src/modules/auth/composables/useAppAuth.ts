@@ -1,7 +1,12 @@
 import { ref, computed } from 'vue';
 import type { RouteLocationNamedRaw } from 'vue-router';
 import api, { ensureCsrf, refreshSession } from '@/api/api.ts';
-import { isSessionRejected, isTransientFailure } from '@/api/errors';
+import {
+  apiErrorCode,
+  apiErrorMessage,
+  isSessionRejected,
+  isTransientFailure,
+} from '@/api/errors';
 import { groupPath } from '@/api/groupPath';
 import i18n from '@/i18n';
 import type { ScheduleConfig } from '@/modules/schedule/types';
@@ -268,12 +273,7 @@ async function doInitAuth(): Promise<void> {
   }
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  const err = error as {
-    response?: { data?: { message?: string; error?: string } };
-  };
-  return err.response?.data?.message ?? err.response?.data?.error ?? fallback;
-}
+const BANNED_FROM_GROUP = 'BANNED_FROM_GROUP';
 
 export function useAppAuth() {
   installSignedOutHandlersOnce();
@@ -353,7 +353,7 @@ export function useAppAuth() {
     } catch (error: unknown) {
       return {
         ok: false,
-        error: errorMessage(error, i18n.global.t('auth.groups.errors.generic')),
+        error: apiErrorMessage(error, i18n.global.t('groups.errors.create')),
       };
     }
   }
@@ -400,9 +400,9 @@ export function useAppAuth() {
     } catch (error: unknown) {
       return {
         ok: false,
-        error: errorMessage(
+        error: apiErrorMessage(
           error,
-          i18n.global.t('auth.groups.errors.invite_create_failed'),
+          i18n.global.t('groups.errors.create_invite'),
         ),
       };
     }
@@ -415,7 +415,6 @@ export function useAppAuth() {
     memberCount?: number;
     alreadyMember?: boolean;
     groupId?: string;
-    error?: string;
   }> {
     try {
       const { data } = await api.get(`/invites/${encodeURIComponent(token)}`);
@@ -427,11 +426,9 @@ export function useAppAuth() {
         alreadyMember: data.alreadyMember === true,
         groupId: data.groupId ?? undefined,
       };
-    } catch (error: unknown) {
-      return {
-        ok: false,
-        error: errorMessage(error, i18n.global.t('auth.groups.errors.generic')),
-      };
+    } catch {
+      // An invite that cannot be read is shown as invalid, which says it all.
+      return { ok: false };
     }
   }
 
@@ -451,7 +448,10 @@ export function useAppAuth() {
     } catch (error: unknown) {
       return {
         ok: false,
-        error: errorMessage(error, i18n.global.t('auth.groups.errors.generic')),
+        error:
+          apiErrorCode(error) === BANNED_FROM_GROUP
+            ? i18n.global.t('groups.errors.banned')
+            : apiErrorMessage(error, i18n.global.t('groups.errors.join')),
       };
     }
   }

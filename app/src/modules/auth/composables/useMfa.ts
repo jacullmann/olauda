@@ -12,7 +12,6 @@ import type {
 import {
   apiErrorCode,
   apiErrorMessage,
-  isRateLimited,
   isReauthDeclined,
   retryAfterMinutes,
 } from '@/api/errors';
@@ -29,30 +28,26 @@ export function isMfaChallengeExpired(err: unknown): boolean {
   return apiErrorCode(err) === MFA_CHALLENGE_EXPIRED;
 }
 
-export function mfaErrorMessage(err: unknown): string {
+export function mfaErrorMessage(err: unknown, fallbackKey: string): string {
   const { t } = i18n.global;
 
   switch (apiErrorCode(err)) {
     case MFA_CHALLENGE_EXPIRED:
-      return t('auth.mfa.verify.errors.challenge_expired');
+      return t('auth.errors.session_expired');
     case MFA_LOCKED:
-      return t('auth.mfa.verify.errors.locked', retryAfterMinutes(err));
+      return t('auth.mfa.errors.locked', retryAfterMinutes(err));
     case INVALID_SECOND_FACTOR:
-      return t('auth.mfa.verify.errors.invalid_code');
+      return t('auth.mfa.errors.code_invalid');
   }
-  // The rate limiter answers in plain text, so it carries no `error` field.
-  if (isRateLimited(err)) {
-    return t('auth.mfa.verify.errors.rate_limited');
-  }
-  return apiErrorMessage(err, t('auth.mfa.verify.errors.failed'));
+  return apiErrorMessage(err, t(fallbackKey));
 }
 
 /** A declined confirmation is the user's choice and shows no error. */
-function failure(err: unknown): MfaResult<never> {
+function failure(err: unknown, fallbackKey: string): MfaResult<never> {
   if (isReauthDeclined(err)) return { ok: false };
   return {
     ok: false,
-    error: mfaErrorMessage(err),
+    error: mfaErrorMessage(err, fallbackKey),
     challengeExpired: isMfaChallengeExpired(err),
   };
 }
@@ -75,7 +70,7 @@ export function useMfa() {
     } catch (err: unknown) {
       mfaError.value = apiErrorMessage(
         err,
-        i18n.global.t('auth.mfa.errors.status_failed'),
+        i18n.global.t('auth.mfa.errors.load'),
       );
       return false;
     } finally {
@@ -95,7 +90,7 @@ export function useMfa() {
       if (!isReauthDeclined(err)) {
         mfaError.value = apiErrorMessage(
           err,
-          i18n.global.t('auth.mfa.errors.setup_failed'),
+          i18n.global.t('auth.mfa.errors.start_setup'),
         );
       }
       return null;
@@ -107,6 +102,7 @@ export function useMfa() {
   async function run<T>(
     request: () => Promise<T>,
     onSuccess: (data: T) => void,
+    fallbackKey: string,
   ): Promise<MfaResult<{ data: T }>> {
     mfaLoading.value = true;
     mfaError.value = null;
@@ -116,7 +112,7 @@ export function useMfa() {
       onSuccess(data);
       return { ok: true, data };
     } catch (err: unknown) {
-      const result = failure(err);
+      const result = failure(err, fallbackKey);
       if (!result.ok && result.error) mfaError.value = result.error;
       return result;
     } finally {
@@ -134,6 +130,7 @@ export function useMfa() {
         mfaEnabled.value = true;
         recoveryCodesLeft.value = codes.length;
       },
+      'auth.mfa.errors.activate',
     );
 
   const deactivateMfa = () =>
@@ -143,6 +140,7 @@ export function useMfa() {
         mfaEnabled.value = false;
         recoveryCodesLeft.value = null;
       },
+      'auth.mfa.errors.deactivate',
     );
 
   const regenerateRecoveryCodes = () =>
@@ -153,6 +151,7 @@ export function useMfa() {
       (codes) => {
         recoveryCodesLeft.value = codes.length;
       },
+      'auth.mfa.errors.regenerate_codes',
     );
 
   const verifyMfaLogin = (proof: SecondFactorProof) =>
@@ -161,6 +160,7 @@ export function useMfa() {
         (await api.post<MfaLoginResponse>('/auth/mfa/verify', proof)).data
           .recoveryCodesLeft,
       () => {},
+      'auth.mfa.errors.verify',
     );
 
   /** The pending sign-in challenge, or `null` if there is none. */

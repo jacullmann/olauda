@@ -12,6 +12,7 @@ import Avatar from '@/modules/auth/components/Avatar.vue';
 import { entranceDelay } from '@/modules/tasks/utils/entrance';
 import { menuAnchor, type MenuAnchor } from '@/modules/tasks/utils/menuAnchor';
 import { useLongPress } from '@/common/composables/useLongPress';
+import { useToast } from '@/common/composables/useToast';
 import GroupContextMenu from '../components/GroupContextMenu.vue';
 
 const { t } = useI18n();
@@ -61,6 +62,7 @@ async function loadAllGroups() {
     allGroups.value = data;
   } catch (err) {
     console.error('Failed to load groups:', err);
+    useToast().error(t('admin.groups.errors.load'));
   } finally {
     loading.value = false;
   }

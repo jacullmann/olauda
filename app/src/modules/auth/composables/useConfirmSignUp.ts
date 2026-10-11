@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/api.ts';
-import { apiErrorCode, apiErrorStatus, isRateLimited } from '@/api/errors';
+import { apiErrorCode, apiErrorStatus } from '@/api/errors';
 import { useCooldown } from '@/common/composables/useCooldown';
 import { useToast } from '@/common/composables/useToast';
 import {
@@ -51,18 +51,17 @@ export function useConfirmSignUp(
     if (errorCode === AuthErrorCode.IncorrectPassword) {
       return t('auth.verify_email.errors.incorrect_password');
     }
-    if (isRateLimited(e)) return t('common.errors.rate_limited');
     if (!errorCode && apiErrorStatus(e) === BAD_REQUEST) {
-      return t('auth.verify_email.errors.invalid_code');
+      return t('auth.errors.code_invalid');
     }
-    return authErrorMessage(e, t('common.errors.unknown'));
+    return authErrorMessage(e, t('auth.verify_email.errors.verify'));
   }
 
   async function submit() {
     if (submitting.value) return;
     clearError();
     if (code.value.length !== EMAIL_CODE_LENGTH) {
-      error.value = t('auth.verify_email.errors.code_missing');
+      error.value = t('auth.errors.code_missing');
       return;
     }
 
@@ -89,9 +88,7 @@ export function useConfirmSignUp(
       code.value = '';
       toast.success(t('auth.verify_email.resent'));
     } catch (e: unknown) {
-      error.value = isRateLimited(e)
-        ? t('common.errors.rate_limited')
-        : t('common.errors.unknown');
+      error.value = authErrorMessage(e, t('auth.errors.send_code'));
     } finally {
       resending.value = false;
     }

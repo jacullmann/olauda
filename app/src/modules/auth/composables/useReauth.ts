@@ -6,7 +6,7 @@ import {
   startAuthentication,
 } from '@simplewebauthn/browser';
 import api from '@/api/api';
-import { apiErrorCode, isRateLimited, retryAfterMinutes } from '@/api/errors';
+import { apiErrorCode, retryAfterMinutes } from '@/api/errors';
 import { mfaErrorMessage } from '@/modules/auth/composables/useMfa';
 import type {
   PasskeyChallengeResponse,
@@ -25,8 +25,8 @@ import {
 import type { ReauthStep } from '@/stores/modalStore';
 
 const ERROR_KEYS: Record<string, string> = {
-  INCORRECT_PASSWORD: 'auth.reauth.errors.incorrect_password',
-  SECOND_FACTOR_REQUIRED: 'auth.reauth.errors.second_factor_required',
+  INCORRECT_PASSWORD: 'auth.errors.password_wrong',
+  SECOND_FACTOR_REQUIRED: 'auth.reauth.errors.second_factor_missing',
 };
 
 /**
@@ -57,15 +57,17 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
       password.value.length > 0 && (!needsSecondFactor.value || !!proof.value),
   );
 
-  function errorMessage(err: unknown): string {
+  function errorMessage(
+    err: unknown,
+    fallbackKey = 'auth.reauth.errors.confirm',
+  ): string {
     const code = apiErrorCode(err);
     if (code === AuthErrorCode.ReauthLocked) {
-      return t('auth.reauth.errors.locked', retryAfterMinutes(err));
+      return t('auth.errors.reauth_locked', retryAfterMinutes(err));
     }
     const key = code ? ERROR_KEYS[code] : undefined;
     if (key) return t(key);
-    if (isRateLimited(err)) return t('auth.reauth.errors.rate_limited');
-    return mfaErrorMessage(err);
+    return mfaErrorMessage(err, fallbackKey);
   }
 
   async function attempt(request: () => Promise<unknown>): Promise<void> {
@@ -94,7 +96,7 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
       status.value = data;
       if (data.recentUntil && step.value === 'choose') onConfirmed();
     } catch {
-      error.value = t('auth.reauth.errors.load_failed');
+      error.value = t('auth.reauth.errors.load');
     } finally {
       loading.value = false;
     }
@@ -129,7 +131,7 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
       onConfirmed();
     } catch (err: unknown) {
       if (!isPasskeyDismissed(err)) {
-        error.value = passkeyErrorMessage(err, 'auth.reauth.errors.passkey');
+        error.value = passkeyErrorMessage(err, 'auth.passkeys.errors.confirm');
       }
     } finally {
       submitting.value = false;
@@ -151,7 +153,7 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
       saveReauthReturn(router.currentRoute.value.fullPath);
       window.location.assign(data.url);
     } catch (err: unknown) {
-      error.value = errorMessage(err);
+      error.value = errorMessage(err, 'auth.reauth.errors.google');
       submitting.value = false;
     }
   }

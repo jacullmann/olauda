@@ -32,7 +32,7 @@ export function useGroupMembers() {
       );
       members.value = data;
     } catch {
-      toast.error(t('groups.settings.messages.load_members_failed'));
+      toast.error(t('groups.settings.members.errors.load'));
     } finally {
       loadingMembers.value = false;
     }
@@ -61,7 +61,7 @@ export function useGroupMembers() {
       await Promise.all([isSelf && checkAuthStatus(), loadMembers()]);
     } catch (e) {
       toast.error(
-        apiErrorMessage(e, t('groups.settings.messages.role_update_failed')),
+        apiErrorMessage(e, t('groups.settings.members.errors.change_role')),
       );
       await loadMembers();
     }
@@ -80,7 +80,7 @@ export function useGroupMembers() {
       );
     } catch (e) {
       toast.error(
-        apiErrorMessage(e, t('groups.settings.messages.member_remove_failed')),
+        apiErrorMessage(e, t('groups.settings.members.errors.remove')),
       );
     }
   }
@@ -120,7 +120,7 @@ export function useGroupMembers() {
       toast.error(
         apiErrorMessage(
           e,
-          t('groups.settings.messages.ownership_transfer_failed'),
+          t('groups.settings.members.errors.transfer_ownership'),
         ),
       );
     }

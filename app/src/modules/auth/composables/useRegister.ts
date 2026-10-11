@@ -2,8 +2,8 @@ import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/api/api.ts';
 import { usePreferences } from '@/common/composables/usePreferences';
-import { isRateLimited } from '@/api/errors';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
+import { isStrongPassword } from '@/modules/auth/utils/password';
 import type { SignUpCredentials } from '@/modules/auth/composables/useConfirmSignUp';
 
 /** Subset of `BaseInput`'s exposed API that these forms rely on. */
@@ -56,26 +56,26 @@ export function useRegister() {
     let ok = true;
 
     if (!email.value?.trim()) {
-      errors.email = t('auth.login.errors.email_missing');
+      errors.email = t('auth.errors.email_missing');
       ok = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-      errors.email = t('auth.login.errors.email_wrong');
+      errors.email = t('auth.errors.email_invalid');
       ok = false;
     }
 
     if (!password.value) {
-      errors.password = t('auth.login.errors.password_missing');
+      errors.password = t('auth.errors.password_missing');
       ok = false;
-    } else if (password.value.length < 8) {
-      errors.password = t('auth.login.errors.new_short');
+    } else if (!isStrongPassword(password.value)) {
+      errors.password = t('auth.errors.new_password_weak');
       ok = false;
     }
 
     if (!passwordConfirm.value) {
-      errors.passwordConfirm = t('auth.login.errors.confirm_missing');
+      errors.passwordConfirm = t('auth.errors.confirm_missing');
       ok = false;
     } else if (password.value !== passwordConfirm.value) {
-      errors.passwordConfirm = t('auth.login.errors.confirm_wrong');
+      errors.passwordConfirm = t('auth.errors.confirm_mismatch');
       ok = false;
     }
 
@@ -119,12 +119,7 @@ export function useRegister() {
       password.value = '';
       passwordConfirm.value = '';
     } catch (e: unknown) {
-      formError.value = authErrorMessage(
-        e,
-        isRateLimited(e)
-          ? t('common.errors.rate_limited')
-          : t('common.errors.unknown'),
-      );
+      formError.value = authErrorMessage(e, t('auth.errors.sign_up'));
     } finally {
       submitting.value = false;
     }

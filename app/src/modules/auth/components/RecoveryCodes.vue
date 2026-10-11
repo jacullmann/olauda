@@ -33,7 +33,7 @@ async function copyCodes() {
       copied.value = false;
     }, COPIED_FEEDBACK_MS);
   } catch {
-    toast.error(t('auth.recovery_codes.copy_failed'));
+    toast.error(t('auth.recovery_codes.errors.copy'));
   }
 }
 

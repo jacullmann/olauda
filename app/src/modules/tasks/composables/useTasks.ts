@@ -144,7 +144,7 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
 
   marks.onCheckReverted(({ task, checked }) => {
     dismissals.followRevertedCheck(task, checked);
-    toast.error(t('tasks.list.tasks.errors.status_failed'));
+    toast.error(t('tasks.errors.save_status'));
   });
 
   async function archiveItem(task: Task) {

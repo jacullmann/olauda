@@ -7,17 +7,20 @@
   "typing": "is typing…",
   "typing_multiple": "are typing…",
   "no_messages": "No messages yet. Say hello!",
-  "error_loading": "Failed to load messages",
   "quote_label": "Reply to",
   "copy_success": "Message copied to clipboard",
   "delete_confirm": "Are you sure you want to delete this message?",
   "delete_confirm_title": "Delete Message?",
   "delete_success": "Message deleted",
   "report_success": "Message reported",
-  "report_error": "Failed to report message",
   "errors": {
-    "send_deactivated": "Sending messages is disabled for you"
+    "load": "Couldn't load the messages.",
+    "report": "Couldn't report the message.",
+    "send": "Couldn't send the message.",
+    "copy": "Couldn't copy the message.",
+    "delete": "Couldn't delete the message."
   },
   "scroll_down": "Scroll down",
-  "reload": "Reload"
+  "reload": "Reload",
+  "placeholder_disabled": "Sending messages is disabled for you"
 }

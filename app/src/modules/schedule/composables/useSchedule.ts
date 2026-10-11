@@ -220,7 +220,7 @@ export function useSchedule(shownWeek?: Ref<number>) {
       // One toast per outage, not one per week swiped to while it lasts.
       if (newlyFailed.length > 0 && failedSubstitutionWeeks.size === 0) {
         useToast().error(
-          apiErrorMessage(error, t('schedule.substitutions_load_failed')),
+          apiErrorMessage(error, t('schedule.errors.load_changes')),
         );
       }
       newlyFailed.forEach((weekKey) => failedSubstitutionWeeks.add(weekKey));
@@ -275,7 +275,7 @@ export function useSchedule(shownWeek?: Ref<number>) {
       // A refresh that fails leaves the schedule that is already shown.
       if (refresh) return;
       lessonsLoadError.value = true;
-      useToast().error(apiErrorMessage(error, t('common.errors.load')));
+      useToast().error(apiErrorMessage(error, t('schedule.errors.load')));
     } finally {
       if (request === latestScheduleRequest) loadingLessons.value = false;
     }

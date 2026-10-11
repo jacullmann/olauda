@@ -31,7 +31,9 @@ export function usePersonalization() {
       return data.personalized;
     } catch (e: unknown) {
       userStore.updateUser({ personalized: previous });
-      useToast().error(apiErrorMessage(e, t('common.errors.update')));
+      useToast().error(
+        apiErrorMessage(e, t('auth.account_settings.errors.save')),
+      );
       return null;
     } finally {
       userStore.savingPersonalization = false;

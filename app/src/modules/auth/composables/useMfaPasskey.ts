@@ -46,10 +46,7 @@ export function useMfaPasskey({ onVerified, onExpired }: MfaPasskeyCallbacks) {
     } catch (err: unknown) {
       if (isMfaChallengeExpired(err)) onExpired();
       else if (!isPasskeyDismissed(err)) {
-        error.value = passkeyErrorMessage(
-          err,
-          'auth.mfa.verify.errors.passkey_failed',
-        );
+        error.value = passkeyErrorMessage(err, 'auth.passkeys.errors.confirm');
       }
     } finally {
       verifying.value = false;

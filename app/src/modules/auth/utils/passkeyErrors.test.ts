@@ -8,7 +8,7 @@ import {
   passkeyErrorMessage,
 } from './passkeyErrors';
 
-const FALLBACK = 'auth.passkeys.errors.sign_in_failed';
+const FALLBACK = 'auth.passkeys.errors.sign_in';
 const { t } = i18n.global;
 
 function apiError(status: number, data: unknown): AxiosError {
@@ -58,7 +58,7 @@ describe('passkeyErrorMessage', () => {
       code: PasskeyErrorCode.Unknown,
     });
     expect(passkeyErrorMessage(err, FALLBACK)).toBe(
-      t('auth.passkeys.errors.unknown'),
+      t('auth.passkeys.errors.not_registered'),
     );
   });
 
@@ -75,7 +75,7 @@ describe('passkeyErrorMessage', () => {
   it('recognises the plain-text rate limit answer', () => {
     expect(
       passkeyErrorMessage(apiError(429, 'Too Many Requests'), FALLBACK),
-    ).toBe(t('auth.passkeys.errors.rate_limited'));
+    ).toBe(t('common.errors.rate_limited'));
   });
 
   it('falls back for anything else', () => {

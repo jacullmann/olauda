@@ -23,7 +23,11 @@ export interface SystemAnnouncementDraft {
 export type DraftField = 'content' | 'start' | 'end';
 
 export type DraftError =
-  'empty' | 'too_long' | 'incomplete' | 'start_in_past' | 'end_before_start';
+  | 'text_missing'
+  | 'text_too_long'
+  | 'date_missing'
+  | 'start_in_past'
+  | 'end_before_start';
 
 export type DraftResult =
   | { ok: true; request: SaveSystemAnnouncementRequest }
@@ -79,10 +83,10 @@ export function toSaveRequest(
   now: Date,
 ): DraftResult {
   const content = draft.content.trim();
-  if (!content) return { ok: false, field: 'content', error: 'empty' };
+  if (!content) return { ok: false, field: 'content', error: 'text_missing' };
   // Counted in code points, as the server counts characters.
   if ([...content].length > ANNOUNCEMENT_MAX_CHARS) {
-    return { ok: false, field: 'content', error: 'too_long' };
+    return { ok: false, field: 'content', error: 'text_too_long' };
   }
 
   const request: SaveSystemAnnouncementRequest = {
@@ -93,7 +97,7 @@ export function toSaveRequest(
   let start = now;
   if (draft.scheduled) {
     const moment = localMoment(draft.startDate, draft.startTime);
-    if (!moment) return { ok: false, field: 'start', error: 'incomplete' };
+    if (!moment) return { ok: false, field: 'start', error: 'date_missing' };
     if (moment <= now) {
       return { ok: false, field: 'start', error: 'start_in_past' };
     }
@@ -103,7 +107,7 @@ export function toSaveRequest(
 
   if (draft.expires) {
     const moment = localMoment(draft.endDate, draft.endTime);
-    if (!moment) return { ok: false, field: 'end', error: 'incomplete' };
+    if (!moment) return { ok: false, field: 'end', error: 'date_missing' };
     if (moment <= start) {
       return { ok: false, field: 'end', error: 'end_before_start' };
     }

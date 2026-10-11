@@ -79,7 +79,7 @@ const handleInput = (e: Event) => {
           rows="1"
           class="w-full flex-1 items-center justify-center py-0 px-1.75 rounded-none bg-transparent border-none shadow-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-base/5 text-on-ghost placeholder:text-on-ghost-subtle resize-none font-normal overflow-hidden"
           :placeholder="
-            canSend ? t('chat.placeholder') : t('chat.errors.send_deactivated')
+            canSend ? t('chat.placeholder') : t('chat.placeholder_disabled')
           "
           required
           maxlength="1000"

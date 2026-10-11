@@ -82,9 +82,7 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
 
   function reportFailure(err: unknown): void {
     if (!active || isPasskeyDismissed(err)) return;
-    toast.error(
-      passkeyErrorMessage(err, 'auth.passkeys.errors.sign_in_failed'),
-    );
+    toast.error(passkeyErrorMessage(err, 'auth.passkeys.errors.sign_in'));
   }
 
   /**

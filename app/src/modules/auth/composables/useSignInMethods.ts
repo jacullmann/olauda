@@ -42,7 +42,7 @@ export function useSignInMethods() {
     } catch (err: unknown) {
       return {
         ok: false,
-        error: authErrorMessage(err, t('auth.remove_password.failed')),
+        error: authErrorMessage(err, t('auth.remove_password.errors.remove')),
       };
     } finally {
       removing.value = false;

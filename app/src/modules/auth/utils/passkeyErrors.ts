@@ -1,6 +1,6 @@
 import { WebAuthnError } from '@simplewebauthn/browser';
 import i18n from '@/i18n';
-import { apiErrorCode, isRateLimited, isReauthDeclined } from '@/api/errors';
+import { apiErrorCode, apiErrorMessage, isReauthDeclined } from '@/api/errors';
 import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
 
 /** Codes the API sends when a passkey ceremony fails. */
@@ -15,7 +15,7 @@ export const PasskeyErrorCode = {
 
 const MESSAGE_KEYS: Record<string, string> = {
   [PasskeyErrorCode.ChallengeExpired]: 'auth.passkeys.errors.expired',
-  [PasskeyErrorCode.Unknown]: 'auth.passkeys.errors.unknown',
+  [PasskeyErrorCode.Unknown]: 'auth.passkeys.errors.not_registered',
   [PasskeyErrorCode.Rejected]: 'auth.passkeys.errors.rejected',
   [PasskeyErrorCode.RegistrationRejected]: 'auth.passkeys.errors.rejected',
   [PasskeyErrorCode.AlreadyRegistered]:
@@ -50,10 +50,5 @@ export function passkeyErrorMessage(err: unknown, fallbackKey: string): string {
   }
 
   const key = MESSAGE_KEYS[apiErrorCode(err) ?? ''];
-  if (key) return t(key);
-
-  // The rate limiter answers in plain text, so it carries no code.
-  if (isRateLimited(err)) return t('auth.passkeys.errors.rate_limited');
-
-  return t(fallbackKey);
+  return key ? t(key) : apiErrorMessage(err, t(fallbackKey));
 }

@@ -2,8 +2,7 @@
   "title": "Dashboard",
   "tasks_overview": {
     "title": "Aufgaben",
-    "no_tasks": "Keine anstehenden Aufgaben in den nächsten 2 Tagen.",
-    "load_failed": "Aufgaben konnten nicht geladen werden."
+    "no_tasks": "Keine anstehenden Aufgaben in den nächsten 2 Tagen."
   },
   "schedule_overview": {
     "title": "Stundenplan",
@@ -11,7 +10,6 @@
     "no_more_lessons": "Keine weiteren Stunden für diese Woche.",
     "changes": "Planänderungen",
     "no_changes": "Keine Planänderungen in dieser Woche.",
-    "load_failed": "Stundenplan konnte nicht geladen werden.",
     "cancelled": "Ausfall",
     "room_change": "Raum {room} statt {original}",
     "setup_cta": "Für diese Gruppe gibt es noch keinen Stundenplan.",

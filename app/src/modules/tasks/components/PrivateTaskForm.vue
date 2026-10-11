@@ -53,20 +53,19 @@ async function submit() {
   submitError.value = '';
 
   if (!title.value.trim()) {
-    titleError.value = t('tasks.private_tasks.form.errors.title_missing');
+    titleError.value = t('tasks.errors.title_missing');
     return;
   }
   if (title.value.trim().length > TITLE_MAX_LENGTH) {
-    titleError.value = t('tasks.private_tasks.form.errors.title_long', {
+    titleError.value = t('tasks.errors.title_too_long', {
       max: TITLE_MAX_LENGTH,
     });
     return;
   }
   if (description.value.trim().length > DESCRIPTION_MAX_LENGTH) {
-    descriptionError.value = t(
-      'tasks.private_tasks.form.errors.description_long',
-      { max: DESCRIPTION_MAX_LENGTH },
-    );
+    descriptionError.value = t('tasks.errors.description_too_long', {
+      max: DESCRIPTION_MAX_LENGTH,
+    });
     return;
   }
 
@@ -89,14 +88,7 @@ async function submit() {
 
     emit('success', responseData);
   } catch (e: unknown) {
-    const err = e as {
-      response?: { data?: { error?: string } };
-      message?: string;
-    };
-    submitError.value = apiErrorMessage(
-      err,
-      err.message ?? t('tasks.private_tasks.form.errors.unexpected'),
-    );
+    submitError.value = apiErrorMessage(e, t('tasks.errors.save'));
   } finally {
     submitting.value = false;
   }

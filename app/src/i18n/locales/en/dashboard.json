@@ -2,8 +2,7 @@
   "title": "Dashboard",
   "tasks_overview": {
     "title": "Tasks",
-    "no_tasks": "No upcoming tasks in the next 2 days.",
-    "load_failed": "Tasks couldn't be loaded."
+    "no_tasks": "No upcoming tasks in the next 2 days."
   },
   "schedule_overview": {
     "title": "Schedule",
@@ -11,7 +10,6 @@
     "no_more_lessons": "No more lessons this week.",
     "changes": "Schedule Changes",
     "no_changes": "No schedule changes this week.",
-    "load_failed": "The schedule couldn't be loaded.",
     "cancelled": "Canceled",
     "room_change": "Room {room} instead of {original}",
     "setup_cta": "This group has no schedule yet.",

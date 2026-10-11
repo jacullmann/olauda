@@ -69,7 +69,7 @@ export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
       );
       if (toValue(userId) === id) memberships.value = data;
     } catch {
-      toast.error(t('admin.errors.action_failed'));
+      toast.error(t('admin.users.errors.change_role'));
     } finally {
       changingGroupId.value = null;
     }

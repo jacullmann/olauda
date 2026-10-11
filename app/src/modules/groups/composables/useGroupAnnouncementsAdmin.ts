@@ -44,7 +44,7 @@ export function useGroupAnnouncementsAdmin() {
       announcementStore.remove(id);
       toast.success(t('groups.settings.messages.announcement_deleted'));
     } catch {
-      toast.error(t('groups.settings.messages.announcement_delete_failed'));
+      toast.error(t('announcements.errors.delete'));
     }
   }
 

@@ -25,13 +25,6 @@
     "content": "What you entered will be lost.",
     "confirm": "Discard"
   },
-  "errors": {
-    "delete": "Failed to delete",
-    "load": "Failed to load",
-    "rate_limited": "Too many requests. Please wait a moment and try again.",
-    "unknown": "Unknown error",
-    "update": "Failed to update"
-  },
   "footer": {
     "quotes": [
       "I miss the old Kanye",
@@ -274,5 +267,9 @@
   "search_results": {
     "empty_title": "No results for “{query}”",
     "empty_message": "Check the spelling or try a new search."
+  },
+  "errors": {
+    "rate_limited": "Too many attempts. Wait a moment and try again.",
+    "copy_link": "Couldn't copy the link."
   }
 }

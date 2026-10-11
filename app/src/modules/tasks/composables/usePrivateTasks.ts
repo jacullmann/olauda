@@ -105,7 +105,7 @@ export function usePrivateTasks() {
       privateTasks.value = data;
       syncState();
     } catch {
-      useToast().error(t('tasks.private_tasks.error_load'));
+      useToast().error(t('tasks.private_tasks.errors.load'));
     } finally {
       loading.value = false;
       initialLoad.value = false;
@@ -183,7 +183,7 @@ export function usePrivateTasks() {
     if (error) {
       toggleSync.delete(id);
       current.completed = entry.serverCompleted;
-      useToast().error(apiErrorMessage(error, t('common.errors.update')));
+      useToast().error(apiErrorMessage(error, t('tasks.errors.save_status')));
     } else if (current.completed !== entry.serverCompleted) {
       await flushToggleSync(id);
     } else {
@@ -216,7 +216,7 @@ export function usePrivateTasks() {
       useToast().success(t('tasks.private_tasks.success_duplicate'));
     } catch (e: any) {
       useToast().error(
-        apiErrorMessage(e, t('tasks.private_tasks.error_duplicate')),
+        apiErrorMessage(e, t('tasks.private_tasks.errors.duplicate')),
       );
     } finally {
       loading.value = false;
@@ -249,7 +249,7 @@ export function usePrivateTasks() {
     } catch (e: any) {
       privateTasks.value.splice(idx, 0, backup);
       syncState();
-      useToast().error(apiErrorMessage(e, t('common.errors.delete')));
+      useToast().error(apiErrorMessage(e, t('tasks.errors.delete')));
     }
   };
 
@@ -339,7 +339,9 @@ export function usePrivateTasks() {
       clearTimeout(reorderTimer);
       reorderTimer = undefined;
       void loadPrivateTasks();
-      useToast().error(apiErrorMessage(e, t('common.errors.update')));
+      useToast().error(
+        apiErrorMessage(e, t('tasks.private_tasks.errors.reorder')),
+      );
       return;
     }
 

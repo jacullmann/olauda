@@ -104,7 +104,7 @@ function updateTimer() {
 
   if (diff <= 0) {
     remainingTime.value = t('auth.mfa.setup.time_expired');
-    verifyError.value = t('auth.mfa.setup.expired');
+    verifyError.value = t('auth.mfa.errors.setup_expired');
     setTimeout(() => cancelSetup(), 2000);
     return;
   }
@@ -193,7 +193,7 @@ async function activateMfa() {
     newRecoveryCodes.value = result.data;
     emit('mfaChanged', true);
   } else {
-    verifyError.value = result.error || t('auth.mfa.verify.errors.failed');
+    verifyError.value = result.error || t('auth.mfa.errors.activate');
     verifyCode.value = '';
     await nextTick();
     codeInput.value?.focus();

@@ -26,7 +26,7 @@ export function useGroupInvites() {
       );
       invites.value = data;
     } catch {
-      toast.error(t('groups.settings.messages.load_invites_failed'));
+      toast.error(t('groups.settings.members.errors.load_invites'));
     } finally {
       loadingInvites.value = false;
     }
@@ -38,7 +38,7 @@ export function useGroupInvites() {
       toast.success(t('groups.settings.messages.invite_revoked'));
       await loadInvites();
     } catch {
-      toast.error(t('groups.settings.messages.invite_revoke_failed'));
+      toast.error(t('groups.settings.members.errors.revoke_invite'));
     }
   }
 

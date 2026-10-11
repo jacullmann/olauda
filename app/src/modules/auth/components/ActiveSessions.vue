@@ -49,7 +49,7 @@ async function fetchSessions() {
   } catch (err) {
     console.error('Failed to fetch active sessions:', err);
     loadFailed.value = true;
-    toast.error(t('auth.sessions.errors.load_failed'));
+    toast.error(t('auth.sessions.errors.load'));
   } finally {
     loading.value = false;
   }
@@ -82,7 +82,7 @@ async function revokeSession(session: ActiveSession) {
     );
   } catch (err) {
     console.error('Failed to revoke session:', err);
-    toast.error(t('auth.sessions.errors.delete_failed'));
+    toast.error(t('auth.sessions.errors.sign_out'));
   } finally {
     revokingId.value = null;
   }
@@ -105,7 +105,7 @@ async function logoutAllOtherSessions() {
     sessions.value = sessions.value.filter((s) => isCurrentSession(s));
   } catch (err) {
     console.error('Failed to logout other sessions:', err);
-    toast.error(t('auth.sessions.errors.delete_all_failed'));
+    toast.error(t('auth.sessions.errors.sign_out_others'));
     await fetchSessions();
   } finally {
     revokingAll.value = false;

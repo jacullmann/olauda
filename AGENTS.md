@@ -63,6 +63,12 @@ Write **idiomatic, performant, secure code that speaks for itself.**
 **Vue Router:**
 - Adhere to Vue Router best practices in the frontend, specifically using named routes instead of hardcoded URLs.
 
+**Error messages:**
+- Only i18n texts reach the user. Never show the API's `error` text or `err.message`; they are English and meant for debugging. Use `apiErrorMessage(err, fallback)`, which also covers rate limits.
+- Show a message for every user action that fails, and for loads that leave a view empty. Give a specific reason only when the user can act on it (wrong code, name taken, locked, too large); the API names such reasons with a `code`. Show nothing when the user cancelled (closed a dialog, declined to confirm, went back on Google).
+- Wording: one or two short sentences ending with a period, second sentence only for what to do next. Failed actions read "Couldn't save the note." / "Die Notiz konnte nicht gespeichert werden." Field errors say what to do: "Enter a title." / "Gib einen Titel ein." No "please"/"bitte", no "error", "failed to", "request", "server" or "token". German uses "du".
+- Keys live in an `errors` object of the section that owns the thing that failed, e.g. `tasks.notes.errors.save`, and are reused from anywhere. `common.errors` only holds messages that belong to no feature. Names: `<verb>[_<object>]` for failed actions (`load`, `delete_course`), `<field>_<problem>` for input (`title_missing`, `title_too_long`), the condition for API reasons (`name_taken`, `locked`). No `_failed`/`_error` suffixes, and nothing but errors inside `errors`.
+
 ---
 
 ## General

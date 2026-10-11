@@ -23,7 +23,7 @@ export function useCleanupJobs() {
       jobs.value = data;
     } catch {
       failed.value = true;
-      toast.error(t('admin.overview.cleanup_jobs.error'));
+      toast.error(t('admin.overview.cleanup_jobs.errors.load'));
     } finally {
       loading.value = false;
     }

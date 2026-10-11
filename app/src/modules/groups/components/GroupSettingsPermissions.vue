@@ -110,7 +110,7 @@ async function fetchPermissions() {
     );
     permissions.value = data.permissions;
   } catch {
-    toast.error(t('groups.settings.permissions.errors.load_failed'));
+    toast.error(t('groups.settings.permissions.errors.load'));
   } finally {
     loading.value = false;
   }
@@ -130,11 +130,11 @@ async function savePermission(
     await api.patch(groupPath(groupId, '/admin/permissions'), {
       permissions: { [key]: role },
     });
-    toast.success(t('groups.settings.permissions.errors.update_success'));
+    toast.success(t('groups.settings.permissions.update_success'));
     await checkAuthStatus();
   } catch {
     permissions.value[key] = previousRole;
-    toast.error(t('groups.settings.permissions.errors.save_failed'));
+    toast.error(t('groups.settings.permissions.errors.save'));
   } finally {
     saving.value = false;
   }

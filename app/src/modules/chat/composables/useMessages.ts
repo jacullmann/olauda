@@ -204,7 +204,7 @@ export function useMessages() {
         isInitialScroll.value = false;
       }, 500);
     } catch (err) {
-      error.value = t('chat.error_loading');
+      error.value = t('chat.errors.load');
       console.error(err);
     } finally {
       loading.value = false;
@@ -339,6 +339,7 @@ export function useMessages() {
       await api.post(groupPath(groupId.value, '/messages'), payload);
     } catch (err) {
       console.error('Failed to send message:', err);
+      toast.error(apiErrorMessage(err, t('chat.errors.send')));
       messageInput.value = text;
       replyParent.value = currentReplyParent;
     }
@@ -417,7 +418,7 @@ export function useMessages() {
       toast.success(t('chat.copy_success'));
     } catch (err) {
       console.error('Failed to copy message:', err);
-      toast.error(t('common.errors.unknown'));
+      toast.error(t('chat.errors.copy'));
     }
   };
 
@@ -437,7 +438,7 @@ export function useMessages() {
       toast.success(t('chat.delete_success'));
     } catch (err) {
       console.error('Failed to delete message:', err);
-      toast.error(t('common.errors.delete'));
+      toast.error(apiErrorMessage(err, t('chat.errors.delete')));
     }
   };
 
@@ -466,12 +467,7 @@ export function useMessages() {
       toast.success(t('chat.report_success'));
     } catch (err) {
       console.error('Failed to report message:', err);
-      const detail = apiErrorMessage(err, '');
-      toast.error(
-        detail
-          ? `${t('chat.report_error')}: ${detail}`
-          : t('chat.report_error'),
-      );
+      toast.error(apiErrorMessage(err, t('chat.errors.report')));
     }
   };
 

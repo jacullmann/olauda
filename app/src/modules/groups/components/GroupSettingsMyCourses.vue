@@ -65,7 +65,7 @@ async function selectCourse(subjectId: string, courseId: string) {
     await saveCourses(selectedCourses.value);
   } catch (e: unknown) {
     showSavedCourses();
-    toast.error(apiErrorMessage(e, t('auth.courses.errors.save_failed')));
+    toast.error(apiErrorMessage(e, t('auth.courses.errors.save')));
   } finally {
     saving.value = false;
   }
@@ -91,7 +91,7 @@ async function redoSetup() {
       query: { returnTo: 'settings' },
     });
   } catch (e: unknown) {
-    toast.error(apiErrorMessage(e, t('auth.courses.errors.save_failed')));
+    toast.error(apiErrorMessage(e, t('auth.courses.errors.save')));
   } finally {
     redoing.value = false;
   }

@@ -8,7 +8,7 @@ import type { MetricsRange, ServerMetrics } from '../types';
 
 /** Why the metrics could not be loaded, told apart where an admin can act on it. */
 type ServerMetricsFailure =
-  'token_rejected' | 'server_not_found' | 'unreachable' | 'unknown';
+  'token_rejected' | 'server_not_found' | 'unreachable' | 'load';
 
 const FAILURE_BY_CODE: Partial<Record<string, ServerMetricsFailure>> = {
   HETZNER_TOKEN_REJECTED: 'token_rejected',
@@ -20,7 +20,7 @@ function failureOf(error: unknown): ServerMetricsFailure {
   const code = axios.isAxiosError<{ code?: string }>(error)
     ? error.response?.data?.code
     : undefined;
-  return (code && FAILURE_BY_CODE[code]) || 'unknown';
+  return (code && FAILURE_BY_CODE[code]) || 'load';
 }
 
 export const METRICS_RANGES: readonly MetricsRange[] = [

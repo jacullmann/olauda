@@ -30,5 +30,12 @@
   "next_week": "Nächste Woche",
   "today": "Heute",
   "day_end": "Schluss",
-  "substitutions_load_failed": "Planänderungen konnten nicht geladen werden."
+  "errors": {
+    "load": "Der Stundenplan konnte nicht geladen werden.",
+    "load_changes": "Die Planänderungen konnten nicht geladen werden.",
+    "save_change": "Die Änderung konnte nicht gespeichert werden.",
+    "delete_change": "Die Änderung konnte nicht gelöscht werden.",
+    "save": "Der Stundenplan konnte nicht gespeichert werden. Es wurden keine Änderungen übernommen.",
+    "save_unavailable": "Der Stundenplan kann gerade nicht gespeichert werden. Es wurden keine Änderungen übernommen. Versuche es später erneut."
+  }
 }

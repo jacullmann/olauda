@@ -309,7 +309,7 @@ const {
               class="animate-enter"
               @retry="reloadList"
             >
-              {{ t('dashboard.tasks_overview.load_failed') }}
+              {{ t('tasks.errors.load') }}
             </BaseLoadError>
 
             <div
@@ -498,7 +498,7 @@ const {
                   }"
                   @retry="retrySubstitutions"
                 >
-                  {{ t('schedule.substitutions_load_failed') }}
+                  {{ t('schedule.errors.load_changes') }}
                 </BaseLoadError>
 
                 <div
@@ -520,7 +520,7 @@ const {
           class="w-full max-w-192 mx-auto animate-enter"
           @retry="loadSchedule()"
         >
-          {{ t('dashboard.schedule_overview.load_failed') }}
+          {{ t('schedule.errors.load') }}
         </BaseLoadError>
 
         <div

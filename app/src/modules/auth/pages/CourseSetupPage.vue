@@ -106,10 +106,7 @@ watch(
     if (!preload) return;
     loadLessons().catch((e: unknown) => {
       if (isLessonStep.value) {
-        error.value = apiErrorMessage(
-          e,
-          t('auth.courses.errors.schedule_load_failed'),
-        );
+        error.value = apiErrorMessage(e, t('schedule.errors.load'));
       }
     });
   },
@@ -147,7 +144,7 @@ async function saveAndFinish(courses: Enrollment[], personalized: boolean) {
     await router.replace(finishedRoute.value);
   } catch (e: unknown) {
     console.error('Course setup failed:', e);
-    error.value = apiErrorMessage(e, t('auth.courses.errors.save_failed'));
+    error.value = apiErrorMessage(e, t('auth.courses.errors.save'));
   } finally {
     saving.value = false;
   }
@@ -160,10 +157,7 @@ async function showLessonStep() {
   try {
     await loadLessons();
   } catch (e: unknown) {
-    error.value = apiErrorMessage(
-      e,
-      t('auth.courses.errors.schedule_load_failed'),
-    );
+    error.value = apiErrorMessage(e, t('schedule.errors.load'));
   }
 }
 
@@ -171,7 +165,7 @@ async function submit() {
   if (isLessonStep.value) return saveAndFinish(enrollments.value, true);
 
   if (isAbitur.value ? !hasAllLevels.value : !hasRequiredSelections.value) {
-    error.value = t('auth.setup.errors.required_courses');
+    error.value = t('auth.courses.errors.required_courses_missing');
     return;
   }
 

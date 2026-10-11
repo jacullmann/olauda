@@ -12,8 +12,8 @@
   },
   "form": {
     "errors": {
-      "empty": "An announcement can't be empty.",
-      "too_long": "The announcement is too long (max. {max} characters)."
+      "text_missing": "The announcement can't be empty.",
+      "text_too_long": "The announcement can have at most {max} characters."
     },
     "title": "New Announcement",
     "content_label": "Announcement",
@@ -26,5 +26,9 @@
   },
   "system": {
     "source": "Info from Olauda"
+  },
+  "errors": {
+    "publish": "Couldn't publish the announcement.",
+    "delete": "Couldn't delete the announcement."
   }
 }

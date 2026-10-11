@@ -8,9 +8,6 @@
     "announcements": "Infos",
     "reports": "Meldungen"
   },
-  "errors": {
-    "action_failed": "Aktion fehlgeschlagen."
-  },
   "overview": {
     "title": "Dashboard-Übersicht",
     "stats": {
@@ -60,7 +57,7 @@
         "token_rejected": "Hetzner lehnt den API-Token ab. Prüfe HETZNER_API_TOKEN im Backend.",
         "server_not_found": "Hetzner kennt keinen Server mit dieser ID. Prüfe HETZNER_SERVER_ID im Backend.",
         "unreachable": "Die Hetzner-API ist gerade nicht erreichbar.",
-        "unknown": "Serverauslastung konnte nicht geladen werden."
+        "load": "Die Serverauslastung konnte nicht geladen werden."
       },
       "retry": "Erneut versuchen"
     },
@@ -70,7 +67,6 @@
       "all_ok": "Alles in Ordnung",
       "jobs_overdue": "Überfällige Jobs: {count}",
       "overdue": "Überfällig: {count}",
-      "error": "Status konnte nicht geladen werden.",
       "retry": "Erneut versuchen",
       "jobs": {
         "cleanup-refresh-tokens": {
@@ -121,10 +117,10 @@
           "label": "Dateien bei Cloudinary",
           "rule": "Ungenutzte Dateien nach 24 Stunden, alle 5 Minuten vom Server gelöscht"
         }
+      },
+      "errors": {
+        "load": "Der Status konnte nicht geladen werden."
       }
-    },
-    "errors": {
-      "load": "Statistiken konnten nicht geladen werden."
     },
     "access_controls": {
       "title": "Zugang zur Plattform",
@@ -142,9 +138,14 @@
         "content": "Alle außer Superadmins verlieren sofort den Zugriff auf Olauda und können sich weder anmelden noch registrieren.",
         "submit": "Aktivieren"
       },
-      "error": "Zugangseinstellungen konnten nicht geladen werden.",
-      "save_error": "Die Änderung konnte nicht gespeichert werden.",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "errors": {
+        "load": "Die Zugangseinstellungen konnten nicht geladen werden.",
+        "save": "Die Änderung konnte nicht gespeichert werden."
+      }
+    },
+    "errors": {
+      "load": "Die Statistiken konnten nicht geladen werden."
     }
   },
   "directory": {
@@ -237,9 +238,13 @@
     },
     "delete_success": "Benutzer gelöscht.",
     "errors": {
-      "load": "Benutzer konnten nicht geladen werden.",
-      "load_details": "Benutzerdetails konnten nicht geladen werden.",
-      "delete": "Benutzer konnte nicht gelöscht werden."
+      "ban": "Der Benutzer konnte nicht gesperrt werden.",
+      "unban": "Die Sperre konnte nicht aufgehoben werden.",
+      "reset_mfa": "Die Zwei-Faktor-Authentifizierung konnte nicht zurückgesetzt werden.",
+      "change_role": "Die Rolle konnte nicht geändert werden.",
+      "load": "Die Benutzer konnten nicht geladen werden.",
+      "load_user": "Der Benutzer konnte nicht geladen werden.",
+      "delete": "Der Benutzer konnte nicht gelöscht werden."
     },
     "reset_mfa_modal": {
       "title": "Zwei-Faktor-Authentifizierung zurücksetzen?",
@@ -262,8 +267,8 @@
     },
     "delete_success": "Meldung gelöscht.",
     "errors": {
-      "load": "Meldungen konnten nicht geladen werden.",
-      "delete": "Meldung konnte nicht gelöscht werden."
+      "load": "Die Meldungen konnten nicht geladen werden.",
+      "delete": "Die Meldung konnte nicht gelöscht werden."
     }
   },
   "groups": {
@@ -289,8 +294,7 @@
     "delete_tooltip": "Gruppe löschen",
     "delete_success": "Gruppe „{name}“ gelöscht.",
     "errors": {
-      "load": "Gruppen konnten nicht geladen werden.",
-      "delete": "Gruppe konnte nicht gelöscht werden."
+      "load": "Die Gruppen konnten nicht geladen werden."
     }
   },
   "announcements": {
@@ -323,9 +327,9 @@
       "publish": "Veröffentlichen",
       "schedule": "Planen",
       "errors": {
-        "empty": "Eine Info darf nicht leer sein.",
-        "too_long": "Die Info ist zu lang (max. {max} Zeichen).",
-        "incomplete": "Bitte Datum und Uhrzeit angeben.",
+        "text_missing": "Die Info darf nicht leer sein.",
+        "text_too_long": "Die Info darf höchstens {max} Zeichen lang sein.",
+        "date_missing": "Gib Datum und Uhrzeit an.",
         "start_in_past": "Der Start muss in der Zukunft liegen.",
         "end_before_start": "Das Ende muss nach dem Start liegen."
       }
@@ -338,17 +342,16 @@
     "save_success": "Info gespeichert.",
     "delete_success": "Info gelöscht.",
     "errors": {
-      "load": "Infos konnten nicht geladen werden.",
-      "delete": "Info konnte nicht gelöscht werden."
+      "load": "Die Infos konnten nicht geladen werden.",
+      "delete": "Die Info konnte nicht gelöscht werden.",
+      "save": "Die Info konnte nicht gespeichert werden."
     }
   },
   "log": {
     "title": "Protokoll",
     "hint": "Sicherheitsereignisse werden 90 Tage aufbewahrt, Aktivität 30 Tage.",
-    "error": "Das Protokoll konnte nicht geladen werden.",
     "empty": "Noch keine Einträge.",
     "empty_filtered": "Keine Einträge passen zu diesen Filtern.",
-    "load_more_failed": "Weitere Einträge laden",
     "sources": {
       "all": "Alle",
       "security": "Sicherheit",
@@ -617,6 +620,10 @@
         "announcement_deleted": "Admin: Info gelöscht",
         "report_deleted": "Admin: Meldung gelöscht"
       }
-    }
+    },
+    "errors": {
+      "load": "Das Protokoll konnte nicht geladen werden."
+    },
+    "load_more": "Weitere Einträge laden"
   }
 }

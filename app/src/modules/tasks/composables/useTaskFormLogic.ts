@@ -107,7 +107,7 @@ export function useTaskFormLogic(
     if (initial) return '';
     const max = IMAGE_QUOTAS[activeType.value].perUploader;
     return imgImages.value.length > max
-      ? t('tasks.images.upload.quota.type_exceeded', { max })
+      ? t('tasks.images.errors.type_quota_exceeded', { max })
       : '';
   });
 
@@ -299,20 +299,25 @@ export function useTaskFormLogic(
     let subject: ItemSubjectPayload | null = null;
 
     if (!subjectSel.value) {
-      subjectError.value = t('tasks.list.task_form.errors.custom_missing');
+      subjectError.value = t(
+        'tasks.list.task_form.errors.custom_subject_missing',
+      );
       hasValidationErrors = true;
     } else if (subjectSel.value === OTHER_SUBJECT) {
       const typed = subjectOther.value.trim();
       const offered = typed ? groupSubjectForTypedName(typed) : undefined;
       if (!typed) {
         subjectOtherError.value = t(
-          'tasks.list.task_form.errors.custom_missing',
+          'tasks.list.task_form.errors.custom_subject_missing',
         );
         hasValidationErrors = true;
       } else if (typed.length > CUSTOM_SUBJECT_MAX_LENGTH) {
-        subjectOtherError.value = t('tasks.list.task_form.errors.custom_long', {
-          max: CUSTOM_SUBJECT_MAX_LENGTH,
-        });
+        subjectOtherError.value = t(
+          'tasks.list.task_form.errors.custom_subject_too_long',
+          {
+            max: CUSTOM_SUBJECT_MAX_LENGTH,
+          },
+        );
         hasValidationErrors = true;
       } else if (offered) {
         subject = { subjectId: offered.id, courseId: null };
@@ -333,10 +338,10 @@ export function useTaskFormLogic(
 
     const cleanTitle = title.value.trim();
     if (!cleanTitle) {
-      titleError.value = t('tasks.list.task_form.errors.title_missing');
+      titleError.value = t('tasks.errors.title_missing');
       hasValidationErrors = true;
     } else if (cleanTitle.length > TITLE_MAX_LENGTH) {
-      titleError.value = t('tasks.list.task_form.errors.title_long', {
+      titleError.value = t('tasks.errors.title_too_long', {
         max: TITLE_MAX_LENGTH,
       });
       hasValidationErrors = true;
@@ -344,10 +349,9 @@ export function useTaskFormLogic(
 
     const cleanDesc = description.value.trim();
     if (cleanDesc.length > DESCRIPTION_MAX_LENGTH) {
-      descriptionError.value = t(
-        'tasks.list.task_form.errors.description_long',
-        { max: DESCRIPTION_MAX_LENGTH },
-      );
+      descriptionError.value = t('tasks.errors.description_too_long', {
+        max: DESCRIPTION_MAX_LENGTH,
+      });
       hasValidationErrors = true;
     }
 
@@ -359,10 +363,12 @@ export function useTaskFormLogic(
     // Old tasks stay editable: the allowed range only applies to a new date.
     if (!dueDateUnchanged.value) {
       if (selectedDate < minDate) {
-        dueDateError.value = t('tasks.list.task_form.errors.date_old');
+        dueDateError.value = t(
+          'tasks.list.task_form.errors.due_date_too_early',
+        );
         hasValidationErrors = true;
       } else if (selectedDate > maxDate) {
-        dueDateError.value = t('tasks.list.task_form.errors.date_new');
+        dueDateError.value = t('tasks.list.task_form.errors.due_date_too_late');
         hasValidationErrors = true;
       }
     }
@@ -401,9 +407,8 @@ export function useTaskFormLogic(
       const err = e as {
         response?: {
           status?: number;
-          data?: { error?: string; code?: string; item?: Task };
+          data?: { code?: string; item?: Task };
         };
-        message?: string;
       };
 
       if (
@@ -414,15 +419,8 @@ export function useTaskFormLogic(
         showDoubleTaskConfirm.value = true;
         submitting.value = false;
         return;
-      } else if (err.response?.status === 400) {
-        submitError.value = apiErrorMessage(
-          err,
-          t('tasks.list.task_form.errors.check_input'),
-        );
-      } else {
-        submitError.value =
-          err.message || t('tasks.list.task_form.errors.unexpected');
       }
+      submitError.value = apiErrorMessage(e, t('tasks.errors.save'));
     } finally {
       submitting.value = false;
     }

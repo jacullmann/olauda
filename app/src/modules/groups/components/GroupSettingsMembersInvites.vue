@@ -37,11 +37,11 @@ async function inviteMember() {
       inviteModal.open({ groupId: groupId, token: res.token });
       void loadInvites();
     } else {
-      toast.error(res.error || t('auth.groups.errors.invite_failed'));
+      toast.error(res.error || t('groups.errors.create_invite'));
     }
   } catch (err) {
     console.error('Failed to generate invite link:', err);
-    toast.error(t('auth.groups.errors.invite_failed'));
+    toast.error(t('groups.errors.create_invite'));
   } finally {
     loadingInvite.value = false;
   }
@@ -58,7 +58,7 @@ async function copyLink(inviteId: string, token: string) {
       }
     }, 3000);
   } catch {
-    toast.error(t('auth.groups.errors.copy_failed'));
+    toast.error(t('common.errors.copy_link'));
   }
 }
 

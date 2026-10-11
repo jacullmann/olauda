@@ -57,10 +57,7 @@ export function useGroupGeneralSettings() {
       await checkAuthStatus();
     } catch (e) {
       toast.error(
-        apiErrorMessage(
-          e,
-          t('groups.settings.messages.group_name_save_failed'),
-        ),
+        apiErrorMessage(e, t('groups.settings.general.errors.save_name')),
       );
     } finally {
       savingGroupName.value = false;
@@ -68,22 +65,25 @@ export function useGroupGeneralSettings() {
   }
 
   /** `avatarId` names an upload from `uploadGroupAvatar`; `null` removes the picture. */
-  async function saveGroupAvatar(avatarId: string | null) {
+  async function saveGroupAvatar(avatarId: string | null): Promise<boolean> {
     try {
       await patchSettings({ avatarId });
       toast.success(
         avatarId
-          ? t('groups.settings.general.avatar.errors.update_success')
-          : t('groups.settings.general.avatar.errors.delete_success'),
+          ? t('groups.settings.general.avatar.update_success')
+          : t('groups.settings.general.avatar.delete_success'),
       );
+      return true;
     } catch (e) {
       toast.error(
         apiErrorMessage(
           e,
-          t('groups.settings.general.avatar.errors.save_group_picture'),
+          avatarId
+            ? t('groups.settings.general.avatar.errors.save')
+            : t('groups.settings.general.avatar.errors.delete'),
         ),
       );
-      throw e;
+      return false;
     }
   }
 
@@ -95,7 +95,7 @@ export function useGroupGeneralSettings() {
       return true;
     } catch (e) {
       toast.error(
-        apiErrorMessage(e, t('groups.settings.general.group_type.failed')),
+        apiErrorMessage(e, t('groups.settings.general.errors.save_group_type')),
       );
       return false;
     } finally {
@@ -111,7 +111,7 @@ export function useGroupGeneralSettings() {
       return true;
     } catch (e) {
       toast.error(
-        apiErrorMessage(e, t('groups.settings.general.dalton.failed')),
+        apiErrorMessage(e, t('groups.settings.general.errors.save_dalton')),
       );
       return false;
     } finally {
@@ -125,9 +125,7 @@ export function useGroupGeneralSettings() {
       toast.success(t('groups.settings.messages.group_deleted'));
       return true;
     } catch (e) {
-      toast.error(
-        apiErrorMessage(e, t('groups.settings.messages.group_delete_failed')),
-      );
+      toast.error(apiErrorMessage(e, t('groups.errors.delete')));
       return false;
     }
   }

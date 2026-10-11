@@ -26,7 +26,7 @@ export function useGroupBans() {
       );
       bannedUsers.value = data;
     } catch {
-      toast.error(t('groups.settings.messages.load_banned_failed'));
+      toast.error(t('groups.settings.members.errors.load_banned'));
     } finally {
       loadingBannedUsers.value = false;
     }
@@ -38,7 +38,7 @@ export function useGroupBans() {
       bannedUsers.value = bannedUsers.value.filter((u) => u.userId !== userId);
       toast.success(t('groups.settings.messages.ban_reverted'));
     } catch {
-      toast.error(t('groups.settings.messages.ban_revert_failed'));
+      toast.error(t('groups.settings.members.errors.unban'));
     }
   }
 

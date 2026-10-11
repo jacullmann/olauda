@@ -1,4 +1,5 @@
 import { isAxiosError, isCancel } from 'axios';
+import i18n from '@/i18n';
 
 /** The machine-readable `code` some API errors carry next to their message. */
 export function apiErrorCode(err: unknown): string | undefined {
@@ -128,13 +129,13 @@ export function isTransientFailure(err: unknown): boolean {
 }
 
 /**
- * Reads the `{ error }` message the API returns on failure, falling back when
- * the request failed before reaching the server or carried no message.
+ * The message for a failed request in the user's language: the shared one
+ * for a rate limit, else the fallback naming what failed. The API's own
+ * `error` text is English and meant for developers, so it is never shown;
+ * a reason worth telling apart comes as a `code` its caller maps.
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
-  if (isAxiosError<{ error?: unknown }>(err)) {
-    const message = err.response?.data?.error;
-    if (typeof message === 'string' && message.length > 0) return message;
-  }
-  return fallback;
+  return isRateLimited(err)
+    ? i18n.global.t('common.errors.rate_limited')
+    : fallback;
 }

@@ -578,7 +578,7 @@ onMounted(() => {
       v-else-if="!subject"
       class="text-center p-8 text-on-ghost-muted text-base"
     >
-      {{ t('groups.settings.subjects.errors.load_failed') }}
+      {{ t('groups.settings.subjects.errors.load') }}
     </div>
     <div v-else class="flex flex-col gap-8">
       <div>

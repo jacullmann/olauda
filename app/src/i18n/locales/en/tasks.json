@@ -45,16 +45,11 @@
       "due_date": "Due date",
       "edit_task": "Edit Task",
       "errors": {
-        "course_missing": "Select a course",
-        "custom_long": "The custom subject is too long (max. {max} characters)",
-        "custom_missing": "Enter a custom subject",
-        "date_new": "The due date is too far in the future",
-        "date_old": "The due date is too far in the past",
-        "description_long": "The description is too long (max. {max} characters)",
-        "title_long": "The title is too long (max. {max} characters)",
-        "title_missing": "Add a title",
-        "check_input": "Please check your input.",
-        "unexpected": "An unexpected error occurred. Please try again."
+        "course_missing": "Select a course.",
+        "custom_subject_missing": "Enter a subject.",
+        "custom_subject_too_long": "The subject can have at most {max} characters.",
+        "due_date_too_late": "The due date is too far in the future.",
+        "due_date_too_early": "The due date is too far in the past."
       },
       "images": "Images",
       "new_task": "New Task",
@@ -84,15 +79,13 @@
           "illegal_placeholder": "Description…",
           "name": "Report",
           "title": "Report this task?",
-          "success": "Task reported.",
-          "error": "Failed to report task: {error}"
+          "success": "Task reported."
         },
         "share": "Share",
         "unarchive": "Unarchive",
         "unpin": "Unpin",
         "upload_images": "Add Images",
-        "share_copied": "Copied link to clipboard",
-        "share_failed": "Sharing failed."
+        "share_copied": "Copied link to clipboard"
       },
       "view": {
         "no_tasks": "No tasks",
@@ -100,21 +93,17 @@
         "no_tasks_message": "Add a new task or",
         "not_found": "Task not found",
         "not_found_message": "This task was deleted or is no longer available.",
-        "load_failed": "Task could not be loaded",
         "load_failed_message": "Check your connection and try again.",
-        "list_load_failed": "Tasks couldn't be loaded",
         "all_tasks": "All tasks",
-        "drop_files": "Drop to attach files"
-      },
-      "errors": {
-        "status_failed": "Failed to update the status."
+        "drop_files": "Drop to attach files",
+        "load_failed": "Couldn't load the task",
+        "list_load_failed": "Couldn't load the tasks"
       }
     },
     "notes": {
       "no_notes": "No notes",
       "note": "Note",
       "saved": "Note saved.",
-      "save_failed": "Failed to save note.",
       "placeholder": "Add a note…"
     },
     "reset_filters": "Reset filters",
@@ -150,8 +139,6 @@
   },
   "private_tasks": {
     "delete_confirm": "Do you really want to delete this private task?",
-    "error_duplicate": "Failed to duplicate task",
-    "error_load": "Failed to load private tasks",
     "form_placeholders": [
       { "title": "Go shopping…", "description": "6 eggs, milk, bread…" },
       {
@@ -206,13 +193,12 @@
     "title": "Private Tasks",
     "form": {
       "new_title": "New Private Task",
-      "edit_title": "Edit Private Task",
-      "errors": {
-        "title_missing": "A title is required.",
-        "title_long": "The title is too long (max. {max} characters).",
-        "description_long": "The description is too long (max. {max} characters).",
-        "unexpected": "An unexpected error occurred."
-      }
+      "edit_title": "Edit Private Task"
+    },
+    "errors": {
+      "duplicate": "Couldn't duplicate the task.",
+      "load": "Couldn't load your private tasks.",
+      "reorder": "Couldn't save the new order."
     }
   },
   "report": {
@@ -225,8 +211,7 @@
       "title": "Delete this task?",
       "message": "The task and all its files will be permanently deleted.",
       "submit": "Delete task",
-      "success": "Task deleted.",
-      "error": "Failed to delete task."
+      "success": "Task deleted."
     }
   },
   "notes": {
@@ -234,8 +219,11 @@
       "title": "Delete note?",
       "message": "Are you sure you want to permanently delete this note?",
       "submit": "Delete note",
-      "success": "Note deleted.",
-      "error": "Failed to delete note."
+      "success": "Note deleted."
+    },
+    "errors": {
+      "save": "Couldn't save the note.",
+      "delete": "Couldn't delete the note."
     }
   },
   "images": {
@@ -243,23 +231,33 @@
       "title": "Delete this image?",
       "message": "If you delete this image, it will be permanently removed.",
       "submit": "Delete image",
-      "success": "Image deleted.",
-      "error": "Failed to delete image."
+      "success": "Image deleted."
     },
     "upload": {
-      "failed": "Images could not be uploaded",
-      "file_too_large": "“{name}” is too large, the maximum is {max} MB. Nothing was uploaded.",
-      "partial": "{uploaded} of {total} images uploaded",
       "progress": "Uploading images",
-      "quota": {
-        "own_exceeded": "You can upload at most {max} images to this task, so {remaining} more. Nothing was uploaded – please select fewer files.",
-        "own_reached": "You have already uploaded the maximum of {max} images to this task.",
-        "task_exceeded": "A task can hold at most {max} images, there is room for {remaining} more. Nothing was uploaded – please select fewer files.",
-        "task_reached": "This task already holds the maximum of {max} images.",
-        "type_exceeded": "This task type allows at most {max} images. Please remove the extra ones."
-      },
       "success": "Images uploaded"
     },
-    "document": "Document"
+    "document": "Document",
+    "errors": {
+      "delete": "Couldn't delete the image.",
+      "upload": "Couldn't upload the images.",
+      "upload_partial": "Only {uploaded} of {total} images were uploaded.",
+      "file_too_large": "“{name}” is too large. Images can be at most {max} MB. Nothing was uploaded.",
+      "own_quota_reached": "You've already uploaded the maximum of {max} images to this task.",
+      "own_quota_exceeded": "Too many images. You can add {remaining} more to this task (max. {max}). Nothing was uploaded.",
+      "task_quota_reached": "This task already has the maximum of {max} images.",
+      "task_quota_exceeded": "Too many images. This task has room for {remaining} more (max. {max}). Nothing was uploaded.",
+      "type_quota_exceeded": "This task type allows at most {max} images. Remove the extra ones."
+    }
+  },
+  "errors": {
+    "load": "Couldn't load the tasks.",
+    "title_missing": "Enter a title.",
+    "title_too_long": "The title can have at most {max} characters.",
+    "description_too_long": "The description can have at most {max} characters.",
+    "save": "Couldn't save the task.",
+    "report": "Couldn't report the task.",
+    "save_status": "Couldn't save the status.",
+    "delete": "Couldn't delete the task."
   }
 }

@@ -4,6 +4,10 @@ import api from '@/api/api.ts';
 import type { ChangePasswordErrors } from '@/modules/auth/types';
 import { apiErrorCode, apiErrorMessage, retryAfterMinutes } from '@/api/errors';
 import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
+import {
+  isStrongPassword,
+  MIN_PASSWORD_LENGTH,
+} from '@/modules/auth/utils/password';
 
 export function useChangePassword(onSuccess: () => void) {
   const { t } = useI18n();
@@ -35,29 +39,29 @@ export function useChangePassword(onSuccess: () => void) {
     if (!currentPassword.value) {
       errors.current = t('auth.change_password.errors.current_missing');
       ok = false;
-    } else if (currentPassword.value.length < 8) {
-      errors.current = t('auth.change_password.errors.current_short');
+    } else if (currentPassword.value.length < MIN_PASSWORD_LENGTH) {
+      errors.current = t('auth.errors.password_too_short');
       ok = false;
     }
 
     if (!newPassword.value) {
-      errors.new = t('auth.change_password.errors.new_missing');
+      errors.new = t('auth.errors.new_password_missing');
       ok = false;
-    } else if (newPassword.value.length < 8) {
-      errors.new = t('auth.change_password.errors.new_short');
+    } else if (!isStrongPassword(newPassword.value)) {
+      errors.new = t('auth.errors.new_password_weak');
       ok = false;
     }
 
     if (!newPassword2.value) {
-      errors.confirm = t('auth.change_password.errors.confirm_missing');
+      errors.confirm = t('auth.errors.confirm_missing');
       ok = false;
     } else if (newPassword.value !== newPassword2.value) {
-      errors.confirm = t('auth.change_password.errors.confirm_wrong');
+      errors.confirm = t('auth.errors.confirm_mismatch');
       ok = false;
     }
 
     if (ok && currentPassword.value === newPassword.value) {
-      errors.new = t('auth.change_password.errors.equal');
+      errors.new = t('auth.change_password.errors.new_password_unchanged');
       ok = false;
     }
 
@@ -81,15 +85,15 @@ export function useChangePassword(onSuccess: () => void) {
     } catch (e: unknown) {
       switch (apiErrorCode(e)) {
         case AuthErrorCode.IncorrectPassword:
-          errors.current = t('auth.change_password.errors.current_wrong');
+          errors.current = t('auth.errors.password_wrong');
           break;
         case AuthErrorCode.ReauthLocked:
-          error.value = t('auth.reauth.errors.locked', retryAfterMinutes(e));
+          error.value = t('auth.errors.reauth_locked', retryAfterMinutes(e));
           break;
         default:
           error.value = apiErrorMessage(
             e,
-            t('auth.change_password.errors.failed'),
+            t('auth.change_password.errors.change'),
           );
       }
     } finally {

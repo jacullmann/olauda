@@ -36,7 +36,7 @@ async function handleMfaCancelled() {
 }
 
 async function handleMfaExpired() {
-  useToast().warning(t('auth.mfa.verify.errors.challenge_expired'));
+  useToast().warning(t('auth.errors.session_expired'));
   await router.replace({ name: 'login' });
 }
 </script>

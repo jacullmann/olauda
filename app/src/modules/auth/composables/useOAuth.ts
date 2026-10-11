@@ -16,27 +16,28 @@ interface LinkedProvider {
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * The reasons a Google redirect comes back with that the user can act on.
+ * Any other reason is a failure on the way and gets the flow's own message.
+ */
+const REASON_KEYS: Partial<Record<string, string>> = {
+  google_account_taken: 'auth.google.errors.account_taken',
+  provider_already_linked: 'auth.google.errors.already_linked',
+  google_account_mismatch: 'auth.reauth.errors.google_account_mismatch',
+  session_expired: 'auth.errors.session_expired',
+  registration_paused: 'auth.errors.registration_paused',
+};
+
+// The user cancelled on Google's side, which is their choice and no error.
+const CANCELLED = 'access_denied';
+
 export function useOAuth() {
   const { t } = useI18n();
   const router = useRouter();
 
-  const ERROR_MESSAGES: Record<string, string> & { server_error: string } = {
-    access_denied: t('auth.google_link.errors.access_denied'),
-    invalid_state: t('auth.google_link.errors.invalid_state'),
-    token_invalid: t('auth.google_link.errors.token_invalid'),
-    token_exchange_failed: t('auth.google_link.errors.token_exchange_failed'),
-    invalid_request: t('auth.google_link.errors.invalid_request'),
-    server_error: t('auth.google_link.errors.server_error'),
-    google_account_taken: t('auth.google_link.errors.google_account_taken'),
-    provider_already_linked: t(
-      'auth.google_link.errors.provider_already_linked',
-    ),
-    session_expired: t('auth.google_link.errors.session_expired'),
-    registration_paused: t('auth.errors.registration_paused'),
-  };
-
-  function errorMessage(reason: string | null): string {
-    return (reason && ERROR_MESSAGES[reason]) || ERROR_MESSAGES.server_error;
+  function showRedirectError(reason: string | null, fallbackKey: string): void {
+    if (reason === CANCELLED) return;
+    useToast().error(t((reason && REASON_KEYS[reason]) || fallbackKey));
   }
 
   // A full navigation: the API answers with a redirect to Google.
@@ -67,10 +68,7 @@ export function useOAuth() {
     } catch (err: unknown) {
       return {
         ok: false,
-        error: authErrorMessage(
-          err,
-          t('auth.connected_accounts.errors.link_failed'),
-        ),
+        error: authErrorMessage(err, t('auth.connected_accounts.errors.link')),
       };
     }
   }
@@ -100,7 +98,7 @@ export function useOAuth() {
     if (result === 'success') {
       useToast().success(t('auth.connected_accounts.linked_success'));
     } else {
-      useToast().error(errorMessage(reason));
+      showRedirectError(reason, 'auth.connected_accounts.errors.link');
     }
     await router.isReady();
     await router.replace({
@@ -121,13 +119,8 @@ export function useOAuth() {
     await router.isReady();
     await router.replace(consumeReauthReturn() ?? '/');
 
-    const toast = useToast();
     if (result === 'error') {
-      toast.error(
-        reason === 'google_account_mismatch'
-          ? t('auth.reauth.errors.google_account_mismatch')
-          : errorMessage(reason),
-      );
+      showRedirectError(reason, 'auth.reauth.errors.google');
       return;
     }
 
@@ -135,7 +128,7 @@ export function useOAuth() {
       result === 'success' ||
       (result === 'second-factor' &&
         (await useReauthModal().request('google-second-factor')));
-    if (confirmed) toast.success(t('auth.reauth.confirmed'));
+    if (confirmed) useToast().success(t('auth.reauth.confirmed'));
   }
 
   // The backend redirect is a full page load, so App calls this exactly once
@@ -178,7 +171,7 @@ export function useOAuth() {
         if (params.get('reason') === 'shutdown') {
           void router.replace({ name: 'maintenance' });
         } else {
-          useToast().error(errorMessage(params.get('reason')));
+          showRedirectError(params.get('reason'), 'auth.google.errors.sign_in');
         }
         break;
     }
@@ -194,7 +187,7 @@ export function useOAuth() {
     } catch (err: unknown) {
       return {
         ok: false,
-        error: authErrorMessage(err, t('auth.google_signup.failed')),
+        error: authErrorMessage(err, t('auth.errors.sign_up')),
       };
     }
   }
@@ -208,7 +201,7 @@ export function useOAuth() {
         ok: false,
         error: authErrorMessage(
           err,
-          t('auth.connected_accounts.errors.unlink_failed'),
+          t('auth.connected_accounts.errors.unlink'),
         ),
       };
     }

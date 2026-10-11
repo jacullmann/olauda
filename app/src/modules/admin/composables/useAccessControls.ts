@@ -27,7 +27,7 @@ export function useAccessControls() {
       const { data } = await api.get<AccessControls>(ENDPOINT);
       controls.value = data;
     } catch {
-      toast.error(t(`${I18N_BASE}.error`));
+      toast.error(t(`${I18N_BASE}.errors.load`));
     } finally {
       loading.value = false;
     }
@@ -54,7 +54,7 @@ export function useAccessControls() {
       });
       controls.value = data;
     } catch {
-      toast.error(t(`${I18N_BASE}.save_error`));
+      toast.error(t(`${I18N_BASE}.errors.save`));
     } finally {
       saving.value = null;
     }

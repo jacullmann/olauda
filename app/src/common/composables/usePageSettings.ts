@@ -51,7 +51,7 @@ export function usePageSettings<P extends SettingsPage>(page: P) {
       await api.patch('/user/preferences', { [page]: { [key]: value } });
     } catch (e) {
       userStore.setPageSetting(page, key, previous);
-      toast.error(apiErrorMessage(e, t('auth.account_settings.save_failed')));
+      toast.error(apiErrorMessage(e, t('auth.account_settings.errors.save')));
     }
   }
 

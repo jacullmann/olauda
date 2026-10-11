@@ -66,6 +66,10 @@ pub enum AppError {
     #[error("The platform is shut down.")]
     Shutdown,
 
+    /// The user tried to join a group that banned them.
+    #[error("You have been banned from this group.")]
+    BannedFromGroup,
+
     #[error("{0}")]
     Forbidden(String),
 
@@ -182,6 +186,10 @@ impl IntoResponse for AppError {
             AppError::Shutdown => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 json!({ "error": self.to_string(), "code": "SHUTDOWN" }),
+            ),
+            AppError::BannedFromGroup => (
+                StatusCode::FORBIDDEN,
+                json!({ "error": self.to_string(), "code": "BANNED_FROM_GROUP" }),
             ),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, json!({ "error": msg })),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, json!({ "error": msg })),

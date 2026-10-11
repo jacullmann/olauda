@@ -74,7 +74,7 @@ async function confirmDeleteGroup() {
       v-if="!canEditGroupType"
       class="text-center text-base text-on-ghost-muted"
     >
-      <p class="m-0">{{ t('groups.settings.general.errors.unauthorized') }}</p>
+      <p class="m-0">{{ t('groups.settings.general.no_permission') }}</p>
     </div>
 
     <div>

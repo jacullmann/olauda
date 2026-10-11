@@ -8,9 +8,6 @@
     "announcements": "Info",
     "reports": "Reports"
   },
-  "errors": {
-    "action_failed": "Action failed."
-  },
   "overview": {
     "title": "Dashboard Overview",
     "stats": {
@@ -59,8 +56,8 @@
       "errors": {
         "token_rejected": "Hetzner rejects the API token. Check HETZNER_API_TOKEN on the backend.",
         "server_not_found": "Hetzner knows no server with this ID. Check HETZNER_SERVER_ID on the backend.",
-        "unreachable": "The Hetzner API cannot be reached right now.",
-        "unknown": "Could not load server usage."
+        "unreachable": "The Hetzner API can't be reached right now.",
+        "load": "Couldn't load the server usage."
       },
       "retry": "Try again"
     },
@@ -70,7 +67,6 @@
       "all_ok": "All OK",
       "jobs_overdue": "Overdue jobs: {count}",
       "overdue": "Overdue: {count}",
-      "error": "Could not load the status.",
       "retry": "Try again",
       "jobs": {
         "cleanup-refresh-tokens": {
@@ -121,10 +117,10 @@
           "label": "Files on Cloudinary",
           "rule": "Unused files after 24 hours, deleted by the server every 5 minutes"
         }
+      },
+      "errors": {
+        "load": "Couldn't load the status."
       }
-    },
-    "errors": {
-      "load": "Failed to load statistics."
     },
     "access_controls": {
       "title": "Platform access",
@@ -142,9 +138,14 @@
         "content": "Everyone except superadmins immediately loses access to Olauda and can neither sign in nor sign up.",
         "submit": "Turn on"
       },
-      "error": "Could not load the access settings.",
-      "save_error": "Could not save the change.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "errors": {
+        "load": "Couldn't load the access settings.",
+        "save": "Couldn't save the change."
+      }
+    },
+    "errors": {
+      "load": "Couldn't load the statistics."
     }
   },
   "directory": {
@@ -237,9 +238,13 @@
     },
     "delete_success": "User deleted.",
     "errors": {
-      "load": "Failed to load users.",
-      "load_details": "Failed to load user details.",
-      "delete": "Failed to delete user."
+      "ban": "Couldn't ban the user.",
+      "unban": "Couldn't lift the ban.",
+      "reset_mfa": "Couldn't reset two-factor authentication.",
+      "change_role": "Couldn't change the role.",
+      "load": "Couldn't load the users.",
+      "load_user": "Couldn't load the user.",
+      "delete": "Couldn't delete the user."
     },
     "reset_mfa_modal": {
       "title": "Reset two-factor authentication?",
@@ -262,8 +267,8 @@
     },
     "delete_success": "Report deleted.",
     "errors": {
-      "load": "Failed to load reports.",
-      "delete": "Failed to delete report."
+      "load": "Couldn't load the reports.",
+      "delete": "Couldn't delete the report."
     }
   },
   "groups": {
@@ -289,8 +294,7 @@
     "delete_tooltip": "Delete group",
     "delete_success": "Group \"{name}\" deleted.",
     "errors": {
-      "load": "Failed to load groups.",
-      "delete": "Failed to delete group."
+      "load": "Couldn't load the groups."
     }
   },
   "announcements": {
@@ -323,11 +327,11 @@
       "publish": "Publish",
       "schedule": "Schedule",
       "errors": {
-        "empty": "Info can't be empty.",
-        "too_long": "The info is too long (max. {max} characters).",
-        "incomplete": "Please enter a date and time.",
-        "start_in_past": "The start must be in the future.",
-        "end_before_start": "The end must be after the start."
+        "text_missing": "The info can't be empty.",
+        "text_too_long": "The info can have at most {max} characters.",
+        "date_missing": "Enter a date and time.",
+        "start_in_past": "The start has to be in the future.",
+        "end_before_start": "The end has to be after the start."
       }
     },
     "delete_modal": {
@@ -338,17 +342,16 @@
     "save_success": "Info saved.",
     "delete_success": "Info deleted.",
     "errors": {
-      "load": "Info couldn't be loaded.",
-      "delete": "The info couldn't be deleted."
+      "load": "Couldn't load the infos.",
+      "delete": "Couldn't delete the info.",
+      "save": "Couldn't save the info."
     }
   },
   "log": {
     "title": "Log",
     "hint": "Security events are kept for 90 days, activity for 30 days.",
-    "error": "The log could not be loaded.",
     "empty": "No entries yet.",
     "empty_filtered": "No entries match these filters.",
-    "load_more_failed": "Load more entries",
     "sources": {
       "all": "All",
       "security": "Security",
@@ -617,6 +620,10 @@
         "announcement_deleted": "Admin: announcement deleted",
         "report_deleted": "Admin: report deleted"
       }
-    }
+    },
+    "errors": {
+      "load": "Couldn't load the log."
+    },
+    "load_more": "Load more entries"
   }
 }
