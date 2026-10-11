@@ -92,15 +92,6 @@ impl AssetFolder {
             None => stem,
         }
     }
-
-    /// The ID `public_id` gets in this folder, keeping its name. IDs already
-    /// in the folder map to themselves.
-    pub fn public_id_for(self, public_id: &str) -> String {
-        let name = public_id
-            .rsplit_once('/')
-            .map_or(public_id, |(_, name)| name);
-        format!("{}/{name}", self.path())
-    }
 }
 
 #[derive(Clone)]
@@ -264,49 +255,6 @@ impl Cloudinary {
             other => Err(CloudinaryError::Rejected(other.to_owned())),
         }
     }
-
-    /// Shows the asset in `folder` of the Media Library without changing its
-    /// public ID.
-    pub async fn move_to_folder(
-        &self,
-        public_id: &str,
-        folder: AssetFolder,
-        resource_type: ResourceType,
-    ) -> Result<(), CloudinaryError> {
-        let response = self
-            .post_signed(
-                resource_type,
-                "explicit",
-                &[
-                    ("public_id", public_id),
-                    ("type", "upload"),
-                    ("asset_folder", folder.path()),
-                ],
-            )
-            .await?;
-        succeeded_unless_missing(response).await
-    }
-
-    /// Gives the asset a new public ID and purges its old URLs from the CDN.
-    pub async fn rename(
-        &self,
-        from_public_id: &str,
-        to_public_id: &str,
-        resource_type: ResourceType,
-    ) -> Result<(), CloudinaryError> {
-        let response = self
-            .post_signed(
-                resource_type,
-                "rename",
-                &[
-                    ("from_public_id", from_public_id),
-                    ("to_public_id", to_public_id),
-                    ("invalidate", "true"),
-                ],
-            )
-            .await?;
-        succeeded_unless_missing(response).await
-    }
 }
 
 async fn rejection(response: Response) -> CloudinaryError {
@@ -315,20 +263,6 @@ async fn rejection(response: Response) -> CloudinaryError {
         .await
         .map_or_else(|_| "unreadable error".to_owned(), |body| body.error.message);
     CloudinaryError::Rejected(message)
-}
-
-/// A missing asset counts as success, so a relocation interrupted between
-/// its steps can simply be repeated: the asset was either handled before or
-/// is lost either way.
-async fn succeeded_unless_missing(response: Response) -> Result<(), CloudinaryError> {
-    match response.status() {
-        StatusCode::NOT_FOUND => Ok(()),
-        StatusCode::BAD_REQUEST => Err(rejection(response).await),
-        _ => {
-            response.error_for_status()?;
-            Ok(())
-        }
-    }
 }
 
 #[cfg(test)]
@@ -354,24 +288,6 @@ mod tests {
         assert!(raw.starts_with("tasks/") && raw.ends_with(".docx"));
         assert!(picture.starts_with("group-pictures/"));
         assert_ne!(image, AssetFolder::Tasks.new_public_id(None));
-    }
-
-    #[test]
-    fn public_ids_move_between_folders_by_name() {
-        assert_eq!(
-            AssetFolder::Tasks.public_id_for("hausaufgaben/abc"),
-            "tasks/abc"
-        );
-        assert_eq!(
-            AssetFolder::Tasks.public_id_for("hausaufgaben/abc.docx"),
-            "tasks/abc.docx"
-        );
-        assert_eq!(
-            AssetFolder::GroupPictures.public_id_for("hausaufgaben/abc"),
-            "group-pictures/abc"
-        );
-        assert_eq!(AssetFolder::Tasks.public_id_for("abc"), "tasks/abc");
-        assert_eq!(AssetFolder::Tasks.public_id_for("tasks/abc"), "tasks/abc");
     }
 
     #[test]

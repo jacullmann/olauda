@@ -12,16 +12,18 @@ const SWEEP_BATCH_SIZE: i64 = 100;
 /// Its heartbeat tells the superadmin overview whether the sweep keeps up.
 const SWEEP_WORKER: &str = "asset-sweep";
 
-pub async fn run(db: PgPool, cloudinary: Cloudinary) {
-    let mut interval = tokio::time::interval(SWEEP_INTERVAL);
-    interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+pub fn spawn(db: PgPool, cloudinary: Cloudinary) {
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(SWEEP_INTERVAL);
+        interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
-    loop {
-        interval.tick().await;
-        if let Err(e) = sweep_orphaned_assets(&db, &cloudinary).await {
-            tracing::warn!("Asset sweep failed: {e}");
+        loop {
+            interval.tick().await;
+            if let Err(e) = sweep_orphaned_assets(&db, &cloudinary).await {
+                tracing::warn!("Asset sweep failed: {e}");
+            }
         }
-    }
+    });
 }
 
 async fn sweep_orphaned_assets(db: &PgPool, cloudinary: &Cloudinary) -> sqlx::Result<()> {
