@@ -6,8 +6,8 @@ import {
   lockAxis,
   PAGE_COMMIT_FRACTION,
   VelocityTracker,
-} from '@/utils/gesture';
-import { haptic } from '@/utils/haptics';
+} from '@/common/utils/gesture';
+import { haptic } from '@/common/utils/haptics';
 
 /**
  * Space between the page on screen and the one sliding in, in px: the page's

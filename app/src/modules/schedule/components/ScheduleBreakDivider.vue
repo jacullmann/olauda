@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 withDefaults(
   defineProps<{
@@ -27,7 +27,7 @@ withDefaults(
     :style="{
       gridColumn,
       gridRow,
-      '--enter-delay': entranceDelay(gridColumn, gridRow),
+      '--enter-delay': cellEntranceDelay(gridColumn, gridRow),
     }"
   >
     <span

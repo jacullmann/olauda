@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { formatDate } from '@/utils/date-formatter';
+import { formatDate } from '@/common/utils/formatDate';
 import type { FeedAnnouncement } from '@/modules/announcements/types';
 import { Megaphone } from '@lucide/vue';
 

@@ -1,12 +1,12 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from './useGroupPageId';
 import type { Announcement } from '@/modules/announcements/types';
-import { useConfirmModal } from '@/stores/modalStore';
-import { useAnnouncementStore } from '@/stores/announcementStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useAnnouncementStore } from '@/modules/announcements/stores/useAnnouncementStore';
 
 /** The group's announcements, as its admins manage them. */
 export function useGroupAnnouncementsAdmin() {

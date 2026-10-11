@@ -8,7 +8,7 @@ import {
   type AuthenticationResponseJSON,
 } from '@simplewebauthn/browser';
 import { isAxiosError } from 'axios';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { apiErrorCode } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
 import type { PasskeyChallengeResponse } from '@/modules/auth/types';

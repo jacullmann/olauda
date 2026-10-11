@@ -3,11 +3,11 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { GraduationCap, RotateCcw } from '@lucide/vue';
-import { useSubjectStore } from '@/stores/subjectStore';
-import { useUserStore } from '@/stores/userStore';
-import { useConfirmModal } from '@/stores/modalStore';
-import { useCourseSelection } from '@/common/composables/useCourseSelection';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useSubjectStore } from '@/modules/courses/stores/useSubjectStore';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useCourseSelection } from '@/modules/courses/composables/useCourseSelection';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useToast } from '@/common/composables/useToast';
 import { apiErrorMessage } from '@/api/errors';
 

@@ -1,11 +1,11 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { uploadTaskFile, type Attachment } from '@/api/files';
-import { processImageBeforeUpload } from '@/modules/tasks/composables/useConvertImage';
+import { processImageBeforeUpload } from '@/modules/tasks/utils/imageConversion';
 import { useToast } from '@/common/composables/useToast';
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 import type { Task, TaskFile } from '@/modules/tasks/types';
 import {
   imageQuotaViolation,

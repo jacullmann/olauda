@@ -4,7 +4,7 @@ import { useIsMobileViewport } from '@/common/composables/useViewport';
 import { Check, X } from '@lucide/vue';
 import { computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { expandFrom, type MorphOrigin } from '@/utils/morph';
+import { expandFrom, type MorphOrigin } from '@/common/utils/morph';
 
 // Two roots (dialog and sheet), so attributes and listeners such as drag and
 // drop handlers are forwarded to whichever one is shown.

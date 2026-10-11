@@ -1,15 +1,15 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useGroupSettingsAccess } from '@/modules/groups/composables/useGroupSettingsAccess';
+import { useGroupPageId } from './useGroupPageId';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroupSettingsAccess } from './useGroupSettingsAccess';
 import type { AssignableMemberRole, GroupMember } from '@/modules/groups/types';
-import { useConfirmModal } from '@/stores/modalStore';
-import { useUserStore } from '@/stores/userStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 
 /** The group's members, their roles and the group's ownership. */
 export function useGroupMembers() {
@@ -18,7 +18,7 @@ export function useGroupMembers() {
   const toast = useToast();
   const confirmModal = useConfirmModal();
   const userStore = useUserStore();
-  const { checkAuthStatus } = useAppAuth();
+  const { checkAuthStatus } = useSession();
   const { hasOwnerRights } = useGroupSettingsAccess();
 
   const members = ref<GroupMember[]>([]);

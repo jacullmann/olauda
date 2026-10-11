@@ -14,9 +14,9 @@ import {
   executeTransition,
   until,
 } from '@vueuse/core';
-import { haptic } from '@/utils/haptics';
-import { FLICK_VELOCITY, VelocityTracker } from '@/utils/gesture';
-import { SETTLE_CURVE, SETTLE_EASING } from '@/utils/motion';
+import { haptic } from '@/common/utils/haptics';
+import { FLICK_VELOCITY, VelocityTracker } from '@/common/utils/gesture';
+import { SETTLE_CURVE, SETTLE_EASING } from '@/common/utils/motion';
 
 export interface SwipeToDismissOptions {
   enabled?: MaybeRefOrGetter<boolean>;

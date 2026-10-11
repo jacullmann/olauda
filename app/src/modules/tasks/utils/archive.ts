@@ -1,5 +1,5 @@
 import type { Task, TaskPreferences } from '@/modules/tasks/types';
-import { isDueByEndOfToday, isPastDue } from '@/modules/tasks/utils/dueDate';
+import { isDueByEndOfToday, isPastDue } from './dueDate';
 
 interface TaskMarksOf {
   checked: boolean;

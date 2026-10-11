@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTasks } from '@/modules/tasks/composables/useTasks';
-import ReportModal from './ReportModal.vue';
+import TaskReportModal from './TaskReportModal.vue';
 import TaskInfoModal from './TaskInfoModal.vue';
 
 const {
@@ -15,7 +15,7 @@ const {
 
 <!-- The dialogs a task card's menu opens, for the page that owns the tasks. -->
 <template>
-  <ReportModal
+  <TaskReportModal
     v-model:reason="reportReason"
     :open="showReportConfirm"
     message=""

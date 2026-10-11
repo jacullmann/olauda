@@ -1,6 +1,6 @@
 import type { Lesson, ScheduleConfig } from '@/modules/schedule/types';
-import { lessonMinutes } from '@/modules/schedule/utils/slotTimes';
-import { daysSinceMonday } from '@/modules/schedule/utils/weekday';
+import { lessonMinutes } from './slotTimes';
+import { daysSinceMonday } from './weekday';
 
 const MINUTES_PER_DAY = 24 * 60;
 

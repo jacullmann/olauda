@@ -3,13 +3,13 @@ import type {
   ScheduleBreaks,
   ScheduleConfig,
 } from '@/modules/schedule/types';
-import { breaksOn } from '@/modules/schedule/utils/breaks';
-import { lessonSpan } from '@/modules/schedule/utils/lesson';
+import { breaksOn } from './breaks';
+import { lessonSpan } from './lesson';
 import {
   DEFAULT_START_TIME,
   formatTimeOfDay,
   minutesSinceMidnight,
-} from '@/utils/time';
+} from '@/common/utils/timeOfDay';
 
 /** What a group without a configured schedule gets. */
 export const DEFAULT_SCHEDULE_CONFIG: Readonly<ScheduleConfig> = {

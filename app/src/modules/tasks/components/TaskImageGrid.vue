@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useLongPress } from '@/common/composables/useLongPress';
 import { useAddedEntrance } from '@/modules/tasks/composables/useAddedEntrance';
 import type { Attachment } from '@/api/files';
-import AttachmentThumbnail from './AttachmentThumbnail.vue';
+import TaskAttachmentThumbnail from './TaskAttachmentThumbnail.vue';
 
 const props = defineProps<{
   images: Attachment[];
@@ -64,7 +64,7 @@ const { handlers: longPressHandlers } = useLongPress(
           class="img-clickable w-full h-full cursor-pointer bg-transparent block touch-target"
           @click.stop="$emit('open-viewer', idx)"
         >
-          <AttachmentThumbnail :file="img" />
+          <TaskAttachmentThumbnail :file="img" />
         </button>
       </div>
     </div>

@@ -1,10 +1,10 @@
 import { computed, ref, watch } from 'vue';
-import { useSearchModal } from '@/stores/modalStore';
-import { visibleSections } from '../utils/sections';
+import { useSearchModal } from '@/modules/search/stores/useSearchModal';
+import { visibleSections } from '@/modules/search/utils/sections';
 import { useActiveItem } from './useActiveItem';
 import { useRootSearchView } from './useRootSearchView';
 import { usePickerSearchViews } from './usePickerSearchViews';
-import type { SearchItem, SearchMode } from '../types';
+import type { SearchItem, SearchMode } from '@/modules/search/types';
 
 /**
  * The search's state: the open view, the query filtering it and the item the

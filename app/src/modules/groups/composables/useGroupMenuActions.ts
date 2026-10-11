@@ -2,15 +2,15 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
-import { useUserStore } from '@/stores/userStore';
-import { useConfirmModal, useInviteModal } from '@/stores/modalStore';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useInviteModal } from '@/modules/groups/stores/useInviteModal';
 import { useToast } from '@/common/composables/useToast';
-import {
-  useAppAuth,
-  type UserGroup,
-} from '@/modules/auth/composables/useAppAuth';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { type UserGroup } from './useGroups';
+import { useInvite } from './useInvite';
 
 /** The per-group actions offered by the header's group menu and the groups list. */
 export function useGroupMenuActions() {
@@ -20,7 +20,8 @@ export function useGroupMenuActions() {
   const inviteModal = useInviteModal();
   const toast = useToast();
   const { user } = storeToRefs(useUserStore());
-  const { createInvite, checkAuthStatus } = useAppAuth();
+  const { createInvite } = useInvite();
+  const { checkAuthStatus } = useSession();
 
   const pending = ref(false);
 

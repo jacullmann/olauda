@@ -1,6 +1,7 @@
 import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/userStore';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useSession } from './useSession';
 import { consumeLoginReturn } from '@/modules/auth/utils/loginReturn';
 
 /**
@@ -10,7 +11,8 @@ import { consumeLoginReturn } from '@/modules/auth/utils/loginReturn';
 export function useEnterApp() {
   const router = useRouter();
   const userStore = useUserStore();
-  const { checkAuthStatus, homeRoute } = useAppAuth();
+  const { checkAuthStatus } = useSession();
+  const { homeRoute } = useGroups();
 
   return async function enterApp() {
     try {

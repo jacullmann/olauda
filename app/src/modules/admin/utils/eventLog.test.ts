@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EventLogEntry } from '../types';
+import type { EventLogEntry } from '@/modules/admin/types';
 import { eventLogRows, isDateKey, localDayStart } from './eventLog';
 
 function entry(id: string, createdAt: Date): EventLogEntry {

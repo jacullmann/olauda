@@ -7,16 +7,20 @@ import {
   type MaybeRefOrGetter,
 } from 'vue';
 import axios from 'axios';
-import api from '@/api/api';
-import { isUuid } from '@/utils/uuid';
+import api from '@/api/client';
+import { isUuid } from '@/common/utils/uuid';
 import type {
   EventLogEntry,
   EventLogPage,
   EventOutcome,
   EventSource,
   SortOrder,
-} from '../types';
-import { EVENT_SOURCES, isDateKey, localDayStart } from '../utils/eventLog';
+} from '@/modules/admin/types';
+import {
+  EVENT_SOURCES,
+  isDateKey,
+  localDayStart,
+} from '@/modules/admin/utils/eventLog';
 import { useRouteQueryState, useSearchInput } from './useRouteQueryState';
 
 const OUTCOMES = [

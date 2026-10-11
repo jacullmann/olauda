@@ -1,5 +1,9 @@
-import { rankByQuery, type SearchField } from '@/utils/search-rank';
-import type { SearchItem, SearchSection, SearchView } from '../types';
+import { rankByQuery, type SearchField } from '@/common/utils/searchRank';
+import type {
+  SearchItem,
+  SearchSection,
+  SearchView,
+} from '@/modules/search/types';
 
 function searchFields(item: SearchItem): SearchField[] {
   return [

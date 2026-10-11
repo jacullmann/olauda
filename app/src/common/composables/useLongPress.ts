@@ -1,7 +1,7 @@
 import { onScopeDispose } from 'vue';
-import { haptic } from '@/utils/haptics';
-import { growWhilePressed, type PressGrowth } from '@/utils/pressGrowth';
-import { HOLD_TOLERANCE } from '@/utils/gesture';
+import { haptic } from '@/common/utils/haptics';
+import { growWhilePressed, type PressGrowth } from '@/common/utils/pressGrowth';
+import { HOLD_TOLERANCE } from '@/common/utils/gesture';
 
 export type LongPressTrigger = (event: PointerEvent | MouseEvent) => void;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { visibleSections } from './sections';
-import type { SearchItem, SearchView } from '../types';
+import type { SearchItem, SearchView } from '@/modules/search/types';
 
 const item = (id: string, extra: Partial<SearchItem> = {}): SearchItem => ({
   id,

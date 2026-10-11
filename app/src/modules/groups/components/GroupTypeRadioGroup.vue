@@ -2,7 +2,7 @@
 import { computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Check } from '@lucide/vue';
-import { GROUP_TYPES, type GroupType } from '@/types/groups';
+import { GROUP_TYPES, type GroupType } from '@/modules/groups/types';
 
 defineProps<{
   disabled?: boolean;

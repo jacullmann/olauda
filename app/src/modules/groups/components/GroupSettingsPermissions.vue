@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import InfoModal from '@/common/components/InfoModal.vue';
-import api from '../../../api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useToast } from '@/common/composables/useToast';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import type {
   ConfigurablePermissionKey,
   PermissionMatrix,
   PermissionRole,
-} from '@/types/permissions';
+} from '@/modules/groups/types';
 
 const i18n = useI18n();
 const { t } = i18n;
@@ -87,7 +87,8 @@ function roleOptions(lowestRole: PermissionRole) {
 }
 
 const toast = useToast();
-const { checkAuthStatus, activeGroupPermissions } = useAppAuth();
+const { checkAuthStatus } = useSession();
+const { activeGroupPermissions } = useGroups();
 const groupId = useGroupPageId();
 
 const permissions = ref<PermissionMatrix | null>(null);
@@ -146,16 +147,16 @@ onMounted(() => {
 
 <template>
   <div>
-    <PageHeader>
+    <BasePageHeader>
       <template #info>
-        <InfoModal
+        <BaseInfoButton
           :tooltip="t('groups.settings.permissions.info.tooltip')"
           :title="t('groups.settings.permissions.title')"
         >
           <h3>{{ t('groups.settings.permissions.info.headline') }}</h3>
-        </InfoModal>
+        </BaseInfoButton>
       </template>
-    </PageHeader>
+    </BasePageHeader>
 
     <div v-if="loading" class="flex flex-col justify-center items-center py-10">
       <BaseSpinner size="32px" />

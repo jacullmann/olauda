@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AdminSystemAnnouncement } from '../types';
+import type { AdminSystemAnnouncement } from '@/modules/admin/types';
 import {
   draftFrom,
   toSaveRequest,

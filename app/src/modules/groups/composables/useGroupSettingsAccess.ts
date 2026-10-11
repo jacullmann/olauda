@@ -1,9 +1,9 @@
 import { computed } from 'vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useUserStore } from '@/stores/userStore';
+import { useGroups } from './useGroups';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 
 export function useGroupSettingsAccess() {
-  const { activeGroupOwnerId } = useAppAuth();
+  const { activeGroupOwnerId } = useGroups();
   const userStore = useUserStore();
 
   const isOwner = computed(

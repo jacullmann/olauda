@@ -3,7 +3,7 @@ import { ref, inject, computed } from 'vue';
 import { Check, ChevronRight } from '@lucide/vue';
 import type { Component } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import { MENU_SHEET_KEY } from '@/common/composables/useMenuContext';
+import { MENU_SHEET_KEY } from '@/common/utils/menuSheet';
 
 const sheetCtx = inject(MENU_SHEET_KEY, undefined);
 const { width: vw } = useWindowSize();

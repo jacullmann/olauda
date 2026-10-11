@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-/** The app's generated-avatar palette (app/src/modules/auth/utils/avatar.ts). */
+/** The app's generated-avatar palette (app/src/common/utils/avatarColor.ts). */
 const AVATAR_COLORS = [
   '#AA47BD',
   '#7B1FA2',

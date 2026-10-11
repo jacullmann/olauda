@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 
 const model = defineModel<boolean>({ default: false });
 

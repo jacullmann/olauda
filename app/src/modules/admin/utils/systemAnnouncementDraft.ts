@@ -1,10 +1,10 @@
 import { ANNOUNCEMENT_MAX_CHARS } from '@/modules/announcements/types';
 import { addDays, isoDate } from '@/modules/schedule/utils/weekday';
-import { formatTimeOfDay } from '@/utils/time';
+import { formatTimeOfDay } from '@/common/utils/timeOfDay';
 import type {
   AdminSystemAnnouncement,
   SaveSystemAnnouncementRequest,
-} from '../types';
+} from '@/modules/admin/types';
 
 /** The form's state, with dates and times in local time as the inputs hold them. */
 export interface SystemAnnouncementDraft {

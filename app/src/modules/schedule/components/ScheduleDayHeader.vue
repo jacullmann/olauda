@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 withDefaults(
   defineProps<{
@@ -36,7 +36,7 @@ withDefaults(
     ]"
     :style="{
       gridColumn: standalone ? '1 / -1' : gridColumn,
-      '--enter-delay': entranceDelay(gridColumn, 1),
+      '--enter-delay': cellEntranceDelay(gridColumn, 1),
     }"
   >
     <template v-if="date">

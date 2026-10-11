@@ -11,11 +11,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppLogo: typeof import('./src/common/components/AppLogo.vue')['default']
+    BaseAvatar: typeof import('./src/common/components/BaseAvatar.vue')['default']
     BaseBackdrop: typeof import('./src/common/components/BaseBackdrop.vue')['default']
     BaseButton: typeof import('./src/common/components/BaseButton.vue')['default']
     BaseCheckbox: typeof import('./src/common/components/BaseCheckbox.vue')['default']
     BaseCodeInput: typeof import('./src/common/components/BaseCodeInput.vue')['default']
+    BaseConfirmModal: typeof import('./src/common/components/BaseConfirmModal.vue')['default']
     BaseDatePicker: typeof import('./src/common/components/BaseDatePicker.vue')['default']
     BaseDialog: typeof import('./src/common/components/BaseDialog.vue')['default']
     BaseEmptyState: typeof import('./src/common/components/BaseEmptyState.vue')['default']
@@ -23,6 +24,8 @@ declare module 'vue' {
     BaseFormContent: typeof import('./src/common/components/BaseFormContent.vue')['default']
     BaseFormGroup: typeof import('./src/common/components/BaseFormGroup.vue')['default']
     BaseGlassRefraction: typeof import('./src/common/components/BaseGlassRefraction.vue')['default']
+    BaseInfoButton: typeof import('./src/common/components/BaseInfoButton.vue')['default']
+    BaseInfoModal: typeof import('./src/common/components/BaseInfoModal.vue')['default']
     BaseInput: typeof import('./src/common/components/BaseInput.vue')['default']
     BaseKbd: typeof import('./src/common/components/BaseKbd.vue')['default']
     BaseKbdGroup: typeof import('./src/common/components/BaseKbdGroup.vue')['default']
@@ -40,6 +43,8 @@ declare module 'vue' {
     BaseModalCard: typeof import('./src/common/components/BaseModalCard.vue')['default']
     BaseNotice: typeof import('./src/common/components/BaseNotice.vue')['default']
     BasePageActions: typeof import('./src/common/components/BasePageActions.vue')['default']
+    BasePageHeader: typeof import('./src/common/components/BasePageHeader.vue')['default']
+    BasePaneTransition: typeof import('./src/common/components/BasePaneTransition.vue')['default']
     BaseRow: typeof import('./src/common/components/BaseRow.vue')['default']
     BaseScrollFade: typeof import('./src/common/components/BaseScrollFade.vue')['default']
     BaseSearchInput: typeof import('./src/common/components/BaseSearchInput.vue')['default']
@@ -54,13 +59,7 @@ declare module 'vue' {
     BaseToast: typeof import('./src/common/components/BaseToast.vue')['default']
     BaseToggle: typeof import('./src/common/components/BaseToggle.vue')['default']
     BaseTooltip: typeof import('./src/common/components/BaseTooltip.vue')['default']
-    CenteredAuthModal: typeof import('./src/common/components/CenteredAuthModal.vue')['default']
-    InfoModal: typeof import('./src/common/components/InfoModal.vue')['default']
-    PageHeader: typeof import('./src/common/components/PageHeader.vue')['default']
-    PersonalizedViewNotice: typeof import('./src/common/components/PersonalizedViewNotice.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SettingsPaneTransition: typeof import('./src/common/components/SettingsPaneTransition.vue')['default']
-    Tagline: typeof import('./src/common/components/Tagline.vue')['default']
   }
 }

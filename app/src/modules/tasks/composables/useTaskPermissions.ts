@@ -1,9 +1,9 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useUserStore } from '@/stores/userStore';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 import type { Attachment, Task } from '@/modules/tasks/types';
-import type { PermissionKey } from '@/types/permissions';
+import type { PermissionKey } from '@/modules/groups/types';
 
 type OwnedBy = { createdBy?: string | null };
 
@@ -13,7 +13,7 @@ type OwnedBy = { createdBy?: string | null };
  * group's matrix says; owners and superadmins arrive with every permission.
  */
 export function useTaskPermissions(groupId: MaybeRefOrGetter<string>) {
-  const { findGroup } = useAppAuth();
+  const { findGroup } = useGroups();
   const { user } = storeToRefs(useUserStore());
 
   const permissions = computed(

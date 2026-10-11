@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { formatSubjectDisplay } from '@/utils/subject-formatter';
+import { formatSubjectDisplay } from '@/modules/courses/utils/subjectLabels';
 import { useIsPhoneViewport } from '@/common/composables/useViewport';
 import type { Task } from '@/modules/tasks/types';
 import { formatDueDate } from '@/modules/tasks/utils/dueDate';
-import { useImpliedCourse } from '@/common/composables/useImpliedCourse';
+import { useImpliedCourse } from '@/modules/courses/composables/useImpliedCourse';
 
 const props = defineProps<{
   item: Task;

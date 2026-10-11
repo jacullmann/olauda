@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TSort extends string">
 import { computed } from 'vue';
 import { ArrowDown, ArrowUp, ArrowUpDown } from '@lucide/vue';
-import type { SortOrder } from '../types';
+import type { SortOrder } from '@/modules/admin/types';
 
 const props = defineProps<{
   label: string;

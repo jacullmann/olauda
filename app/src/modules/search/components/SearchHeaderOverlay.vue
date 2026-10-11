@@ -7,7 +7,7 @@ import { Search, X } from '@lucide/vue';
 /**
  * The search on phones. It grows out of AppHeader's search button: the bar
  * slides out to the left carrying the button's icon, and the results fade in
- * over the frosted page. GlobalModalContainer runs its enter and leave as the
+ * over the frosted page. AppModalHost runs its enter and leave as the
  * `header-search` transition.
  */
 defineProps<{

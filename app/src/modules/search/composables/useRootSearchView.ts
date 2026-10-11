@@ -37,21 +37,19 @@ import {
   PanelLeft,
   ScrollText,
 } from '@lucide/vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useGroupMenuActions } from '@/modules/groups/composables/useGroupMenuActions';
-import { useLogout } from '@/core/composables/useLogout';
-import { useGroupAction } from '@/core/composables/useGroupAction';
+import { useLogout } from '@/modules/auth/composables/useLogout';
+import { useGroupAction } from '@/modules/groups/composables/useGroupAction';
 import { useIsSidebarViewport } from '@/common/composables/useViewport';
-import {
-  useAnnouncementFormModal,
-  useCreateGroupModal,
-  useDeleteAccountModal,
-  usePrivateTaskFormModal,
-  useTaskFormModal,
-} from '@/stores/modalStore';
-import { useSidebarStore } from '@/stores/sidebarStore';
-import { useUserStore } from '@/stores/userStore';
-import type { SearchItem, SearchView } from '../types';
+import { useAnnouncementFormModal } from '@/modules/announcements/stores/useAnnouncementFormModal';
+import { useCreateGroupModal } from '@/modules/groups/stores/useCreateGroupModal';
+import { useDeleteAccountModal } from '@/modules/account/stores/useDeleteAccountModal';
+import { useTodoFormModal } from '@/modules/todos/stores/useTodoFormModal';
+import { useTaskFormModal } from '@/modules/tasks/stores/useTaskFormModal';
+import { useSidebarStore } from '@/shell/stores/useSidebarStore';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import type { SearchItem, SearchView } from '@/modules/search/types';
 
 type Command = SearchItem & { available?: boolean };
 
@@ -70,7 +68,7 @@ const GROUP_SETTINGS_TABS = [
 export function useRootSearchView(): ComputedRef<SearchView> {
   const { t } = useI18n();
   const router = useRouter();
-  const { activeGroupId, checkPermission, canInAnyGroup } = useAppAuth();
+  const { activeGroupId, checkPermission, canInAnyGroup } = useGroups();
   const { withGroup } = useGroupAction();
   const { inviteMember } = useGroupMenuActions();
   const performLogout = useLogout();
@@ -78,7 +76,7 @@ export function useRootSearchView(): ComputedRef<SearchView> {
   const userStore = useUserStore();
   const sidebarStore = useSidebarStore();
   const taskFormModal = useTaskFormModal();
-  const privateTaskFormModal = usePrivateTaskFormModal();
+  const todoFormModal = useTodoFormModal();
   const announcementFormModal = useAnnouncementFormModal();
   const createGroupModal = useCreateGroupModal();
   const deleteAccountModal = useDeleteAccountModal();
@@ -281,7 +279,7 @@ export function useRootSearchView(): ComputedRef<SearchView> {
         kind: 'action',
         icon: Lock,
         shortcut: ['alt', 'p'],
-        run: privateTaskFormModal.openNew,
+        run: todoFormModal.openNew,
       },
       {
         id: 'create-announcement',

@@ -1,11 +1,11 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { useToast } from '@/common/composables/useToast';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { consumeReauthReturn } from '@/modules/auth/utils/reauthReturn';
-import { useReauthModal } from '@/stores/modalStore';
+import { useReauthModal } from '@/modules/auth/stores/useReauthModal';
 
 const showSignUpModal = ref(false);
 

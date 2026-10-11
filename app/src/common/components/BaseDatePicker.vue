@@ -4,7 +4,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue';
 import { useSwipePager } from '@/common/composables/useSwipePager';
-import { labelTextFor } from '@/utils/labelText';
+import { labelTextFor } from '@/common/utils/labelText';
 
 /** Value format matches `<input type="date">`: `YYYY-MM-DD`. */
 const model = defineModel<string | null>();

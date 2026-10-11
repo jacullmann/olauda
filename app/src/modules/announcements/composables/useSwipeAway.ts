@@ -1,6 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 import {
   FLICK_VELOCITY,
   SNAP_BACK_MS,
@@ -9,8 +9,12 @@ import {
   drawnMatrix,
   rubberBand,
   unRubberBand,
-} from '@/utils/gesture';
-import { GLIDE_EASING, SETTLE_EASING, glideDuration } from '@/utils/motion';
+} from '@/common/utils/gesture';
+import {
+  GLIDE_EASING,
+  SETTLE_EASING,
+  glideDuration,
+} from '@/common/utils/motion';
 
 /**
  * The share of the card's own size a slow swipe must cover to send it away:

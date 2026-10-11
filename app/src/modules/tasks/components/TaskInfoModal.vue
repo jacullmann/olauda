@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import type { Task } from '@/modules/tasks/types';
-import { formatDate as formatRelativeDate } from '@/utils/date-formatter';
+import { formatDate as formatRelativeDate } from '@/common/utils/formatDate';
 
 const props = defineProps<{
   open: boolean;

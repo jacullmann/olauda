@@ -4,7 +4,7 @@ import { onClickOutside, useElementBounding } from '@vueuse/core';
 import { ChevronDown } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue';
-import { labelTextFor } from '@/utils/labelText';
+import { labelTextFor } from '@/common/utils/labelText';
 
 const { t } = useI18n();
 

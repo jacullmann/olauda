@@ -1,11 +1,11 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import App from '@/App.vue';
+import App from './App.vue';
 import '@/assets/css/style.css';
 import router from '@/router';
 import { useTheme } from '@/common/composables/useTheme';
 import i18n from '@/i18n';
-import { loadAnalytics } from '@/core/analytics';
+import { loadAnalytics } from '@/shell/utils/analytics';
 import VWave from 'v-wave';
 
 const { initializeTheme } = useTheme();

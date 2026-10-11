@@ -7,10 +7,10 @@ import {
   SNAP_BACK_MS,
   TOUCH_SLOP,
   VelocityTracker,
-} from '@/utils/gesture';
-import { SETTLE_EASING } from '@/utils/motion';
-import { haptic } from '@/utils/haptics';
-import { expandFrom, type MorphOrigin } from '@/utils/morph';
+} from '@/common/utils/gesture';
+import { SETTLE_EASING } from '@/common/utils/motion';
+import { haptic } from '@/common/utils/haptics';
+import { expandFrom, type MorphOrigin } from '@/common/utils/morph';
 
 defineOptions({ inheritAttrs: false });
 

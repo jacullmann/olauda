@@ -2,7 +2,7 @@
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useResizeObserver } from '@vueuse/core';
 import type { NowMarker } from '@/modules/schedule/utils/nowMarker';
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 const props = withDefaults(
   defineProps<{
@@ -82,7 +82,7 @@ const transform = computed(() => {
     ref="root"
     class="col-start-2 row-span-full pointer-events-none z-[3]"
     :class="{ 'animate-enter': animated }"
-    :style="{ '--enter-delay': entranceDelay(2, marker.firstRow) }"
+    :style="{ '--enter-delay': cellEntranceDelay(2, marker.firstRow) }"
     aria-hidden="true"
   >
     <div

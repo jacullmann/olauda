@@ -4,8 +4,8 @@ import type {
   ScheduleCourse,
   ScheduleSubject,
 } from '@/modules/schedule/types';
-import { DALTON_SUBJECT_KEY } from '@/types/subjects';
-import { subjectLabel } from '@/utils/subject-formatter';
+import { DALTON_SUBJECT_KEY } from '@/modules/courses/types';
+import { subjectLabel } from '@/modules/courses/utils/subjectLabels';
 
 /**
  * The stored subject name of a lesson, or the Dalton key for the pseudo-subject.

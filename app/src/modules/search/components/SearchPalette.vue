@@ -2,8 +2,8 @@
 import { computed, useId, useTemplateRef, type InputHTMLAttributes } from 'vue';
 import { onKeyStroke } from '@vueuse/core';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
-import { useSearchPalette } from '../composables/useSearchPalette';
-import { optionElementId } from '../utils/sections';
+import { useSearchPalette } from '@/modules/search/composables/useSearchPalette';
+import { optionElementId } from '@/modules/search/utils/sections';
 import SearchDialog from './SearchDialog.vue';
 import SearchHeaderOverlay from './SearchHeaderOverlay.vue';
 import SearchResults from './SearchResults.vue';

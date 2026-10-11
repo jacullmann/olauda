@@ -1,6 +1,6 @@
 import { computed, nextTick, onScopeDispose, ref, watch, type Ref } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 import {
   FLICK_VELOCITY,
   PULL_AGAINST_RESISTANCE,
@@ -8,8 +8,12 @@ import {
   VelocityTracker,
   drawnMatrix,
   lockAxis,
-} from '@/utils/gesture';
-import { GLIDE_EASING, SETTLE_EASING, glideDuration } from '@/utils/motion';
+} from '@/common/utils/gesture';
+import {
+  GLIDE_EASING,
+  SETTLE_EASING,
+  glideDuration,
+} from '@/common/utils/motion';
 
 /** The share of the toast's width a slow swipe must cover to dismiss it. */
 const COMMIT_FRACTION = 0.35;

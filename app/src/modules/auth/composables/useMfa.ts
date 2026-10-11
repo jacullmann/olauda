@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import i18n from '@/i18n';
 import type {
   MfaChallengeResponse,

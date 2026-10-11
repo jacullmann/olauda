@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check } from '@lucide/vue';
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 
 withDefaults(
   defineProps<{

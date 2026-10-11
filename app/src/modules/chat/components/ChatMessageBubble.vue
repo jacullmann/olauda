@@ -2,9 +2,8 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Reply, Ellipsis } from '@lucide/vue';
-import Avatar from '@/modules/auth/components/Avatar.vue';
 import { useLongPress } from '@/common/composables/useLongPress';
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 
 const { t } = useI18n();
 
@@ -167,7 +166,7 @@ const formatTime = (timestamp: string) => {
         v-if="msg.userId !== currentUserId"
         class="w-8 shrink-0 flex justify-center self-start"
       >
-        <Avatar
+        <BaseAvatar
           v-if="msg.userId !== currentUserId && !isGrouped"
           :name="msg.senderName"
           :size="8"

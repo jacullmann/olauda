@@ -7,8 +7,8 @@ import {
   lockAxis,
   MIN_GLIDE_MS,
   VelocityTracker,
-} from '@/utils/gesture';
-import { GLIDE_EASING, glideDuration } from '@/utils/motion';
+} from '@/common/utils/gesture';
+import { GLIDE_EASING, glideDuration } from '@/common/utils/motion';
 
 export type PageStep = -1 | 1;
 

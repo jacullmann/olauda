@@ -11,7 +11,6 @@ import {
 import { useIsPhoneViewport } from '@/common/composables/useViewport';
 import { useScheduleDisplay } from '@/modules/schedule/composables/useScheduleDisplay';
 
-import BaseTableWrapper from '@/common/components/BaseTableWrapper.vue';
 import ScheduleDayTrack from './ScheduleDayTrack.vue';
 import ScheduleStartTimeColumn from './ScheduleStartTimeColumn.vue';
 import ScheduleDayHeader from './ScheduleDayHeader.vue';

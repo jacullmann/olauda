@@ -1,14 +1,15 @@
 import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { isAxiosError } from 'axios';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroupPageId } from './useGroupPageId';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroups } from './useGroups';
 import type { Lesson, ScheduleConfig } from '@/modules/schedule/types';
-import { isUuid } from '@/utils/uuid';
+import { isUuid } from '@/common/utils/uuid';
 
 interface ScheduleLessonPayload {
   id?: string;
@@ -43,7 +44,8 @@ export function useGroupScheduleAdmin() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
-  const { checkAuthStatus, activeGroupDaltonEnabled } = useAppAuth();
+  const { checkAuthStatus } = useSession();
+  const { activeGroupDaltonEnabled } = useGroups();
 
   const lessons = ref<Lesson[]>([]);
   const loadingLessons = ref(false);

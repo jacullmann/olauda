@@ -1,7 +1,7 @@
 import { computed } from 'vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useAnnouncementStore } from '@/stores/announcementStore';
-import { useSystemAnnouncementStore } from '@/stores/systemAnnouncementStore';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useAnnouncementStore } from '@/modules/announcements/stores/useAnnouncementStore';
+import { useSystemAnnouncementStore } from '@/modules/announcements/stores/useSystemAnnouncementStore';
 import type {
   Announcement,
   FeedAnnouncement,
@@ -37,7 +37,7 @@ function fromSystemAnnouncement(a: SystemAnnouncement): FeedAnnouncement {
  * once read.
  */
 export function useAnnouncementFeed() {
-  const { activeGroupId } = useAppAuth();
+  const { activeGroupId } = useGroups();
   const groupStore = useAnnouncementStore();
   const systemStore = useSystemAnnouncementStore();
 

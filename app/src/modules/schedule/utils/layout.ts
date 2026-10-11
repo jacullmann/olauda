@@ -6,16 +6,10 @@ import type {
   ScheduleLayout,
   ScheduleRow,
 } from '@/modules/schedule/types';
-import {
-  lessonsSlotRange,
-  type SlotRange,
-} from '@/modules/schedule/utils/lesson';
-import { breaksOn } from '@/modules/schedule/utils/breaks';
-import {
-  formatMinuteRange,
-  slotRangeMinutes,
-} from '@/modules/schedule/utils/slotTimes';
-import { formatTimeOfDay } from '@/utils/time';
+import { lessonsSlotRange, type SlotRange } from './lesson';
+import { breaksOn } from './breaks';
+import { formatMinuteRange, slotRangeMinutes } from './slotTimes';
+import { formatTimeOfDay } from '@/common/utils/timeOfDay';
 
 /** The day headers take the first row. */
 const FIRST_SLOT_ROW = 2;

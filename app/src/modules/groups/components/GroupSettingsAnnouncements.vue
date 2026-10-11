@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Plus, Trash2 } from '@lucide/vue';
-import { useAnnouncementFormModal } from '@/stores/modalStore';
+import { useAnnouncementFormModal } from '@/modules/announcements/stores/useAnnouncementFormModal';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useGroupAnnouncementsAdmin } from '@/modules/groups/composables/useGroupAnnouncementsAdmin';
 import AnnouncementList from '@/modules/announcements/components/AnnouncementList.vue';
 import { fromGroupAnnouncement } from '@/modules/announcements/composables/useAnnouncementFeed';
@@ -20,7 +20,7 @@ const { t } = useI18n();
 
 const announcementFormModal = useAnnouncementFormModal();
 
-const { checkPermission } = useAppAuth();
+const { checkPermission } = useGroups();
 const canManageAnnouncements = computed(() =>
   checkPermission('manage_announcements'),
 );
@@ -30,7 +30,7 @@ announcementFormModal.onSuccess(() => void loadAnnouncements());
 
 <template>
   <div class="flex flex-1 flex-col">
-    <PageHeader>
+    <BasePageHeader>
       <template #action>
         <BaseTooltip
           v-if="canManageAnnouncements"
@@ -45,7 +45,7 @@ announcementFormModal.onSuccess(() => void loadAnnouncements());
           />
         </BaseTooltip>
       </template>
-    </PageHeader>
+    </BasePageHeader>
 
     <AnnouncementList class="flex-1" :announcements="listedAnnouncements">
       <template #actions="{ announcement }">

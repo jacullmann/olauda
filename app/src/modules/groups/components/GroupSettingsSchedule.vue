@@ -10,20 +10,18 @@ import {
   Undo2,
   Redo2,
 } from '@lucide/vue';
-import AdminSchedule from '@/modules/groups/components/AdminSchedule.vue';
-import GroupSettingsScheduleConfig from '@/modules/groups/components/GroupSettingsScheduleConfig.vue';
-import GroupSettingsScheduleChanges from '@/modules/groups/components/GroupSettingsScheduleChanges.vue';
-import BaseMenu from '@/common/components/BaseMenu.vue';
-import BaseMenuButton from '@/common/components/BaseMenuButton.vue';
+import GroupSettingsScheduleEditor from './GroupSettingsScheduleEditor.vue';
+import GroupSettingsScheduleConfig from './GroupSettingsScheduleConfig.vue';
+import GroupSettingsScheduleChanges from './GroupSettingsScheduleChanges.vue';
 import type { Lesson, ScheduleConfig } from '@/modules/schedule/types';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useSubjectAdmin } from '@/modules/groups/composables/useSubjectAdmin';
 import { useGroupScheduleAdmin } from '@/modules/groups/composables/useGroupScheduleAdmin';
 import { useLessonSelection } from '@/modules/groups/composables/useLessonSelection';
 import { useScheduleDisplay } from '@/modules/schedule/composables/useScheduleDisplay';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import {
   cloneFnJSON,
   useEventListener,
@@ -32,7 +30,7 @@ import {
 } from '@vueuse/core';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
 import { useLeaveGuard } from '@/common/composables/useLeaveGuard';
-import { useConfirmModal } from '@/stores/modalStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import {
   findLessonSubject,
   lessonLastSlot,
@@ -41,8 +39,11 @@ import {
   formatMinuteRange,
   slotRangeMinutes,
 } from '@/modules/schedule/utils/slotTimes';
-import { DALTON_SUBJECT_KEY } from '@/types/subjects';
-import { courseOptionLabel, subjectLabel } from '@/utils/subject-formatter';
+import { DALTON_SUBJECT_KEY } from '@/modules/courses/types';
+import {
+  courseOptionLabel,
+  subjectLabel,
+} from '@/modules/courses/utils/subjectLabels';
 
 const i18n = useI18n();
 const { t, locale } = i18n;
@@ -55,7 +56,7 @@ const groupId = useGroupPageId();
 const { lessons, loadingLessons, savingScheduleConfig, saveScheduleBatch } =
   useGroupScheduleAdmin();
 
-const { activeGroupDaltonEnabled, checkPermission } = useAppAuth();
+const { activeGroupDaltonEnabled, checkPermission } = useGroups();
 const { subjects, loadSubjects } = useSubjectAdmin();
 const { scheduleConfig, schedulesCoursesIndividually, formatDayName } =
   useScheduleDisplay();
@@ -501,7 +502,7 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-8">
     <div>
-      <PageHeader>
+      <BasePageHeader>
         <span class="swap-stack">
           <Transition :name="isEditMode ? 'swap-wheel-down' : 'swap-wheel-up'">
             <span v-if="isEditMode" class="swap-text">
@@ -514,14 +515,14 @@ onMounted(() => {
         </span>
 
         <template #info>
-          <InfoModal
+          <BaseInfoButton
             :tooltip="t('groups.settings.schedule.info.tooltip')"
             :title="t('groups.settings.schedule.info.title')"
           >
             <h3>
               {{ t('groups.settings.schedule.config.instruction_text') }}
             </h3>
-          </InfoModal>
+          </BaseInfoButton>
         </template>
 
         <template #action>
@@ -584,7 +585,7 @@ onMounted(() => {
             </Transition>
           </div>
         </template>
-      </PageHeader>
+      </BasePageHeader>
 
       <div v-if="isEditMode" class="flex flex-col gap-6">
         <div class="sm:p-6">
@@ -678,7 +679,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <AdminSchedule
+          <GroupSettingsScheduleEditor
             :lessons="draftLessons"
             :subjects="subjects"
             is-editable
@@ -718,7 +719,7 @@ onMounted(() => {
         >
           {{ t('schedule.loading') }}
         </div>
-        <AdminSchedule
+        <GroupSettingsScheduleEditor
           v-else
           :lessons="lessons"
           :subjects="subjects"

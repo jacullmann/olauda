@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { DALTON_SUBJECT_KEY } from '@/types/subjects';
-import { builtInSubjectKey } from '@/utils/subject-formatter';
+import { DALTON_SUBJECT_KEY } from '@/modules/courses/types';
+import { builtInSubjectKey } from '@/modules/courses/utils/subjectLabels';
 
 export const CUSTOM_SUBJECT_OPTION = 'custom';
 

@@ -1,14 +1,14 @@
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { apiErrorMessage } from '@/api/errors';
 import { ANNOUNCEMENT_MAX_CHARS } from '@/modules/announcements/types';
 import {
   draftFrom,
   toSaveRequest,
   type DraftField,
-} from '../utils/systemAnnouncementDraft';
-import type { AdminSystemAnnouncement } from '../types';
+} from '@/modules/admin/utils/systemAnnouncementDraft';
+import type { AdminSystemAnnouncement } from '@/modules/admin/types';
 
 const ENDPOINT = '/admin/system-announcements';
 

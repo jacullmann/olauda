@@ -11,7 +11,7 @@ import {
 import { useEventListener } from '@vueuse/core';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
 import { ChevronLeft } from '@lucide/vue';
-import { MENU_SHEET_KEY } from '@/common/composables/useMenuContext';
+import { MENU_SHEET_KEY } from '@/common/utils/menuSheet';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();

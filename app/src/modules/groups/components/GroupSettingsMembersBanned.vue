@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import Avatar from '@/modules/auth/components/Avatar.vue';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useGroupBans } from '@/modules/groups/composables/useGroupBans';
 import { Ban } from '@lucide/vue';
 
 const { bannedUsers, loadingBannedUsers: loading, revertBan } = useGroupBans();
 
 const { t, locale } = useI18n();
-const { checkPermission } = useAppAuth();
+const { checkPermission } = useGroups();
 const canModerateMembers = computed(() => checkPermission('moderate_members'));
 
 function bannedOnLabel(bannedAt: string): string {
@@ -39,7 +38,7 @@ function bannedOnLabel(bannedAt: string): string {
         <div v-if="index > 0" class="separator md:ml-14 md:mr-3"></div>
         <div class="flex items-center justify-between py-3 gap-2">
           <div class="flex items-center gap-4 min-w-0">
-            <Avatar
+            <BaseAvatar
               class="max-md:hidden"
               :name="user.generatedName"
               :size="10"

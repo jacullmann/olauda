@@ -1,10 +1,10 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroupPageId } from './useGroupPageId';
+import { useGroups } from './useGroups';
 import type { GroupInviteLog } from '@/modules/groups/types';
 
 /** The group's invite links, used, revoked and still open. */
@@ -12,7 +12,7 @@ export function useGroupInvites() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
-  const { checkPermission } = useAppAuth();
+  const { checkPermission } = useGroups();
 
   const invites = ref<GroupInviteLog[]>([]);
   const loadingInvites = ref(false);

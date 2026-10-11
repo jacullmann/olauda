@@ -1,5 +1,5 @@
 import type { ScheduleRow } from '@/modules/schedule/types';
-import { minutesSinceMidnight } from '@/utils/time';
+import { minutesSinceMidnight } from '@/common/utils/timeOfDay';
 
 /** How long before the day's first time the marker appears. */
 export const LEAD_MINUTES = 3;

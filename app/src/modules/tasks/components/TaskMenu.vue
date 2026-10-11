@@ -16,7 +16,7 @@ import {
 } from '@lucide/vue';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
 import type { TaskMenuAction } from '@/modules/tasks/types';
-import type { MenuAnchor } from '@/modules/tasks/utils/menuAnchor';
+import type { MenuAnchor } from '@/common/utils/menuAnchor';
 
 const props = defineProps<{
   open: boolean;

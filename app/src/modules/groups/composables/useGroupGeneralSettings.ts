@@ -1,12 +1,13 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import type { GroupType } from '@/types/groups';
+import { useGroupPageId } from './useGroupPageId';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroups } from './useGroups';
+import type { GroupType } from '@/modules/groups/types';
 
 interface GroupSettingsPatch {
   name?: string;
@@ -20,7 +21,8 @@ export function useGroupGeneralSettings() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
-  const { groupName: authGroupName, checkAuthStatus } = useAppAuth();
+  const { groupName: authGroupName } = useGroups();
+  const { checkAuthStatus } = useSession();
 
   const groupName = computed(
     () => authGroupName.value || t('groups.settings.group_fallback'),

@@ -1,15 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useLoadingBar } from '@/common/composables/loadingState';
-import { useUserStore } from '@/stores/userStore';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useLoadingBar } from '@/shell/composables/useLoadingBar';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 import i18n from '@/i18n';
-import { consumePendingInviteRoute } from '@/modules/auth/utils/pendingInvite';
+import { consumePendingInviteRoute } from '@/modules/groups/utils/invites';
 import {
   consumeLoginReturn,
   saveLoginReturn,
 } from '@/modules/auth/utils/loginReturn';
-import { useAccessStatusStore } from '@/stores/accessStatusStore';
+import { useAccessStatusStore } from '@/modules/auth/stores/useAccessStatusStore';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -18,60 +19,61 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/login',
-    component: () => import('@/layouts/LoginLayout.vue'),
+    component: () => import('@/modules/auth/pages/AuthLayout.vue'),
     children: [
       {
         path: '',
         name: 'login',
-        component: () => import('@/modules/auth/pages/LoginPage.vue'),
+        component: () => import('@/modules/auth/pages/AuthLoginPage.vue'),
         meta: { title: 'auth.login.login', access: 'guest' },
       },
     ],
   },
   {
     path: '/register',
-    component: () => import('@/layouts/LoginLayout.vue'),
+    component: () => import('@/modules/auth/pages/AuthLayout.vue'),
     children: [
       {
         path: '',
         name: 'register',
-        component: () => import('@/modules/auth/pages/RegisterPage.vue'),
+        component: () => import('@/modules/auth/pages/AuthRegisterPage.vue'),
         meta: { title: 'auth.login.register', access: 'guest' },
       },
     ],
   },
   {
     path: '/verify-mfa',
-    component: () => import('@/layouts/LoginLayout.vue'),
+    component: () => import('@/modules/auth/pages/AuthLayout.vue'),
     children: [
       {
         path: '',
         name: 'verify-mfa',
-        component: () => import('@/modules/auth/pages/MfaPage.vue'),
+        component: () => import('@/modules/auth/pages/AuthMfaPage.vue'),
         meta: { title: 'auth.mfa.verify.title', access: 'guest' },
       },
     ],
   },
   {
     path: '/forgot-password',
-    component: () => import('@/layouts/LoginLayout.vue'),
+    component: () => import('@/modules/auth/pages/AuthLayout.vue'),
     children: [
       {
         path: '',
         name: 'forgot-password',
-        component: () => import('@/modules/auth/pages/ForgotPasswordPage.vue'),
+        component: () =>
+          import('@/modules/auth/pages/AuthForgotPasswordPage.vue'),
         meta: { title: 'auth.login.reset.title', access: 'public' },
       },
     ],
   },
   {
     path: '/maintenance',
-    component: () => import('@/layouts/LoginLayout.vue'),
+    component: () => import('@/modules/auth/pages/AuthLayout.vue'),
     children: [
       {
         path: '',
         name: 'maintenance',
-        component: () => import('@/modules/auth/pages/MaintenancePage.vue'),
+        component: () => import('@/modules/auth/pages/AuthMaintenancePage.vue'),
         meta: { title: 'auth.access.shutdown.title', access: 'public' },
         // Only reachable while the platform is shut down.
         beforeEnter: async () => {
@@ -85,12 +87,12 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/',
-    component: () => import('@/layouts/DefaultLayout.vue'),
+    component: () => import('@/shell/pages/AppLayout.vue'),
     children: [
       {
         path: 'groups',
         name: 'groups',
-        component: () => import('@/modules/groups/pages/Groups.vue'),
+        component: () => import('@/modules/groups/pages/GroupListPage.vue'),
         meta: {
           title: 'navigation.home',
           headerTitle: 'groups.list.title',
@@ -107,13 +109,14 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'dashboard',
             name: 'group-dashboard',
-            component: () => import('@/modules/dashboard/pages/Dashboard.vue'),
+            component: () =>
+              import('@/modules/dashboard/pages/DashboardPage.vue'),
             props: true,
             meta: { title: 'tasks.list.title' },
           },
           {
             path: 'tasks',
-            component: () => import('@/modules/tasks/pages/Tasks.vue'),
+            component: () => import('@/modules/tasks/pages/TaskLayout.vue'),
             meta: {
               title: 'tasks.list.title',
               // An opened task keeps the tasks entry of the navigation active.
@@ -123,7 +126,8 @@ const routes: RouteRecordRaw[] = [
               {
                 path: '',
                 name: 'group-tasks',
-                component: () => import('@/modules/tasks/pages/TaskList.vue'),
+                component: () =>
+                  import('@/modules/tasks/pages/TaskListPage.vue'),
                 // Kept alive behind an opened task, it returns to where it was.
                 meta: { headerTitle: 'tasks.list.title', restoresScroll: true },
                 // Links shared before tasks had a page of their own pointed
@@ -143,7 +147,8 @@ const routes: RouteRecordRaw[] = [
               {
                 path: ':taskId',
                 name: 'group-task',
-                component: () => import('@/modules/tasks/pages/TaskDetail.vue'),
+                component: () =>
+                  import('@/modules/tasks/pages/TaskDetailPage.vue'),
                 // The page caps its own content, so files can be dropped
                 // across the whole view beside it.
                 meta: { fullWidth: true },
@@ -153,13 +158,14 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'schedule',
             name: 'group-schedule',
-            component: () => import('@/modules/schedule/pages/Schedule.vue'),
+            component: () =>
+              import('@/modules/schedule/pages/SchedulePage.vue'),
             meta: { title: 'schedule.title', headerTitle: 'schedule.title' },
           },
           {
             path: 'messages',
             name: 'group-messages',
-            component: () => import('@/modules/chat/pages/Messages.vue'),
+            component: () => import('@/modules/chat/pages/ChatPage.vue'),
             meta: {
               title: 'common.sidebar.messages',
               headerTitle: 'common.sidebar.messages',
@@ -168,7 +174,8 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'settings/:tab?/:subTab?',
             name: 'group-admin',
-            component: () => import('@/modules/groups/pages/GroupSettings.vue'),
+            component: () =>
+              import('@/modules/groups/pages/GroupSettingsPage.vue'),
             meta: {
               title: 'navigation.group_admin',
               fullWidth: true,
@@ -180,14 +187,15 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'account/:tab?/:subTab?',
         name: 'account-settings',
-        component: () => import('@/modules/auth/pages/AccountSettings.vue'),
+        component: () =>
+          import('@/modules/account/pages/AccountSettingsPage.vue'),
         meta: { title: 'navigation.account_settings', fullWidth: true },
       },
 
       {
         path: 'private',
         name: 'private-todos',
-        component: () => import('@/modules/tasks/pages/PrivateTasks.vue'),
+        component: () => import('@/modules/todos/pages/TodoListPage.vue'),
         meta: {
           title: 'navigation.private_todos',
           headerTitle: 'tasks.private_tasks.title',
@@ -202,7 +210,7 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin',
-    component: () => import('@/layouts/DefaultLayout.vue'),
+    component: () => import('@/shell/pages/AppLayout.vue'),
     meta: {
       title: 'navigation.super_admin',
       headerTitle: 'navigation.super_admin',
@@ -213,15 +221,14 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        component: () =>
-          import('@/modules/admin/pages/SuperAdminDashboard.vue'),
+        component: () => import('@/modules/admin/pages/AdminLayout.vue'),
         children: [
           { path: '', redirect: { name: 'super-admin' } },
           {
             path: 'overview',
             name: 'super-admin',
             component: () =>
-              import('@/modules/admin/pages/SuperAdminOverview.vue'),
+              import('@/modules/admin/pages/AdminOverviewPage.vue'),
             meta: { adminTab: 'overview' },
           },
           {
@@ -231,20 +238,20 @@ const routes: RouteRecordRaw[] = [
               {
                 path: '',
                 component: () =>
-                  import('@/modules/admin/pages/SuperAdminDirectory.vue'),
+                  import('@/modules/admin/pages/AdminDirectoryLayout.vue'),
                 children: [
                   { path: '', redirect: { name: 'admin-users' } },
                   {
                     path: 'users',
                     name: 'admin-users',
                     component: () =>
-                      import('@/modules/admin/pages/SuperAdminUsers.vue'),
+                      import('@/modules/admin/pages/AdminUsersPage.vue'),
                   },
                   {
                     path: 'groups',
                     name: 'admin-groups',
                     component: () =>
-                      import('@/modules/admin/pages/SuperAdminGroups.vue'),
+                      import('@/modules/admin/pages/AdminGroupsPage.vue'),
                   },
                 ],
               },
@@ -252,7 +259,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'users/:userId',
                 name: 'admin-user',
                 component: () =>
-                  import('@/modules/admin/pages/SuperAdminUserDetail.vue'),
+                  import('@/modules/admin/pages/AdminUserPage.vue'),
                 props: true,
               },
             ],
@@ -260,21 +267,21 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'log',
             name: 'admin-log',
-            component: () => import('@/modules/admin/pages/SuperAdminLog.vue'),
+            component: () => import('@/modules/admin/pages/AdminLogPage.vue'),
             meta: { adminTab: 'log' },
           },
           {
             path: 'reports',
             name: 'admin-reports',
             component: () =>
-              import('@/modules/admin/pages/SuperAdminReports.vue'),
+              import('@/modules/admin/pages/AdminReportsPage.vue'),
             meta: { adminTab: 'reports' },
           },
           {
             path: 'announcements',
             name: 'admin-announcements',
             component: () =>
-              import('@/modules/admin/pages/SuperAdminAnnouncements.vue'),
+              import('@/modules/admin/pages/AdminAnnouncementsPage.vue'),
             meta: { adminTab: 'announcements' },
           },
         ],
@@ -284,12 +291,12 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/invite/:token',
-    component: () => import('@/layouts/SimpleLayout.vue'),
+    component: () => import('@/shell/pages/AppSimpleLayout.vue'),
     children: [
       {
         path: '',
         name: 'group-invite',
-        component: () => import('@/core/pages/GroupInvite.vue'),
+        component: () => import('@/modules/groups/pages/GroupInvitePage.vue'),
         props: true,
         meta: { title: 'navigation.group_invite', access: 'public' },
       },
@@ -298,12 +305,13 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/account/security/password/edit',
-    component: () => import('@/layouts/SimpleLayout.vue'),
+    component: () => import('@/shell/pages/AppSimpleLayout.vue'),
     children: [
       {
         path: '',
         name: 'account-password-edit',
-        component: () => import('@/modules/auth/pages/PasswordPage.vue'),
+        component: () =>
+          import('@/modules/account/pages/AccountPasswordPage.vue'),
         meta: {
           title: () =>
             useUserStore().hasPassword
@@ -317,12 +325,12 @@ const routes: RouteRecordRaw[] = [
   {
     // Kept out of the group's own layout until the member is done with it.
     path: '/groups/:groupId/setup',
-    component: () => import('@/layouts/SimpleLayout.vue'),
+    component: () => import('@/shell/pages/AppSimpleLayout.vue'),
     children: [
       {
         path: '',
         name: 'group-course-setup',
-        component: () => import('@/modules/auth/pages/CourseSetupPage.vue'),
+        component: () => import('@/modules/courses/pages/CourseSetupPage.vue'),
         meta: { title: 'navigation.course_setup' },
       },
     ],
@@ -330,12 +338,12 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/:pathMatch(.*)*',
-    component: () => import('@/layouts/DefaultLayout.vue'),
+    component: () => import('@/shell/pages/AppLayout.vue'),
     children: [
       {
         path: '',
         name: 'not-found',
-        component: () => import('@/core/pages/404-Page.vue'),
+        component: () => import('@/shell/pages/AppNotFoundPage.vue'),
         meta: { title: 'navigation.not_found', fullWidth: true },
       },
     ],
@@ -356,16 +364,8 @@ const router = createRouter({
 });
 
 const { start, finish } = useLoadingBar();
-const {
-  isLoggedIn,
-  isAuthReady,
-  isApiUnreachable,
-  initAuth,
-  homeRoute,
-  canShowGroup,
-  showGroup,
-  findGroup,
-} = useAppAuth();
+const { isLoggedIn, isAuthReady, isApiUnreachable, initAuth } = useSession();
+const { homeRoute, canShowGroup, showGroup, findGroup } = useGroups();
 
 /**
  * Group pages a member with a pending course setup may still open: the setup
@@ -450,9 +450,7 @@ router.beforeEach(async (to, from) => {
   // After the profile fetch, so a title that depends on the user sees it.
   const titleKey =
     typeof to.meta.title === 'function' ? to.meta.title() : to.meta.title;
-  document.title = titleKey
-    ? `${i18n.global.t(titleKey)} | Olauda`
-    : 'Olauda';
+  document.title = titleKey ? `${i18n.global.t(titleKey)} | Olauda` : 'Olauda';
 
   if (to.meta.requiresSuperAdmin) {
     if (!userStore.initialized) await userStore.fetchUser();

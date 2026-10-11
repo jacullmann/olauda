@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { vEntranceStart } from '@/common/composables/useSkeletonHandoff';
-import { entranceDelay } from '@/modules/tasks/utils/entrance';
+import { entranceDelay } from '@/common/utils/entrance';
 
 withDefaults(
   defineProps<{

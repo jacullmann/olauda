@@ -6,9 +6,9 @@ import {
   rubberBand,
   SCROLL_EDGE_STIFFNESS,
   VelocityTracker,
-} from '@/utils/gesture';
-import { Spring, type SpringConfig } from '@/utils/spring';
-import { haptic } from '@/utils/haptics';
+} from '@/common/utils/gesture';
+import { Spring, type SpringConfig } from '@/common/utils/spring';
+import { haptic } from '@/common/utils/haptics';
 
 export interface NavItem {
   id: string;

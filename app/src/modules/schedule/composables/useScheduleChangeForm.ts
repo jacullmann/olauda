@@ -1,14 +1,14 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useSubjectAdmin } from '@/modules/groups/composables/useSubjectAdmin';
-import { useScheduleDisplay } from '@/modules/schedule/composables/useScheduleDisplay';
+import { useScheduleDisplay } from './useScheduleDisplay';
 import type { Lesson, Substitution } from '@/modules/schedule/types';
 import { findLessonSubject } from '@/modules/schedule/utils/lesson';
-import { courseOptionLabel } from '@/utils/subject-formatter';
+import { courseOptionLabel } from '@/modules/courses/utils/subjectLabels';
 
 interface ScheduleChangePayload {
   lessonId: string;

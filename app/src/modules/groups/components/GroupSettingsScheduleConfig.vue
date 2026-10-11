@@ -10,7 +10,7 @@ import {
   MAX_SLOTS,
   useScheduleConfigForm,
 } from '@/modules/groups/composables/useScheduleConfigForm';
-import ScheduleDayPlan from '@/modules/groups/components/ScheduleDayPlan.vue';
+import GroupSettingsScheduleDayPlan from './GroupSettingsScheduleDayPlan.vue';
 
 const props = defineProps<{
   canEdit: boolean;
@@ -128,7 +128,7 @@ async function submit() {
 
 <template>
   <div>
-    <PageHeader>
+    <BasePageHeader>
       {{ t('groups.settings.schedule.config.title') }}
 
       <template #action>
@@ -140,7 +140,7 @@ async function submit() {
           <BaseButton variant="ghost" :icon="Pencil" @click="startEditing" />
         </BaseTooltip>
       </template>
-    </PageHeader>
+    </BasePageHeader>
 
     <BaseFormContent v-if="isEditing" class="max-w-120">
       <BaseFormGroup id="config-start">
@@ -205,7 +205,7 @@ async function submit() {
           </BaseButton>
         </div>
 
-        <ScheduleDayPlan
+        <GroupSettingsScheduleDayPlan
           editable
           :times="draftConfig"
           :total-slots="draftConfig.totalSlots"
@@ -275,7 +275,7 @@ async function submit() {
           </p>
         </template>
 
-        <ScheduleDayPlan
+        <GroupSettingsScheduleDayPlan
           :times="scheduleConfig"
           :total-slots="scheduleConfig.totalSlots"
           :breaks="savedBreaks"

@@ -4,8 +4,8 @@ import {
   browserSupportsWebAuthn,
   startAuthentication,
 } from '@simplewebauthn/browser';
-import api from '@/api/api';
-import { isMfaChallengeExpired } from '@/modules/auth/composables/useMfa';
+import api from '@/api/client';
+import { isMfaChallengeExpired } from './useMfa';
 import type { PasskeyChallengeResponse } from '@/modules/auth/types';
 import {
   isPasskeyDismissed,

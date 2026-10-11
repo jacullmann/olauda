@@ -10,14 +10,12 @@ import {
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import Avatar from '@/modules/auth/components/Avatar.vue';
-import InfoModal from '@/common/components/InfoModal.vue';
 import type { GroupMember, MemberRole } from '@/modules/groups/types';
 import { useGroupMembers } from '@/modules/groups/composables/useGroupMembers';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useUserStore } from '@/stores/userStore';
-import { rankByQuery } from '@/utils/search-rank';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { rankByQuery } from '@/common/utils/searchRank';
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -80,7 +78,7 @@ const {
   transferOwnership,
 } = useGroupMembers();
 
-const { checkPermission } = useAppAuth();
+const { checkPermission } = useGroups();
 const userStore = useUserStore();
 const canModerateMembers = computed(() => checkPermission('moderate_members'));
 const canChangeAnyRole = computed(() =>
@@ -211,9 +209,9 @@ function confirmRemove() {
       </BaseList>
     </div>
 
-    <PageHeader>
+    <BasePageHeader>
       <template #info>
-        <InfoModal
+        <BaseInfoButton
           :tooltip="t('groups.settings.members.info.tooltip')"
           :title="t('groups.settings.members.title')"
         >
@@ -227,7 +225,7 @@ function confirmRemove() {
 
           <h3>{{ t('groups.settings.members.info.remove_title') }}</h3>
           <p>{{ t('groups.settings.members.info.remove_text') }}</p>
-        </InfoModal>
+        </BaseInfoButton>
       </template>
 
       <template #action>
@@ -240,7 +238,7 @@ function confirmRemove() {
           />
         </BaseTooltip>
       </template>
-    </PageHeader>
+    </BasePageHeader>
 
     <div v-if="loading && members.length === 0" class="flex justify-center p-8">
       <BaseSpinner />
@@ -283,7 +281,7 @@ function confirmRemove() {
         <div v-if="index > 0" class="separator md:ml-14 md:mr-3"></div>
         <div class="flex items-center justify-between py-3 gap-2">
           <div class="flex items-center gap-4 min-w-0">
-            <Avatar
+            <BaseAvatar
               class="max-md:hidden"
               :name="member.generatedName"
               :size="10"

@@ -1,8 +1,8 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { useToast } from '@/common/composables/useToast';
-import type { CleanupJob } from '../types';
+import type { CleanupJob } from '@/modules/admin/types';
 
 /**
  * The health of the scheduled cleanups. Fetched fresh whenever the overview

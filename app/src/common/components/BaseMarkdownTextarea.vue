@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { BULLET_MARKER } from '@/utils/bullets';
+import { BULLET_MARKER } from '@/common/utils/bullets';
 
 const props = withDefaults(
   defineProps<{

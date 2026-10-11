@@ -1,10 +1,10 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
 import { useToast } from '@/common/composables/useToast';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroupPageId } from './useGroupPageId';
+import { useGroups } from './useGroups';
 import type { BannedMember } from '@/modules/groups/types';
 
 /** Former members banned from rejoining the group. */
@@ -12,7 +12,7 @@ export function useGroupBans() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
-  const { checkPermission } = useAppAuth();
+  const { checkPermission } = useGroups();
 
   const bannedUsers = ref<BannedMember[]>([]);
   const loadingBannedUsers = ref(false);

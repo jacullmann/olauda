@@ -1,14 +1,14 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { isUuid } from '@/utils/uuid';
-import { parseUserAgent } from '@/modules/auth/utils/userAgent';
-import type { EventSource } from '../types';
+import { isUuid } from '@/common/utils/uuid';
+import { parseUserAgent } from '@/common/utils/userAgent';
+import type { EventSource } from '@/modules/admin/types';
 import {
   calendarDaysAgo,
   humanizeKey,
   isIsoDateTime,
   typeKeyPath,
-} from '../utils/logFormat';
+} from '@/modules/admin/utils/logFormat';
 
 const I18N_BASE = 'admin.log';
 /** Values such as `wrong_password` have a text; free text is shown as it is. */

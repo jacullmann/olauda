@@ -42,6 +42,48 @@ Write **idiomatic, performant, secure code that speaks for itself.**
 
 ## Vue 3 Frontend
 
+**File organization (`app/src`):**
+
+Every file has one owner, and its location and name say who that is and what kind of file it is. Ask "which feature is this about?" before "who uses it?".
+
+```
+src/
+  main.ts  App.vue
+  api/        transport every request shares: client, error mapping, reauth hook, file storage, groupPath
+  i18n/  router/  assets/
+  common/     domain-free building blocks: no imports from shell/ or modules/, no feature i18n keys
+    components/  Base* design-system components, registered globally
+    composables/ utils/ types.ts
+  shell/      the frame around every page: layouts, header, sidebar, tab bar, modal host, not-found page
+    components/ composables/ pages/ stores/ utils/
+  modules/<feature>/   everything one feature owns
+    pages/ components/ composables/ stores/ utils/ types.ts
+```
+
+- Modules: `account` (the signed-in user: settings, preferences, profile), `admin` (platform admin), `announcements`, `auth` (session, sign-in and sign-up, MFA, reauth), `chat`, `courses` (subjects, courses, enrollment and course setup), `dashboard`, `groups` (membership, the group on screen, permissions, invites, group settings), `schedule`, `search`, `tasks` (group tasks), `todos` (private todos).
+- A file lives in the module that owns its concept, even when other modules use it more; they import it from there. Domain-bound code never moves to `common/` (task swipe actions stay in `tasks`, `todos` imports them).
+- Domain-free code lives in its only module until a second module needs it; then it moves to `common/`. Base components are the exception: every generic UI primitive is a `Base*` component in `common/components`, however many modules use it.
+- Only the folders a module needs exist, and they stay flat: no subfolders inside `components/`, `composables/` and so on. Related files group through their name prefix instead.
+- Import a file in the same folder with `./`, everything else with `@/`; never `../`. No barrel `index.ts` files.
+
+**What gets its own file:**
+- A component file for: every route (page or layout); every component used in more than one place; every modal, menu or sheet; and every part of a page that stands on its own, with a name a reader would look for (a settings tab, a dashboard section, a card, a row, a toolbar) and its data passed in as props or loaded by itself. A few lines of markup, or a fragment that only works with its parent's state, stay in the parent. Length alone is no reason to split a cohesive component.
+- A composable for stateful logic: reactivity, lifecycle, provide/inject, a store. One concern per composable; a composable may combine others.
+- A util for logic without Vue: calculations, mapping API data, formatting. Move pure logic that is longer than a few lines out of components and composables into `utils/` and test it there.
+- One store per file. Types shared within a module go in its `types.ts`; a type used by one file stays in that file.
+- Group functions by concept, not one function per file, and never into grab-bag files (`helpers.ts`, `misc.ts`). A file that only wraps a few lines for one consumer belongs in that consumer.
+- Delete what nothing imports.
+
+**Naming:**
+- Components: PascalCase, at least two words, file name = component name. They start with their owner: `Base` in `common/`, `App` in `shell/`, the module's name in singular in a module (`Task`, `Todo`, `Group`, `Course`, `Account`, `Auth`, `Admin`, `Announcement`, `Chat`, `Dashboard`, `Schedule`, `Search`). Then general to specific, so related files sort together: `GroupSettingsMembers`, `GroupSettingsMembersInvites`, `AccountMenuTheme`.
+- Suffixes say the role: `*Page` for a route without child routes, `*Layout` for a route that frames child routes (both only in `pages/`), `*Modal` for a component that is a modal (its root is `BaseModal` or another modal), `*Menu` for a floating menu, `*Form` for an inline form. Nothing else in `pages/`.
+- Base components are never imported; they are registered globally. Every other component is imported explicitly.
+- Composables: `use<Thing>.ts` exporting `use<Thing>`, plus the types and constants that belong to it. A function without reactivity, lifecycle or injection is not a composable: it goes to `utils/` without the `use` prefix.
+- Stores: Pinia setup stores in `stores/`, one per file, named after the store: `useUserStore.ts`. A store that only opens one modal is `use<Name>Modal` (`useTaskFormModal`).
+- Utils: camelCase file named after the concept (`dueDate.ts`, `invites.ts`), tests beside them (`dueDate.test.ts`).
+- Types: a module's shared types in `types.ts`; `common/types.ts` only for domain-free shapes.
+- No kebab-case or snake_case `.ts`/`.vue` file names, except names a tool requires (`vite-env.d.ts`). Route names stay kebab-case (`group-tasks`).
+
 **Composition API patterns:**
 - Extract logic into composables. Keep components thin
 - Use `ref()`, `computed()`, `watch()` idiomatically

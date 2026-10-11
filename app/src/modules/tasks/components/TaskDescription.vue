@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { BULLET_MARKER } from '@/utils/bullets';
+import { BULLET_MARKER } from '@/common/utils/bullets';
 
 const props = defineProps<{
   description: string;

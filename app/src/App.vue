@@ -5,26 +5,25 @@ import { CloudOff } from '@lucide/vue';
 import { storeToRefs } from 'pinia';
 import { START_LOCATION, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useUserStore } from '@/stores/userStore';
-import { useAccessStatusStore } from '@/stores/accessStatusStore';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { useAccessStatusStore } from '@/modules/auth/stores/useAccessStatusStore';
+import { useSession } from '@/modules/auth/composables/useSession';
 import { useOAuth } from '@/modules/auth/composables/useOAuth';
-import { useLoadingBar } from '@/common/composables/loadingState';
+import { useLoadingBar } from '@/shell/composables/useLoadingBar';
 import {
   consumeLoginReturn,
   saveLoginReturn,
 } from '@/modules/auth/utils/loginReturn';
-import GlobalModalContainer from '@/core/components/GlobalModalContainer.vue';
-import BaseToast from '@/common/components/BaseToast.vue';
-import ConnectionStatus from '@/core/components/ConnectionStatus.vue';
-import api from './api/api';
+import AppModalHost from '@/shell/components/AppModalHost.vue';
+import AppConnectionStatus from '@/shell/components/AppConnectionStatus.vue';
+import api from '@/api/client';
 
 const router = useRouter();
 const { t } = useI18n();
 const userStore = useUserStore();
 const accessStatus = useAccessStatusStore();
 const { user } = storeToRefs(userStore);
-const { isAuthReady, isApiUnreachable, checkAuthStatus } = useAppAuth();
+const { isAuthReady, isApiUnreachable, checkAuthStatus } = useSession();
 const { handleOAuthReturn } = useOAuth();
 const { loading, progress, opacity } = useLoadingBar();
 
@@ -145,10 +144,10 @@ onMounted(() => {
         <component :is="Component" />
       </router-view>
 
-      <GlobalModalContainer />
+      <AppModalHost />
       <BaseToast />
     </template>
 
-    <ConnectionStatus />
+    <AppConnectionStatus />
   </div>
 </template>

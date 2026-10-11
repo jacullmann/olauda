@@ -1,8 +1,8 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api.ts';
-import { useMfa } from '@/modules/auth/composables/useMfa';
-import type { SignUpCredentials } from '@/modules/auth/composables/useConfirmSignUp';
+import api from '@/api/client';
+import { useMfa } from './useMfa';
+import type { SignUpCredentials } from './useConfirmSignUp';
 import { apiErrorCode } from '@/api/errors';
 import {
   AuthErrorCode,

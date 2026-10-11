@@ -1,8 +1,5 @@
 import { onMounted, ref, watch, type Ref } from 'vue';
-import {
-  entranceDelay,
-  hasSettledEntrance,
-} from '@/modules/tasks/utils/entrance';
+import { entranceDelay, hasSettledEntrance } from '@/common/utils/entrance';
 
 /**
  * Entries added after mount, by their place in the batch they arrived with, so

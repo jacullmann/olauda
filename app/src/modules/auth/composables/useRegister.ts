@@ -1,10 +1,10 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api.ts';
-import { usePreferences } from '@/common/composables/usePreferences';
+import api from '@/api/client';
+import { usePreferences } from '@/modules/account/composables/usePreferences';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { isStrongPassword } from '@/modules/auth/utils/password';
-import type { SignUpCredentials } from '@/modules/auth/composables/useConfirmSignUp';
+import type { SignUpCredentials } from './useConfirmSignUp';
 
 /** Subset of `BaseInput`'s exposed API that these forms rely on. */
 interface FocusableInput {

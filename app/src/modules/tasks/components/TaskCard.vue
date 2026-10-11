@@ -9,7 +9,7 @@ import {
 import { useI18n } from 'vue-i18n';
 import { Ellipsis, Pin } from '@lucide/vue';
 import { useLongPress } from '@/common/composables/useLongPress';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
 import {
   useSwipeCard,
@@ -18,8 +18,8 @@ import {
 import { useFileDrop } from '@/modules/tasks/composables/useFileDrop';
 import type { Task, TaskMenuAction } from '@/modules/tasks/types';
 import { taskRoute } from '@/modules/tasks/utils/routes';
-import { menuAnchor, type MenuAnchor } from '@/modules/tasks/utils/menuAnchor';
-import SwipeActionTray from './SwipeActionTray.vue';
+import { menuAnchor, type MenuAnchor } from '@/common/utils/menuAnchor';
+import TaskSwipeActions from './TaskSwipeActions.vue';
 import TaskMenu from './TaskMenu.vue';
 import TaskMeta from './TaskMeta.vue';
 
@@ -144,7 +144,7 @@ function runSecondarySwipeAction(event: MouseEvent) {
     :data-revealed="isRevealed || undefined"
     v-on="longPressHandlers"
   >
-    <SwipeActionTray
+    <TaskSwipeActions
       v-if="isActionsVisible"
       ref="tray"
       :key="activeSide"

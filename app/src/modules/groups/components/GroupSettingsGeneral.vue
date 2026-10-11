@@ -4,15 +4,17 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useGroupGeneralSettings } from '@/modules/groups/composables/useGroupGeneralSettings';
 import { useGroupSettingsAccess } from '@/modules/groups/composables/useGroupSettingsAccess';
-import { useConfirmModal } from '@/stores/modalStore';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useSession } from '@/modules/auth/composables/useSession';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import GroupTypeRadioGroup from './GroupTypeRadioGroup.vue';
-import DeleteGroupModal from './DeleteGroupModal.vue';
-import type { GroupType } from '@/types/groups';
+import GroupDeleteModal from './GroupDeleteModal.vue';
+import type { GroupType } from '@/modules/groups/types';
 
 const confirmModal = useConfirmModal();
 const { t } = useI18n();
-const { activeGroupType, checkPermission, checkAuthStatus } = useAppAuth();
+const { activeGroupType, checkPermission } = useGroups();
+const { checkAuthStatus } = useSession();
 const canEditGroupType = computed(() =>
   checkPermission('edit_group_configuration'),
 );
@@ -78,9 +80,9 @@ async function confirmDeleteGroup() {
     </div>
 
     <div>
-      <PageHeader>{{
+      <BasePageHeader>{{
         t('groups.settings.general.group_type.title')
-      }}</PageHeader>
+      }}</BasePageHeader>
       <p class="text-base/relaxed text-on-ghost-muted m-0 mb-4 max-w-160">
         {{ t('groups.settings.general.group_type.description') }}
       </p>
@@ -133,7 +135,7 @@ async function confirmDeleteGroup() {
         {{ t('groups.settings.general.delete_group.button') }}
       </BaseButton>
 
-      <DeleteGroupModal
+      <GroupDeleteModal
         :open="deleteModalOpen"
         :group-name="groupName"
         :loading="deletingGroup"

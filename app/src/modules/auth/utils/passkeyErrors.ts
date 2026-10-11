@@ -1,7 +1,7 @@
 import { WebAuthnError } from '@simplewebauthn/browser';
 import i18n from '@/i18n';
 import { apiErrorCode, apiErrorMessage, isReauthDeclined } from '@/api/errors';
-import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
+import { AuthErrorCode } from './authErrors';
 
 /** Codes the API sends when a passkey ceremony fails. */
 export const PasskeyErrorCode = {

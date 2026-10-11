@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { UserRoundPlus, Copy, Check, Undo2 } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
-import { formatDate } from '@/utils/date-formatter';
+import { formatDate } from '@/common/utils/formatDate';
 import { ref } from 'vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { useInviteModal } from '@/stores/modalStore';
+import { useInvite } from '@/modules/groups/composables/useInvite';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
+import { useInviteModal } from '@/modules/groups/stores/useInviteModal';
 import { useToast } from '@/common/composables/useToast';
 import { useAbsoluteUrl } from '@/common/composables/useAbsoluteUrl';
-import { inviteRoute } from '@/modules/auth/utils/routes';
+import { inviteRoute } from '@/modules/groups/utils/invites';
 import type { GroupInviteLog } from '@/modules/groups/types';
 import { useGroupInvites } from '@/modules/groups/composables/useGroupInvites';
 
@@ -20,7 +20,7 @@ const {
 } = useGroupInvites();
 
 const { t } = useI18n();
-const { createInvite } = useAppAuth();
+const { createInvite } = useInvite();
 const groupId = useGroupPageId();
 const inviteModal = useInviteModal();
 const toast = useToast();

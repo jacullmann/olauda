@@ -1,8 +1,8 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { apiErrorCode, apiErrorStatus } from '@/api/errors';
-import { useCooldown } from '@/common/composables/useCooldown';
+import { useCooldown } from './useCooldown';
 import { useToast } from '@/common/composables/useToast';
 import {
   AuthErrorCode,

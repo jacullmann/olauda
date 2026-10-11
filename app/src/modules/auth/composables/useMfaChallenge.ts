@@ -1,6 +1,6 @@
 import { readonly, ref } from 'vue';
 import { useEventListener, useTimeoutFn } from '@vueuse/core';
-import { useMfa } from '@/modules/auth/composables/useMfa';
+import { useMfa } from './useMfa';
 import type { MfaChallengeResponse } from '@/modules/auth/types';
 
 const MS_PER_SECOND = 1000;

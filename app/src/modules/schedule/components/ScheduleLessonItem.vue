@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useLongPress } from '@/common/composables/useLongPress';
-import { useImpliedCourse } from '@/common/composables/useImpliedCourse';
+import { useImpliedCourse } from '@/modules/courses/composables/useImpliedCourse';
 import type { Lesson } from '@/modules/schedule/types';
 import { Check } from '@lucide/vue';
 

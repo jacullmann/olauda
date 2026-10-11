@@ -255,6 +255,9 @@
   },
   "preview": "Vorschau",
   "image": "Bild",
+  "avatar": {
+    "alt": "Profilbild"
+  },
   "more": "Mehr",
   "connection": {
     "offline": "Keine Internetverbindung",

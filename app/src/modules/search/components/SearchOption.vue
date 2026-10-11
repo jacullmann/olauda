@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ArrowUpRight, Check, ChevronRight } from '@lucide/vue';
-import Avatar from '@/modules/auth/components/Avatar.vue';
-import type { SearchItem } from '../types';
+import type { SearchItem } from '@/modules/search/types';
 
 const props = defineProps<{
   item: SearchItem;
@@ -39,7 +38,7 @@ const stateClasses = computed(() => {
       v-if="item.icon || item.avatar"
       class="shrink-0 flex items-center justify-center size-8 text-on-ghost-muted"
     >
-      <Avatar
+      <BaseAvatar
         v-if="item.avatar"
         :name="item.avatar.name"
         :picture="item.avatar.picture"

@@ -1,5 +1,5 @@
 <script lang="ts">
-/** Where SimpleLayout takes a page's secondary actions on phones. */
+/** Where AppSimpleLayout takes a page's secondary actions on phones. */
 export const PAGE_SECONDARY_ACTIONS_ID = 'page-secondary-actions';
 </script>
 

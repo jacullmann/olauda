@@ -5,9 +5,9 @@ import {
   browserSupportsWebAuthn,
   startAuthentication,
 } from '@simplewebauthn/browser';
-import api from '@/api/api';
+import api from '@/api/client';
 import { apiErrorCode, retryAfterMinutes } from '@/api/errors';
-import { mfaErrorMessage } from '@/modules/auth/composables/useMfa';
+import { mfaErrorMessage } from './useMfa';
 import type {
   PasskeyChallengeResponse,
   ReauthStatus,
@@ -22,7 +22,7 @@ import {
   emptySecondFactor,
   secondFactorProof,
 } from '@/modules/auth/utils/secondFactor';
-import type { ReauthStep } from '@/stores/modalStore';
+import type { ReauthStep } from '@/modules/auth/stores/useReauthModal';
 
 const ERROR_KEYS: Record<string, string> = {
   INCORRECT_PASSWORD: 'auth.errors.password_wrong',

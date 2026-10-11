@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 withDefaults(
   defineProps<{
@@ -28,7 +28,7 @@ const { t } = useI18n();
     :style="{
       gridColumn,
       gridRow: `${firstRow} / ${lastRow + 1}`,
-      '--enter-delay': entranceDelay(gridColumn, firstRow),
+      '--enter-delay': cellEntranceDelay(gridColumn, firstRow),
     }"
   >
     <span class="text-base font-bold">{{ t('schedule.free') }}</span>

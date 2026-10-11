@@ -8,10 +8,8 @@ const activeTrigger = ref<HTMLElement | null>(null);
 import { computed, onBeforeUnmount, inject } from 'vue';
 import { useEventListener, useWindowSize } from '@vueuse/core';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue';
-import BaseMenuButton from '@/common/components/BaseMenuButton.vue';
-import BaseMenu from '@/common/components/BaseMenu.vue';
 import type { Component } from 'vue';
-import { MENU_SHEET_KEY } from '@/common/composables/useMenuContext';
+import { MENU_SHEET_KEY } from '@/common/utils/menuSheet';
 
 const props = defineProps<{
   label?: string;

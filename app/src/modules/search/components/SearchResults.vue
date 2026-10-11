@@ -2,8 +2,8 @@
 import { useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronLeft, Search } from '@lucide/vue';
-import { optionElementId } from '../utils/sections';
-import type { SearchItem, SearchSection } from '../types';
+import { optionElementId } from '@/modules/search/utils/sections';
+import type { SearchItem, SearchSection } from '@/modules/search/types';
 import SearchOption from './SearchOption.vue';
 
 const props = defineProps<{

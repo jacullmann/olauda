@@ -1,5 +1,5 @@
-import api from '@/api/api';
-import { groupPath } from '@/api/groupPath';
+import api from './client';
+import { groupPath } from './groupPath';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
 // Lets development point delivery at the mock server's Cloudinary stand-in.

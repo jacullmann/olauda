@@ -8,15 +8,15 @@ import {
   type Ref,
 } from 'vue';
 import { useEventListener } from '@vueuse/core';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
-import { hiddenByCourses } from '@/api/personalization';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
+import { hiddenByCourses } from '@/modules/courses/utils/personalization';
 import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
-import { useUserStore } from '@/stores/userStore';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { usePageSettings } from '@/common/composables/usePageSettings';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { usePageSettings } from '@/modules/account/composables/usePageSettings';
 import type {
   Lesson,
   ScheduleSubject,
@@ -27,13 +27,8 @@ import {
   groupOverlappingLessons,
   lessonLastSlot,
   lessonsSlotRange,
-  resolveLessonSubject,
-  subjectsById,
 } from '@/modules/schedule/utils/lesson';
-import {
-  lessonMinutes,
-  slotRangeMinutes,
-} from '@/modules/schedule/utils/slotTimes';
+import { lessonMinutes } from '@/modules/schedule/utils/slotTimes';
 import {
   buildScheduleLayout,
   freeSlotRuns,
@@ -47,31 +42,15 @@ import {
   mondayOf,
   weeksBetween,
 } from '@/modules/schedule/utils/weekday';
-import { useScheduleDisplay } from '@/modules/schedule/composables/useScheduleDisplay';
-import { useWeekCache } from '@/modules/schedule/composables/useWeekCache';
+import { withSubstitutions } from '@/modules/schedule/utils/substitutions';
+import { personalLessons } from '@/modules/schedule/utils/personalLessons';
+import { activeOrNextGroupKeyAt } from '@/modules/schedule/utils/activeLesson';
+import { useScheduleDisplay } from './useScheduleDisplay';
+import { useWeekCache } from './useWeekCache';
 
 const MS_PER_MINUTE = 60 * 1000;
 /** Back after this long, the schedule may have changed meanwhile. */
 const STALE_AFTER_MS = MS_PER_MINUTE;
-
-const isSet = <T>(value: T | null | undefined | ''): value is T =>
-  value !== null && value !== undefined && value !== '';
-
-/** The lesson as its change turns it out, keeping the original to compare. */
-function applySubstitution(original: Lesson, sub: Substitution): Lesson {
-  const merged: Lesson = { ...original, _original: original };
-  if (isSet(sub.day)) merged.day = Number(sub.day);
-  if (isSet(sub.slot)) merged.slot = sub.slot;
-  if (isSet(sub.duration)) merged.duration = sub.duration;
-  if (isSet(sub.room)) merged.room = sub.room;
-  if (sub.cancelled) merged.cancelled = true;
-  if (isSet(sub.subject)) {
-    merged.subject = sub.subject;
-    merged.isSubstitutedSubject = true;
-  }
-  if (isSet(sub.subjectAbbr)) merged.subjectAbbr = sub.subjectAbbr;
-  return merged;
-}
 
 /**
  * The group's schedule with the changes of each week applied. The weeks of
@@ -90,7 +69,7 @@ export function useSchedule(shownWeek?: Ref<number>) {
     getDisplayName,
   } = useScheduleDisplay();
   const groupId = useGroupPageId();
-  const { findGroup } = useAppAuth();
+  const { findGroup } = useGroups();
 
   const hasCourseSelection = computed(
     () => findGroup(groupId)?.courseSetup === 'done',
@@ -281,118 +260,23 @@ export function useSchedule(shownWeek?: Ref<number>) {
     }
   }
 
-  const personalLessons = computed(() => {
-    const result: Lesson[] = [];
-    let hiddenCount = 0;
-    if (!lessons.value || lessons.value.length === 0) {
-      return { lessons: result, hiddenCount };
-    }
+  const personalLessonList = computed(() =>
+    personalLessons(lessons.value ?? [], subjects.value, {
+      courseIds: new Set(
+        (userStore.user?.courses ?? []).map(({ courseId }) => courseId),
+      ),
+      hasCourseSelection: hasCourseSelection.value,
+      isPersonalized: isPersonalized.value,
+      schedulesCoursesIndividually: schedulesCoursesIndividually.value,
+    }),
+  );
 
-    const subjectMap = subjectsById(subjects.value);
-
-    const userCourses = userStore.user?.courses || [];
-    const userCourseIds = new Set(userCourses.map((c: any) => c.courseId));
-
-    lessons.value.forEach((lesson) => {
-      const {
-        subjectId,
-        subjects: subjectRef,
-        courses,
-        ownCourseId,
-        ownCourse,
-      } = resolveLessonSubject(lesson, subjectMap);
-
-      // A lesson scheduled for one course is already personal — Abitur groups
-      // schedule nearly all of them that way.
-      if (ownCourseId) {
-        result.push({
-          ...lesson,
-          _originalId: lesson.id,
-          courseId: ownCourseId,
-          courseName: lesson.courseName ?? ownCourse?.name,
-          courses: ownCourse,
-          subjects: subjectRef,
-          outsideCourseSelection:
-            hasCourseSelection.value && !userCourseIds.has(ownCourseId),
-        });
-        return;
-      }
-
-      // Without a course the lesson covers the whole group. In an Abitur group
-      // that is what it means; a regular group splits it into the member's own
-      // course of that subject.
-      if (!isPersonalized.value || schedulesCoursesIndividually.value) {
-        result.push({
-          ...lesson,
-          _originalId: lesson.id,
-          subjects: subjectRef,
-          outsideCourseSelection:
-            hasCourseSelection.value &&
-            !schedulesCoursesIndividually.value &&
-            courses.length > 0 &&
-            !courses.some((c) => userCourseIds.has(c.id)),
-        });
-        return;
-      }
-
-      if (courses.length === 0) {
-        result.push({ ...lesson, _originalId: lesson.id });
-        return;
-      }
-
-      const ownCourses = courses.filter((c) => userCourseIds.has(c.id));
-      if (ownCourses.length === 0) hiddenCount++;
-
-      ownCourses.forEach((c) => {
-        result.push({
-          ...lesson,
-          id: `${lesson.id}_${c.id}`,
-          _originalId: lesson.id,
-          courseId: c.id,
-          courseName: c.name,
-          courses: { id: c.id, name: c.name },
-          subjectId,
-          subjects: subjectRef,
-        });
-      });
-    });
-
-    return { lessons: result, hiddenCount };
-  });
-
-  const expandedLessons = computed(() => personalLessons.value.lessons);
+  const expandedLessons = computed(() => personalLessonList.value.lessons);
 
   /** Lessons the member does not see because of their course selection. */
   const hiddenLessonCount = computed(
-    () => lessonsHiddenByServer.value + personalLessons.value.hiddenCount,
+    () => lessonsHiddenByServer.value + personalLessonList.value.hiddenCount,
   );
-
-  /*
-   * A lesson carries at most one change a week. Should the server still hand
-   * over several, the latest wins, so a lesson never shows up twice.
-   */
-  const substitutionByLessonOf = (subs: readonly Substitution[]) => {
-    const byLesson = new Map<string, Substitution>();
-    subs.forEach((sub) => {
-      const current = byLesson.get(sub.lessonId);
-      if (!current || (sub.createdAt ?? '') >= (current.createdAt ?? '')) {
-        byLesson.set(sub.lessonId, sub);
-      }
-    });
-    return byLesson;
-  };
-
-  const effectiveLessonsOf = (subs: readonly Substitution[]): Lesson[] => {
-    const substitutionByLesson = substitutionByLessonOf(subs);
-    return expandedLessons.value.map((original) => {
-      const sub = substitutionByLesson.get(original._originalId || original.id);
-      const applies =
-        sub && (!sub.courseId || sub.courseId === original.courseId);
-      return applies
-        ? applySubstitution(original, sub)
-        : { ...original, _original: original };
-    });
-  };
 
   const lastSlotByDayOf = (dayLessons: Lesson[]) => {
     const byDay = new Map<number, number>();
@@ -406,7 +290,10 @@ export function useSchedule(shownWeek?: Ref<number>) {
   };
 
   const scheduleOfWeek = useWeekCache((week) => {
-    const effectiveLessons = effectiveLessonsOf(substitutionsOf(week));
+    const effectiveLessons = withSubstitutions(
+      expandedLessons.value,
+      substitutionsOf(week),
+    );
     const groupedLessons = groupOverlappingLessons(effectiveLessons);
     /** The last slot of each day that shows a lesson at all. */
     const lastShownSlotByDay = lastSlotByDayOf(effectiveLessons);
@@ -608,71 +495,14 @@ export function useSchedule(shownWeek?: Ref<number>) {
     ]);
   }
 
-  const activeOrNextGroupKey = computed<string | null>(() => {
-    const currentDayIndex = daysSinceMonday(now.value);
-    const currentTotalWeekMinutes =
-      currentDayIndex * 24 * 60 + minutesToday.value;
-
-    const timeBlocks = scheduleOfWeek(todayWeek.value)
-      .groupedLessons.map(({ key, lessons: group }) => {
-        const first = group[0];
-        if (!first) return null;
-        const dayIdx = days.indexOf(first.day);
-        if (dayIdx === -1) return null;
-
-        const { firstSlot, lastSlot } = lessonsSlotRange(group);
-        const { start, end } = slotRangeMinutes(
-          scheduleConfig.value,
-          first.day,
-          firstSlot,
-          lastSlot,
-        );
-        const startTotal = dayIdx * 24 * 60 + start;
-        const endTotal = dayIdx * 24 * 60 + end;
-
-        return { key, startTotal, endTotal };
-      })
-      .filter(
-        (
-          block,
-        ): block is { key: string; startTotal: number; endTotal: number } =>
-          block !== null,
-      );
-
-    const activeBlock = timeBlocks.find(
-      (b) =>
-        currentTotalWeekMinutes >= b.startTotal &&
-        currentTotalWeekMinutes < b.endTotal,
-    );
-    if (activeBlock) return activeBlock.key;
-
-    const pastBlocks = timeBlocks.filter(
-      (b) => b.endTotal <= currentTotalWeekMinutes,
-    );
-    const futureBlocks = timeBlocks.filter(
-      (b) => b.startTotal > currentTotalWeekMinutes,
-    );
-
-    futureBlocks.sort((a, b) => a.startTotal - b.startTotal);
-    const nextBlock = futureBlocks[0];
-
-    if (!nextBlock) return null;
-
-    pastBlocks.sort((a, b) => b.endTotal - a.endTotal);
-    const lastFinishedBlock = pastBlocks[0];
-
-    if (lastFinishedBlock) {
-      const minutesSinceFinish =
-        currentTotalWeekMinutes - lastFinishedBlock.endTotal;
-      const minutesUntilNext = nextBlock.startTotal - currentTotalWeekMinutes;
-
-      if (minutesSinceFinish > 10 && minutesUntilNext > 120) {
-        return null;
-      }
-    }
-
-    return nextBlock.key;
-  });
+  const activeOrNextGroupKey = computed(() =>
+    activeOrNextGroupKeyAt(
+      scheduleOfWeek(todayWeek.value).groupedLessons,
+      days,
+      scheduleConfig.value,
+      now.value,
+    ),
+  );
 
   return {
     isPersonalized,

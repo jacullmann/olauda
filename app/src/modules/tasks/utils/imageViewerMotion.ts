@@ -1,4 +1,4 @@
-import { drawnMatrix } from '@/utils/gesture';
+import { drawnMatrix } from '@/common/utils/gesture';
 import { isOfficeDocument, isPdf, type StoredFile } from '@/api/files';
 
 // A slide that is not thrown decelerates on the same curve and over the same

@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import type { Lesson } from '@/modules/schedule/types';
 import { lessonDisplayName } from '@/modules/schedule/utils/lesson';
 import { scheduleConfigOrDefault } from '@/modules/schedule/utils/slotTimes';
@@ -11,7 +11,7 @@ export function useScheduleDisplay() {
   const i18n = useI18n();
   const { t, locale } = i18n;
   const te = i18n.te.bind(i18n);
-  const { activeScheduleConfig, activeGroupType } = useAppAuth();
+  const { activeScheduleConfig, activeGroupType } = useGroups();
 
   // Abitur groups schedule each course on its own, so lessons carry a course.
   const schedulesCoursesIndividually = computed(

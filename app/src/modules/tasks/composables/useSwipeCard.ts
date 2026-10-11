@@ -3,7 +3,7 @@ import {
   useSwipeToDismiss,
   SWIPE_SETTLE_MS,
   SWIPE_SETTLE_EASING,
-} from '@/modules/tasks/composables/useSwipeToDismiss';
+} from './useSwipeToDismiss';
 
 /** What a swipe button does. A full swipe runs the main one, shown across the whole strip past the commit point. */
 export type SwipeAction =

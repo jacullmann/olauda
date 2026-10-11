@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Avatar from '@/modules/auth/components/Avatar.vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import type { PermissionKey } from '@/types/permissions';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import type { PermissionKey } from '@/modules/groups/types';
 
 const props = defineProps<{
   /** Groups lacking this permission are listed but cannot be picked. */
@@ -13,7 +12,7 @@ const props = defineProps<{
 const groupId = defineModel<string>({ required: true });
 
 const { t } = useI18n();
-const { userGroups } = useAppAuth();
+const { userGroups } = useGroups();
 
 const options = computed(() =>
   userGroups.value.map((group) => ({
@@ -40,7 +39,7 @@ const avatarByGroupId = computed(
     classes="w-48! max-w-full pl-2! min-h-0! -my-0.5"
   >
     <template #icon="{ option, size }">
-      <Avatar
+      <BaseAvatar
         :name="option.label"
         :picture="avatarByGroupId.get(option.value)"
         :size="size / 4"

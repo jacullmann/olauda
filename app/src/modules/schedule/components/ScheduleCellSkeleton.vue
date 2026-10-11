@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import BaseSkeleton from '@/common/components/BaseSkeleton.vue';
 import { vEntranceStart } from '@/common/composables/useSkeletonHandoff';
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 defineProps<{
   gridColumn: number;
@@ -33,7 +32,7 @@ defineProps<{
     <div
       v-entrance-start="entranceStart"
       class="h-full animate-enter"
-      :style="{ '--enter-delay': entranceDelay(gridColumn, gridRow) }"
+      :style="{ '--enter-delay': cellEntranceDelay(gridColumn, gridRow) }"
     >
       <BaseSkeleton
         width="full"

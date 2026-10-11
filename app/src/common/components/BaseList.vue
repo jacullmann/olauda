@@ -3,8 +3,8 @@ import { computed, nextTick, watch, type CSSProperties } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronRight, ChevronsUpDown } from '@lucide/vue';
 import { useFloatingMenu } from '@/common/composables/useFloatingMenu';
-import type { UnitOption } from '@/common/components/BaseSelect.vue';
-import { haptic } from '@/utils/haptics';
+import type { UnitOption } from './BaseSelect.vue';
+import { haptic } from '@/common/utils/haptics';
 
 const { t } = useI18n();
 

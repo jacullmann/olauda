@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ScheduleNowLabel, ScheduleRow } from '@/modules/schedule/types';
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 withDefaults(
   defineProps<{
@@ -35,7 +35,7 @@ withDefaults(
     }"
     :style="{
       gridRow: row.gridRow,
-      '--enter-delay': entranceDelay(1, row.gridRow),
+      '--enter-delay': cellEntranceDelay(1, row.gridRow),
     }"
   >
     <span v-if="row.kind === 'lesson'" class="font-bold text-lg text-on-ghost">

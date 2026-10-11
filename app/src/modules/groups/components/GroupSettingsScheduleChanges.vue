@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RefreshCw, Trash2 } from '@lucide/vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useGroupScheduleChanges } from '@/modules/groups/composables/useGroupScheduleChanges';
 import { useSubjectAdmin } from '@/modules/groups/composables/useSubjectAdmin';
 import type { ScheduleSubstitution } from '@/modules/groups/types';
@@ -13,7 +13,10 @@ import {
   lessonDisplayName,
 } from '@/modules/schedule/utils/lesson';
 import { addDays, parseIsoDate } from '@/modules/schedule/utils/weekday';
-import { courseLabel, subjectLabel } from '@/utils/subject-formatter';
+import {
+  courseLabel,
+  subjectLabel,
+} from '@/modules/courses/utils/subjectLabels';
 
 const props = defineProps<{
   /** The group's weekly schedule, which names the lesson each change is for. */
@@ -26,7 +29,7 @@ const te = i18n.te.bind(i18n);
 
 const { changes, loadingChanges, loadChanges, deleteChange } =
   useGroupScheduleChanges();
-const { checkPermission } = useAppAuth();
+const { checkPermission } = useGroups();
 const { subjects } = useSubjectAdmin();
 const { formatDayName } = useScheduleDisplay();
 
@@ -107,7 +110,7 @@ const rows = computed(() =>
 
 <template>
   <div>
-    <PageHeader>
+    <BasePageHeader>
       {{ t('groups.settings.schedule.changes.title') }}
 
       <template #action>
@@ -120,7 +123,7 @@ const rows = computed(() =>
           />
         </BaseTooltip>
       </template>
-    </PageHeader>
+    </BasePageHeader>
 
     <div
       v-if="changes.length === 0 && !loadingChanges"

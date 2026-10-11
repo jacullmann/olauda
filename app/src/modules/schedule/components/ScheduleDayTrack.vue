@@ -6,7 +6,7 @@ import {
   useSchedulePager,
   type SchedulePager,
 } from '@/modules/schedule/composables/useSchedulePager';
-import { entranceDelay } from '@/modules/schedule/utils/entrance';
+import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
 
 const props = withDefaults(
   defineProps<{
@@ -143,7 +143,7 @@ const panels = computed(() => {
     <div
       class="overflow-x-clip"
       :class="[bleedClass, { 'animate-enter': animated }]"
-      :style="{ '--enter-delay': entranceDelay(0, 1) }"
+      :style="{ '--enter-delay': cellEntranceDelay(0, 1) }"
     >
       <div :ref="bindWeekTrack" class="relative touch-pan-y">
         <ScheduleDayPicker

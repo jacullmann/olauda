@@ -1,17 +1,20 @@
 <script setup lang="ts">
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { Library, Plus, Pencil, Trash2, Search } from '@lucide/vue';
 import { useSubjectAdmin } from '@/modules/groups/composables/useSubjectAdmin';
 import { useGroupGeneralSettings } from '@/modules/groups/composables/useGroupGeneralSettings';
-import { useConfirmModal } from '@/stores/modalStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import {
   CUSTOM_SUBJECT_OPTION,
   useSubjectNamePicker,
 } from '@/modules/groups/composables/useSubjectNamePicker';
-import { courseLabel, subjectLabel } from '@/utils/subject-formatter';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import {
+  courseLabel,
+  subjectLabel,
+} from '@/modules/courses/utils/subjectLabels';
 import {
   categoryBelongsTo,
   courseSelectionFor,
@@ -27,9 +30,9 @@ import {
   COURSE_NAME_MAX_LENGTH,
   SUBJECT_NAME_MAX_LENGTH,
   type CourseType,
-} from '@/types/subjects';
+} from '@/modules/courses/types';
 import type { AdminCourse } from '@/modules/groups/types';
-import { rankByQuery } from '@/utils/search-rank';
+import { rankByQuery } from '@/common/utils/searchRank';
 
 const i18n = useI18n();
 const { t } = i18n;
@@ -51,7 +54,7 @@ const {
 } = useSubjectAdmin();
 
 const { checkPermission, activeGroupType, activeGroupDaltonEnabled } =
-  useAppAuth();
+  useGroups();
 const canEditSubjects = computed(() =>
   checkPermission('edit_subjects_courses'),
 );
@@ -391,7 +394,7 @@ onMounted(() => {
   <div class="flex flex-1 flex-col">
     <!-- List View -->
     <div v-if="!subTabId" class="flex flex-1 flex-col">
-      <PageHeader>
+      <BasePageHeader>
         <template #action>
           <BaseTooltip
             v-if="canEditSubjects"
@@ -406,7 +409,7 @@ onMounted(() => {
             />
           </BaseTooltip>
         </template>
-      </PageHeader>
+      </BasePageHeader>
 
       <div class="flex max-w-200 flex-col mx-auto mb-4 max-md:-mx-6 md:w-full">
         <BaseList
@@ -582,9 +585,9 @@ onMounted(() => {
     </div>
     <div v-else class="flex flex-col gap-8">
       <div>
-        <PageHeader>{{
+        <BasePageHeader>{{
           t('groups.settings.subjects.appearance_title')
-        }}</PageHeader>
+        }}</BasePageHeader>
         <BaseFormContent class="max-w-120">
           <BaseFormGroup id="subject-name">
             <BaseLabel for="subject-name">{{

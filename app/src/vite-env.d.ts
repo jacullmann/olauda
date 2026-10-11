@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { DefineComponent } from 'vue';
-import type { UmamiPayload } from '@/core/analytics';
+import type { UmamiPayload } from '@/shell/utils/analytics';
 
 declare module '*.vue' {
   const component: DefineComponent<

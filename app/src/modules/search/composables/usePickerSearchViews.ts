@@ -1,12 +1,12 @@
 import { computed, type Component, type ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Filter, Languages, LayoutGrid, Moon, Sun, SunMoon } from '@lucide/vue';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
-import { usePersonalization } from '@/modules/auth/composables/usePersonalization';
-import { useOpenGroup } from '@/core/composables/useOpenGroup';
-import { usePreferences } from '@/common/composables/usePreferences';
-import { useUserStore } from '@/stores/userStore';
-import type { SearchMode, SearchView } from '../types';
+import { useGroups } from '@/modules/groups/composables/useGroups';
+import { usePersonalization } from '@/modules/account/composables/usePersonalization';
+import { useOpenGroup } from '@/modules/groups/composables/useOpenGroup';
+import { usePreferences } from '@/modules/account/composables/usePreferences';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
+import type { SearchMode, SearchView } from '@/modules/search/types';
 
 interface Choice {
   id: string;
@@ -51,7 +51,7 @@ export function usePickerSearchViews(): Record<
   ComputedRef<SearchView>
 > {
   const { t } = useI18n();
-  const { activeGroupId, userGroups } = useAppAuth();
+  const { activeGroupId, userGroups } = useGroups();
   const { openGroup } = useOpenGroup();
   const { currentTheme, currentLanguage, setPreference } = usePreferences();
   const { setPersonalization } = usePersonalization();

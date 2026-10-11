@@ -1,13 +1,13 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/api.ts';
+import api from '@/api/client';
 import { groupPath } from '@/api/groupPath';
-import { useGroupPageId } from '@/core/composables/useGroupPageId';
+import { useGroupPageId } from './useGroupPageId';
 import type { AdminCourse, AdminSubject } from '@/modules/groups/types';
-import type { CourseType } from '@/types/subjects';
+import type { CourseType } from '@/modules/courses/types';
 import { useToast } from '@/common/composables/useToast';
-import { useConfirmModal } from '@/stores/modalStore';
-import { useSubjectStore } from '@/stores/subjectStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
+import { useSubjectStore } from '@/modules/courses/stores/useSubjectStore';
 import { apiErrorCode, apiErrorMessage, apiErrorStatus } from '@/api/errors';
 
 const subjects = ref<AdminSubject[]>([]);

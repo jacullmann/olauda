@@ -1,4 +1,4 @@
-import type { EventLogEntry, EventSource } from '../types';
+import type { EventLogEntry, EventSource } from '@/modules/admin/types';
 import { groupByDay } from './logFormat';
 
 /**

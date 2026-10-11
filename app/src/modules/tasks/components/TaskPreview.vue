@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import type { StoredFile } from '@/api/files';
-import AttachmentThumbnail from './AttachmentThumbnail.vue';
+import TaskAttachmentThumbnail from './TaskAttachmentThumbnail.vue';
 import TaskDescription from './TaskDescription.vue';
 
 defineProps<{
@@ -57,7 +57,7 @@ const { t } = useI18n();
           :key="file.publicId"
           class="aspect-square overflow-hidden rounded-sm bg-black/[0.12]"
         >
-          <AttachmentThumbnail :file="file" />
+          <TaskAttachmentThumbnail :file="file" />
         </div>
       </div>
     </div>

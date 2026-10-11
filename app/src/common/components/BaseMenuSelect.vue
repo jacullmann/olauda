@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import BaseSubmenu from '@/common/components/BaseSubmenu.vue';
-import BaseMenuButton from '@/common/components/BaseMenuButton.vue';
 
 export interface MenuOption {
   value: string;

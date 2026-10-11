@@ -3,18 +3,17 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useGroupGeneralSettings } from '@/modules/groups/composables/useGroupGeneralSettings';
 import { Pencil, Camera, Trash2, Upload } from '@lucide/vue';
-import { useConfirmModal } from '@/stores/modalStore';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import { useToast } from '@/common/composables/useToast';
-import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
+import { useGroups } from '@/modules/groups/composables/useGroups';
 import { uploadGroupAvatar } from '@/api/files';
-import GroupAvatarCropper from './GroupAvatarCropper.vue';
-import Avatar from '@/modules/auth/components/Avatar.vue';
-import { GROUP_NAME_MAX_LENGTH } from '@/types/groups';
+import GroupAvatarCropModal from './GroupAvatarCropModal.vue';
+import { GROUP_NAME_MAX_LENGTH } from '@/modules/groups/types';
 
 const confirmModal = useConfirmModal();
 const toast = useToast();
 const { t } = useI18n();
-const { activeGroupAvatarUrl, checkPermission } = useAppAuth();
+const { activeGroupAvatarUrl, checkPermission } = useGroups();
 const canEditSettings = computed(() => checkPermission('edit_group_profile'));
 
 const {
@@ -154,7 +153,7 @@ async function deleteAvatar() {
           :disabled="savingAvatar"
           @click.stop="toggleMenu"
         >
-          <Avatar
+          <BaseAvatar
             :name="groupName"
             :picture="activeGroupAvatarUrl"
             :size="24"
@@ -167,7 +166,7 @@ async function deleteAvatar() {
           </span>
         </button>
 
-        <Avatar
+        <BaseAvatar
           v-else
           :name="groupName"
           :picture="activeGroupAvatarUrl"
@@ -324,7 +323,7 @@ async function deleteAvatar() {
       @change="onFileSelected"
     />
 
-    <GroupAvatarCropper
+    <GroupAvatarCropModal
       :open="cropperOpen"
       :image-src="selectedImageSrc"
       @cancel="cropperOpen = false"

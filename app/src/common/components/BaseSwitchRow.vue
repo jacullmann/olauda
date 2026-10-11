@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { haptic } from '@/utils/haptics';
+import { haptic } from '@/common/utils/haptics';
 
 /** A full-width form row that is itself the switch, labelled on the left. */
 const model = defineModel<boolean>({ required: true });

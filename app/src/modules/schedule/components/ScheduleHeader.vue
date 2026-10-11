@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import InfoModal from '@/common/components/InfoModal.vue';
 import { useI18n } from 'vue-i18n';
 
 defineProps<{
@@ -13,9 +12,9 @@ const tm = i18n.tm.bind(i18n);
 </script>
 
 <template>
-  <PageHeader>
+  <BasePageHeader>
     <template #info>
-      <InfoModal
+      <BaseInfoButton
         :tooltip="t('schedule.infopop.tooltip')"
         :title="t('schedule.title')"
       >
@@ -37,10 +36,10 @@ const tm = i18n.tm.bind(i18n);
             class="w-full h-full rounded-lg"
           />
         </div>
-      </InfoModal>
+      </BaseInfoButton>
     </template>
     <template #action>
       <slot name="action"></slot>
     </template>
-  </PageHeader>
+  </BasePageHeader>
 </template>

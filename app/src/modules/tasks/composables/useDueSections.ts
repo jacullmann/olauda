@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNow } from '@vueuse/core';
-import { usePageSettings } from '@/common/composables/usePageSettings';
+import { usePageSettings } from '@/modules/account/composables/usePageSettings';
 import type { Task } from '@/modules/tasks/types';
 import {
   dueSectionKey,
