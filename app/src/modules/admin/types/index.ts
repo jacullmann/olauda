@@ -1,16 +1,14 @@
 import type { StoredFile } from '@/api/files';
 
 export type AdminTab =
-  'overview' | 'users' | 'reports' | 'groups' | 'announcements';
+  'overview' | 'directory' | 'log' | 'reports' | 'announcements';
 
 export type SortOrder = 'asc' | 'desc';
 
-export interface Page<T> {
+/** The rows of a list from an offset on, with how many match in all. */
+export interface ListWindow<T> {
   items: T[];
   total: number;
-  page: number;
-  pageSize: number;
-  pageCount: number;
 }
 
 export interface SuperAdminStats {
@@ -33,14 +31,19 @@ export interface CleanupJob {
   overdueCount: number;
 }
 
-export type SecurityEventOutcome = 'success' | 'failure';
+export type EventSource = 'security' | 'activity';
 
-/** An entry of the security log. The ids outlive the accounts and groups
- * they name; the email or group name is there only while those exist. */
-export interface SecurityEvent {
+export type EventOutcome = 'success' | 'failure';
+
+/** An entry of the security or the activity log. Security events outlive the
+ * accounts and groups they name; the email or group name is there only while
+ * those exist. Activity is caused by the account it belongs to and records no
+ * outcome, address or group. */
+export interface EventLogEntry {
   id: string;
-  eventType: string;
-  outcome: SecurityEventOutcome;
+  source: EventSource;
+  type: string;
+  outcome: EventOutcome | null;
   userId: string | null;
   userEmail: string | null;
   actorId: string | null;
@@ -53,35 +56,12 @@ export interface SecurityEvent {
   createdAt: string;
 }
 
-/** Narrows the security log down; a filter left out matches everything. */
-export interface SecurityEventFilters {
-  eventType?: string;
-  outcome?: SecurityEventOutcome;
-  ip?: string;
-  /** Events about this account as well as those it caused. */
-  userId?: string;
-}
-
-export interface SecurityEventCount {
-  eventType: string;
-  outcome: SecurityEventOutcome;
-  count: number;
-}
-
-/** An address failures came from. `accountCount` counts only the existing
- * accounts targeted; attempts against unknown ones name none. */
-export interface FailureSource {
-  ipAddress: string;
-  count: number;
-  accountCount: number;
-  lastSeenAt: string;
-}
-
-/** The security log of the past `days` at a glance, most frequent first. */
-export interface SecurityEventSummary {
-  days: number;
-  eventCounts: SecurityEventCount[];
-  failureSources: FailureSource[];
+export interface EventLogPage {
+  items: EventLogEntry[];
+  /** Absent once the log is exhausted. */
+  nextCursor: string | null;
+  /** Counted for the first page only. */
+  total: number | null;
 }
 
 export interface DailyActivity {
@@ -132,12 +112,6 @@ export interface SuperAdminUser {
   isBanned: boolean;
   createdAt: string;
   lastLoginAt: string | null;
-}
-
-export interface SuperAdminUserActivity {
-  at: string;
-  type: string;
-  meta: Record<string, unknown> | null;
 }
 
 export type MemberRole = 'owner' | 'admin' | 'moderator' | 'user';

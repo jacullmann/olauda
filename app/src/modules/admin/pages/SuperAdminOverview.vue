@@ -7,7 +7,6 @@ import DailyBarChart, {
 } from '../components/DailyBarChart.vue';
 import AccessControlsSection from '../components/AccessControlsSection.vue';
 import CleanupJobsSection from '../components/CleanupJobsSection.vue';
-import SecurityEventSummarySection from '../components/SecurityEventSummarySection.vue';
 import ServerMetricsSection from '../components/ServerMetricsSection.vue';
 import WeeklyRhythmHeatmap from '../components/WeeklyRhythmHeatmap.vue';
 import { useSuperAdminStats } from '../composables/useSuperAdminStats';
@@ -161,8 +160,6 @@ onMounted(() => Promise.all([loadDailyActivity(), loadWeeklyRhythm()]));
     <CleanupJobsSection />
 
     <ServerMetricsSection />
-
-    <SecurityEventSummarySection />
   </div>
 
   <!-- Outside the stats: the switches must work even when they fail to load. -->

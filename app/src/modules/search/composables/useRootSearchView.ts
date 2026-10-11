@@ -35,6 +35,7 @@ import {
   Trash2,
   LogOut,
   PanelLeft,
+  ScrollText,
 } from '@lucide/vue';
 import { useAppAuth } from '@/modules/auth/composables/useAppAuth';
 import { useGroupMenuActions } from '@/modules/groups/composables/useGroupMenuActions';
@@ -166,6 +167,17 @@ export function useRootSearchView(): ComputedRef<SearchView> {
         kind: 'link',
         icon: UsersRound,
         run: () => navigate({ name: 'admin-users' }),
+        available: userStore.isSuperadmin,
+        searchOnly: true,
+      },
+      {
+        id: 'superadmin-log',
+        label: t('admin.nav.log'),
+        description: t('search.descriptions.admin_log'),
+        parent: t('common.roles.superadmin'),
+        kind: 'link',
+        icon: ScrollText,
+        run: () => navigate({ name: 'admin-log' }),
         available: userStore.isSuperadmin,
         searchOnly: true,
       },

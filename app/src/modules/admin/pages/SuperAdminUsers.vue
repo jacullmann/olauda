@@ -1,32 +1,35 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter, type RouteLocationRaw } from 'vue-router';
+import { RotateCw } from '@lucide/vue';
 import {
   useSuperAdminUsers,
   USER_STATUS_FILTERS,
 } from '../composables/useSuperAdminUsers';
 import { useSuperAdminFormat } from '../composables/useSuperAdminFormat';
+import { useWindowVirtualList } from '../composables/useWindowVirtualList';
 import AdminListToolbar from '../components/AdminListToolbar.vue';
-import AdminPagination from '../components/AdminPagination.vue';
 import AdminSortHeader from '../components/AdminSortHeader.vue';
 import type { SuperAdminUser, UserStatusFilter } from '../types';
 
+/** A row's height until it is measured, in px. */
+const ROW_HEIGHT = 48;
+const COLUMN_COUNT = 5;
+
 const {
-  items: users,
   params,
-  page,
-  total,
-  pageCount,
-  loading,
-  searchInput,
   setParams,
-  setPage,
   toggleSort,
-  reload,
+  searchInput,
+  total,
+  state,
+  itemAt,
+  ensureRange,
+  refresh,
 } = useSuperAdminUsers();
 const { fmtDate } = useSuperAdminFormat();
-const { t } = useI18n();
+const { t, n } = useI18n();
 const router = useRouter();
 
 const statusOptions = computed(() =>
@@ -34,6 +37,18 @@ const statusOptions = computed(() =>
     value: status,
     label: t(`admin.users.filters.${status}`),
   })),
+);
+
+const bodyEl = useTemplateRef<HTMLElement>('body');
+const { rows, offsetTop, offsetBottom, measureRow } = useWindowVirtualList({
+  container: bodyEl,
+  count: total,
+  estimateSize: () => ROW_HEIGHT,
+  onRangeChange: ensureRange,
+});
+
+const visibleRows = computed(() =>
+  rows.value.map((row) => ({ row, user: itemAt(row.index) })),
 );
 
 const userRoute = (user: SuperAdminUser): RouteLocationRaw => ({
@@ -55,46 +70,57 @@ function openUser(user: SuperAdminUser, event: MouseEvent) {
 </script>
 
 <template>
-  <PageHeader>
-    {{ t('admin.users.title') }}
-    <template #action>
-      <BaseButton variant="ghost" @click="reload">{{
-        t('common.buttons.refresh')
-      }}</BaseButton>
-    </template>
-  </PageHeader>
-
-  <AdminListToolbar
-    id="admin-user-search"
-    v-model:search="searchInput"
-    :placeholder="t('admin.users.search_placeholder')"
-  >
-    <div class="sm:w-48">
-      <BaseSelect
-        :model-value="params.status"
-        :options="statusOptions"
-        :title="t('admin.users.table.status')"
-        @update:model-value="
-          (status) => setParams({ status: status as UserStatusFilter })
-        "
-      />
-    </div>
-  </AdminListToolbar>
-
-  <div v-if="loading && !users.length" class="flex justify-center p-10">
-    <BaseSpinner on="ghost" size="24px" />
-  </div>
-  <div v-else-if="!users.length" class="text-center text-on-ghost-muted p-10">
-    {{ t('admin.users.empty') }}
-  </div>
-  <template v-else>
-    <BaseTableWrapper
-      :class="{ 'opacity-60 pointer-events-none': loading }"
-      :aria-busy="loading"
+  <div class="flex flex-col gap-4">
+    <AdminListToolbar
+      id="admin-user-search"
+      v-model:search="searchInput"
+      :placeholder="t('admin.users.search_placeholder')"
     >
-      <table>
+      <div class="sm:w-48">
+        <BaseSelect
+          :model-value="params.status"
+          :options="statusOptions"
+          :title="t('admin.users.table.status')"
+          @update:model-value="
+            (status) => setParams({ status: status as UserStatusFilter })
+          "
+        />
+      </div>
+    </AdminListToolbar>
+
+    <div class="flex items-center justify-between gap-3">
+      <span class="text-sm text-on-ghost-muted tabular-nums" aria-live="polite">
+        <template v-if="state === 'ready'">
+          {{ t('admin.users.count', { count: n(total) }, total) }}
+        </template>
+      </span>
+      <BaseButton variant="ghost" size="sm" :icon="RotateCw" @click="refresh">
+        {{ t('common.buttons.refresh') }}
+      </BaseButton>
+    </div>
+
+    <div v-if="state === 'loading'" class="flex justify-center p-10">
+      <BaseSpinner on="ghost" size="24px" />
+    </div>
+    <BaseLoadError v-else-if="state === 'failed'" @retry="refresh">
+      {{ t('admin.users.errors.load') }}
+    </BaseLoadError>
+    <div v-else-if="!total" class="text-center text-on-ghost-muted p-10">
+      {{ t('admin.users.empty') }}
+    </div>
+    <BaseTableWrapper v-else>
+      <!-- Fixed columns: rows come and go while scrolling and must not
+           resize them. -->
+      <table class="table-fixed" :aria-rowcount="total + 1">
+        <colgroup>
+          <col class="w-72" />
+          <col class="w-48" />
+          <col class="w-32" />
+          <col class="w-36" />
+          <col class="w-44" />
+        </colgroup>
         <thead>
-          <tr>
+          <tr aria-rowindex="1">
             <AdminSortHeader
               :label="t('admin.users.table.email')"
               field="email"
@@ -120,47 +146,71 @@ function openUser(user: SuperAdminUser, event: MouseEvent) {
             />
           </tr>
         </thead>
-        <tbody>
-          <tr
-            v-for="u in users"
-            :key="u.id"
-            class="group cursor-pointer"
-            :class="{ 'row-banned': u.isBanned }"
-            @click="openUser(u, $event)"
-          >
-            <td>
-              <RouterLink :to="userRoute(u)" class="group-hover:underline">{{
-                u.email
-              }}</RouterLink>
-            </td>
-            <td class="whitespace-nowrap">{{ u.username }}</td>
-            <td class="whitespace-nowrap">
-              <span v-if="u.isSuperadmin" class="badge text-indigo-500">{{
-                t('admin.users.status.admin')
-              }}</span>
-              <span v-else-if="u.isBanned" class="badge text-danger">{{
-                t('admin.users.status.banned')
-              }}</span>
-              <span v-else class="badge text-success">{{
-                t('admin.users.status.active')
-              }}</span>
-            </td>
-            <td class="cell-date">{{ fmtDate(u.createdAt) }}</td>
-            <td class="cell-date">
-              {{ u.lastLoginAt ? fmtDate(u.lastLoginAt) : '—' }}
-            </td>
+        <tbody ref="body">
+          <tr v-if="offsetTop" aria-hidden="true">
+            <td
+              :colspan="COLUMN_COUNT"
+              class="p-0! after:hidden"
+              :style="{ height: `${offsetTop}px` }"
+            />
+          </tr>
+          <template v-for="{ row, user } in visibleRows" :key="row.index">
+            <tr
+              v-if="user"
+              :ref="measureRow"
+              :data-index="row.index"
+              :aria-rowindex="row.index + 2"
+              class="group cursor-pointer"
+              :class="{ 'row-banned': user.isBanned }"
+              @click="openUser(user, $event)"
+            >
+              <td class="truncate" :title="user.email">
+                <RouterLink
+                  :to="userRoute(user)"
+                  class="group-hover:underline"
+                  >{{ user.email }}</RouterLink
+                >
+              </td>
+              <td class="truncate">{{ user.username }}</td>
+              <td class="whitespace-nowrap">
+                <span v-if="user.isSuperadmin" class="badge text-indigo-500">{{
+                  t('admin.users.status.admin')
+                }}</span>
+                <span v-else-if="user.isBanned" class="badge text-danger">{{
+                  t('admin.users.status.banned')
+                }}</span>
+                <span v-else class="badge text-success">{{
+                  t('admin.users.status.active')
+                }}</span>
+              </td>
+              <td class="cell-date">{{ fmtDate(user.createdAt) }}</td>
+              <td class="cell-date">
+                {{ user.lastLoginAt ? fmtDate(user.lastLoginAt) : '—' }}
+              </td>
+            </tr>
+            <tr
+              v-else
+              :ref="measureRow"
+              :data-index="row.index"
+              :aria-rowindex="row.index + 2"
+              aria-busy="true"
+            >
+              <td :colspan="COLUMN_COUNT">
+                <BaseSkeleton height="6" radius="md" />
+              </td>
+            </tr>
+          </template>
+          <tr v-if="offsetBottom" aria-hidden="true">
+            <td
+              :colspan="COLUMN_COUNT"
+              class="p-0! after:hidden"
+              :style="{ height: `${offsetBottom}px` }"
+            />
           </tr>
         </tbody>
       </table>
     </BaseTableWrapper>
-
-    <AdminPagination
-      :page="page"
-      :page-count="pageCount"
-      :total="total"
-      @update:page="setPage"
-    />
-  </template>
+  </div>
 </template>
 
 <style scoped>

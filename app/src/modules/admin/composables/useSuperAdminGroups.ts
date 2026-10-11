@@ -10,7 +10,7 @@ import type {
   SortOrder,
   SuperAdminGroup,
 } from '../types';
-import { usePaginatedList } from './usePaginatedList';
+import { useWindowedList } from './useWindowedList';
 
 export const GROUP_TYPE_FILTERS = [
   'all',
@@ -33,7 +33,7 @@ export function useSuperAdminGroups() {
   const { createInvite } = useAppAuth();
   const { t } = useI18n();
 
-  const list = usePaginatedList<
+  const list = useWindowedList<
     SuperAdminGroup,
     {
       search: string;
@@ -44,7 +44,7 @@ export function useSuperAdminGroups() {
   >({
     endpoint: '/admin/groups',
     defaults: { search: '', type: 'all', sort: 'createdAt', order: 'desc' },
-    allowed: {
+    rules: {
       type: GROUP_TYPE_FILTERS,
       sort: GROUP_SORTS,
       order: SORT_ORDERS,
@@ -92,7 +92,7 @@ export function useSuperAdminGroups() {
       await api.delete(`/admin/groups/${group.id}`);
       toast.success(t('admin.groups.delete_success', { name: group.name }));
       deleteModalOpen.value = false;
-      await list.reload();
+      list.refresh();
     } catch {
       toast.error(t('admin.groups.errors.delete'));
     } finally {

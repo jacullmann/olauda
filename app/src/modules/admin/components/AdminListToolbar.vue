@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row gap-2 mb-4">
+  <div class="flex flex-col sm:flex-row gap-2">
     <div class="w-full sm:max-w-sm">
       <BaseInput
         :id="id"

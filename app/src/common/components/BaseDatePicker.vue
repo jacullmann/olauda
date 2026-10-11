@@ -19,8 +19,16 @@ const props = withDefaults(
     min?: string;
     max?: string;
     disabled?: boolean;
+    /** Shown while no day is picked. */
+    placeholder?: string;
   }>(),
-  { title: undefined, min: undefined, max: undefined, disabled: false },
+  {
+    title: undefined,
+    min: undefined,
+    max: undefined,
+    disabled: false,
+    placeholder: undefined,
+  },
 );
 
 const { t, locale } = useI18n();
@@ -150,7 +158,7 @@ const displayLabel = computed(() =>
             ? undefined
             : 'numeric',
       }).format(fromKey(model.value))
-    : t('common.selection.placeholder'),
+    : (props.placeholder ?? t('common.selection.placeholder')),
 );
 
 const focusCursor = async (options?: FocusOptions) => {

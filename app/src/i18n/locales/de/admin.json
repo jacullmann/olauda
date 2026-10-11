@@ -1,19 +1,15 @@
 {
   "nav": {
     "overview": "Übersicht",
+    "directory": "Verzeichnis",
+    "log": "Protokoll",
     "users": "Benutzer",
-    "reports": "Meldungen",
     "groups": "Gruppen",
-    "announcements": "Infos"
+    "announcements": "Infos",
+    "reports": "Meldungen"
   },
   "errors": {
     "action_failed": "Aktion fehlgeschlagen."
-  },
-  "pagination": {
-    "total": "Insgesamt: {count}",
-    "page": "Seite {page} von {count}",
-    "previous": "Vorherige Seite",
-    "next": "Nächste Seite"
   },
   "overview": {
     "title": "Dashboard-Übersicht",
@@ -151,9 +147,12 @@
       "retry": "Erneut versuchen"
     }
   },
+  "directory": {
+    "title": "Verzeichnis"
+  },
   "users": {
-    "title": "Benutzerverwaltung",
     "empty": "Keine Benutzer gefunden.",
+    "count": "{count} Benutzer | {count} Benutzer",
     "search_placeholder": "Nach E-Mail oder ID suchen…",
     "filters": {
       "all": "Alle Benutzer",
@@ -191,7 +190,6 @@
         "mfa_off": "Nicht eingerichtet",
         "groups": "Gruppen"
       },
-      "security_log": "Sicherheitsprotokoll",
       "manage": {
         "title": "Kontoverwaltung",
         "superadmin_hint": "Superadmins können weder gebannt noch gelöscht werden.",
@@ -220,9 +218,7 @@
       "groups": "Gruppen & Rollen",
       "no_groups": "Keine Gruppenmitgliedschaften.",
       "joined": "Beigetreten am {date}",
-      "activity": "Aktivität",
-      "activity_hint": "Die neuesten 200 Einträge. Sie werden 30 Tage aufbewahrt.",
-      "no_activity": "Keine Einträge.",
+      "log": "Protokoll",
       "role_changed": "Rolle geändert."
     },
     "ban_modal": {
@@ -271,8 +267,8 @@
     }
   },
   "groups": {
-    "title": "Gruppenverwaltung",
     "empty": "Keine Gruppen gefunden.",
+    "count": "{count} Gruppe | {count} Gruppen",
     "search_placeholder": "Nach Name, Besitzer-E-Mail oder ID suchen…",
     "filters": {
       "all": "Alle Typen",
@@ -346,56 +342,65 @@
       "delete": "Info konnte nicht gelöscht werden."
     }
   },
-  "security": {
-    "title": "Sicherheitsereignisse",
-    "error": "Sicherheitsereignisse konnten nicht geladen werden.",
-    "outcome": {
+  "log": {
+    "title": "Protokoll",
+    "hint": "Sicherheitsereignisse werden 90 Tage aufbewahrt, Aktivität 30 Tage.",
+    "error": "Das Protokoll konnte nicht geladen werden.",
+    "empty": "Noch keine Einträge.",
+    "empty_filtered": "Keine Einträge passen zu diesen Filtern.",
+    "load_more_failed": "Weitere Einträge laden",
+    "sources": {
+      "all": "Alle",
+      "security": "Sicherheit",
+      "activity": "Aktivität"
+    },
+    "outcomes": {
       "success": "Erfolgreich",
       "failure": "Fehlgeschlagen"
     },
-    "summary": {
-      "hint": "Die letzten {days} Tage.",
-      "view_all": "Alle Ereignisse",
-      "signals": {
-        "events": "Ereignisse",
-        "failed_sign_ins": "Fehlgeschlagene Anmeldungen",
-        "lockouts": "Sperren nach Fehlversuchen",
-        "stolen_sessions": "Gestohlene Sitzungen erkannt"
-      },
-      "top_events": "Häufigste Ereignisse",
-      "empty": "Keine Ereignisse in diesem Zeitraum.",
-      "failure_sources": "Fehlschläge nach IP-Adresse",
-      "failure_sources_hint": "Viele Konten von einer Adresse deuten auf automatisierte Angriffe hin.",
-      "no_failures": "Keine Fehlschläge in diesem Zeitraum.",
-      "failures": "{count} Fehlschlag | {count} Fehlschläge",
-      "accounts": "{count} Konto | {count} Konten",
-      "last_seen": "Zuletzt {date}"
+    "filters": {
+      "search_placeholder": "E-Mail, IP-Adresse, Gruppe, Details…",
+      "category": "Kategorie",
+      "all_categories": "Alle Kategorien",
+      "outcome": "Ergebnis",
+      "all_outcomes": "Alle Ergebnisse",
+      "from": "Von",
+      "to": "Bis",
+      "from_day": "Ab {date}",
+      "to_day": "Bis {date}",
+      "newest_first": "Neueste zuerst",
+      "oldest_first": "Älteste zuerst",
+      "ip": "IP: {value}",
+      "group": "Gruppe: {value}",
+      "remove": "Filter „{filter}“ entfernen",
+      "reset": "Filter zurücksetzen"
     },
-    "log": {
-      "back": "Übersicht",
-      "hint": "Die neuesten 200 passenden Einträge. Sie werden 90 Tage aufbewahrt.",
-      "empty": "Noch keine Sicherheitsereignisse.",
-      "empty_filtered": "Keine Ereignisse passen zu diesen Filtern.",
-      "filters": {
-        "type": "Ereignis",
-        "all_types": "Alle Ereignisse",
-        "outcome": "Ergebnis",
-        "all_outcomes": "Alle Ergebnisse",
-        "ip": "IP: {value}",
-        "userId": "Konto: {value}",
-        "remove": "Filter „{filter}“ entfernen",
-        "reset": "Filter zurücksetzen"
-      },
+    "entry": {
       "user": "Konto",
       "actor": "Ausgeführt von",
       "deleted_account": "Gelöschtes Konto",
       "group": "Gruppe",
       "ip": "IP-Adresse",
-      "filter_ip": "Alle Ereignisse dieser IP-Adresse",
-      "device": "Gerät"
-    }
-  },
-  "log": {
+      "device": "Gerät",
+      "filter_type": "Nur Einträge dieser Art",
+      "filter_group": "Nur Einträge dieser Gruppe",
+      "filter_ip": "Nur Einträge dieser IP-Adresse"
+    },
+    "categories": {
+      "auth": "Anmeldung",
+      "account": "Konto",
+      "mfa": "Zwei-Faktor",
+      "passkey": "Passkeys",
+      "group": "Gruppen",
+      "group_admin": "Gruppenverwaltung",
+      "admin": "Plattformverwaltung",
+      "item": "Aufgaben",
+      "todo": "To-dos",
+      "schedule": "Stundenplan",
+      "message": "Nachrichten",
+      "profile": "Profil",
+      "page": "App-Aufrufe"
+    },
     "today": "Heute",
     "yesterday": "Gestern",
     "yes": "Ja",

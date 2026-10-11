@@ -11,7 +11,7 @@ function localDayKey(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-/** Splits entries, newest first, into the local days they happened on. */
+/** Splits entries, in time order either way, into the local days they happened on. */
 export function groupByDay<T>(
   entries: readonly T[],
   dateOf: (entry: T) => string,

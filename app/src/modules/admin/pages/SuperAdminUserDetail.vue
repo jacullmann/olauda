@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue';
+import { computed, useTemplateRef, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useSuperAdminUserDetails } from '../composables/useSuperAdminUserDetails';
@@ -7,7 +7,7 @@ import { useSuperAdminUserActions } from '../composables/useSuperAdminUserAction
 import { useSuperAdminFormat } from '../composables/useSuperAdminFormat';
 import AdminBackButton from '../components/AdminBackButton.vue';
 import UserAccountActions from '../components/UserAccountActions.vue';
-import UserActivityLog from '../components/UserActivityLog.vue';
+import EventLogView from '../components/EventLogView.vue';
 import UserMemberships from '../components/UserMemberships.vue';
 
 const I18N_BASE = 'admin.users.details';
@@ -19,15 +19,8 @@ const props = defineProps<{
 const { t } = useI18n();
 const router = useRouter();
 const { fmtDate, fmtDateTime } = useSuperAdminFormat();
-const {
-  user,
-  memberships,
-  activity,
-  state,
-  reload,
-  changingGroupId,
-  changeRole,
-} = useSuperAdminUserDetails(() => props.userId);
+const { user, memberships, state, reload, changingGroupId, changeRole } =
+  useSuperAdminUserDetails(() => props.userId);
 const { pendingAction, toggleBan, resetMfa, deleteUser } =
   useSuperAdminUserActions(user);
 
@@ -63,12 +56,20 @@ const facts = computed(() => {
 });
 
 /**
- * Stepping back returns to the list as it was filtered and paged. A page
- * opened from a link has nothing of this app behind it to step back to.
+ * Stepping back returns to the page this one was opened from, as it was left.
+ * A page opened from a link has nothing of this app behind it to step back to.
  */
 function leave() {
   if (router.options.history.state.back) router.back();
   else void router.push({ name: 'admin-users' });
+}
+
+// What was just done to the account is in its log right away.
+const log = useTemplateRef('log');
+
+async function runAndRefreshLog(action: () => Promise<unknown>) {
+  await action();
+  await log.value?.reload();
 }
 
 async function onDelete() {
@@ -130,24 +131,13 @@ watchEffect(() => {
       </dl>
 
       <section class="flex flex-col gap-3">
-        <div class="flex items-baseline justify-between gap-3">
-          <h3>{{ t(`${I18N_BASE}.manage.title`) }}</h3>
-          <BaseLink
-            :to="{
-              name: 'admin-security-events',
-              query: { userId: user.id },
-            }"
-            class="shrink-0 text-sm"
-          >
-            {{ t(`${I18N_BASE}.security_log`) }}
-          </BaseLink>
-        </div>
+        <h3>{{ t(`${I18N_BASE}.manage.title`) }}</h3>
         <UserAccountActions
           :user="user"
           :owns-group="ownsGroup"
           :pending-action="pendingAction"
-          @toggle-ban="toggleBan"
-          @reset-mfa="resetMfa"
+          @toggle-ban="runAndRefreshLog(toggleBan)"
+          @reset-mfa="runAndRefreshLog(resetMfa)"
           @delete="onDelete"
         />
       </section>
@@ -157,21 +147,21 @@ watchEffect(() => {
         <UserMemberships
           :memberships="memberships"
           :changing-group-id="changingGroupId"
-          @change-role="changeRole"
+          @change-role="
+            (membership, role) =>
+              runAndRefreshLog(() => changeRole(membership, role))
+          "
         />
       </section>
 
       <section class="flex flex-col gap-3">
         <div>
-          <h3>{{ t(`${I18N_BASE}.activity`) }}</h3>
+          <h3>{{ t(`${I18N_BASE}.log`) }}</h3>
           <p class="text-sm text-on-ghost-muted">
-            {{ t(`${I18N_BASE}.activity_hint`) }}
+            {{ t('admin.log.hint') }}
           </p>
         </div>
-        <p v-if="!activity.length" class="text-sm text-on-ghost-muted m-0">
-          {{ t(`${I18N_BASE}.no_activity`) }}
-        </p>
-        <UserActivityLog v-else :activity="activity" />
+        <EventLogView ref="log" :user-id="user.id" />
       </section>
     </div>
   </div>

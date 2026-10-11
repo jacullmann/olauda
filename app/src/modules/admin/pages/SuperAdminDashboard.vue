@@ -2,7 +2,7 @@
 import { computed, onMounted, markRaw, ref, type Component } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Home, UsersRound, Flag, Layers, Info } from '@lucide/vue';
+import { BookUser, Flag, Home, Info, ScrollText } from '@lucide/vue';
 import SuperAdminLayout from '@/layouts/AdminLayout.vue';
 import SuperAdminTabBar from '../components/SuperAdminTabBar.vue';
 import { useSuperAdminStats } from '../composables/useSuperAdminStats';
@@ -22,17 +22,17 @@ const navItems = computed<(SuperAdminNavItem & { icon: Component })[]>(() => [
     count: 0,
   },
   {
-    id: 'users',
+    id: 'directory',
     name: 'admin-users',
-    label: t('admin.nav.users'),
-    icon: markRaw(UsersRound),
+    label: t('admin.nav.directory'),
+    icon: markRaw(BookUser),
     count: 0,
   },
   {
-    id: 'groups',
-    name: 'admin-groups',
-    label: t('admin.nav.groups'),
-    icon: markRaw(Layers),
+    id: 'log',
+    name: 'admin-log',
+    label: t('admin.nav.log'),
+    icon: markRaw(ScrollText),
     count: 0,
   },
   {
@@ -85,7 +85,13 @@ onMounted(loadStats);
     :active-tab="activeTab"
     @update:active-tab="onTabChange"
   >
-    <router-view />
+    <router-view v-slot="{ Component: page }">
+      <!-- A list keeps its place behind a page opened from it, such as an
+           account opened from the log, while the admin area stays open. -->
+      <KeepAlive :include="['SuperAdminDirectory', 'SuperAdminLog']">
+        <component :is="page" />
+      </KeepAlive>
+    </router-view>
     <SuperAdminTabBar
       :label="t('navigation.super_admin')"
       :items="navItems"

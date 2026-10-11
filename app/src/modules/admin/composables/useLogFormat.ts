@@ -2,6 +2,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { isUuid } from '@/utils/uuid';
 import { parseUserAgent } from '@/modules/auth/utils/userAgent';
+import type { EventSource } from '../types';
 import {
   calendarDaysAgo,
   humanizeKey,
@@ -35,7 +36,7 @@ export function useLogFormat() {
   const i18n = useI18n();
   const { t, locale } = i18n;
 
-  // Built once per locale rather than for each of up to 200 entries.
+  // Built once per locale rather than for each entry.
   const formats = computed(() => ({
     number: new Intl.NumberFormat(locale.value),
     dateTime: new Intl.DateTimeFormat(locale.value, {
@@ -53,11 +54,17 @@ export function useLogFormat() {
 
   const optional = (key: string) => (i18n.te(key) ? t(key) : undefined);
 
-  const activityLabel = (type: string) =>
-    optional(`${I18N_BASE}.activity.${typeKeyPath(type)}`) ?? type;
+  const eventLabel = (source: EventSource, type: string) =>
+    optional(`${I18N_BASE}.${source}.${typeKeyPath(type)}`) ?? type;
 
-  const securityEventLabel = (type: string) =>
-    optional(`${I18N_BASE}.security.${typeKeyPath(type)}`) ?? type;
+  /** For a type whose log is not known, as when it comes from a link. */
+  const anyEventLabel = (type: string) =>
+    optional(`${I18N_BASE}.security.${typeKeyPath(type)}`) ??
+    optional(`${I18N_BASE}.activity.${typeKeyPath(type)}`) ??
+    type;
+
+  const categoryLabel = (category: string) =>
+    optional(`${I18N_BASE}.categories.${typeKeyPath(category)}`) ?? category;
 
   const fieldLabel = (key: string) =>
     optional(`${I18N_BASE}.fields.${key}`) ?? humanizeKey(key);
@@ -133,8 +140,9 @@ export function useLogFormat() {
   const time = (iso: string) => formats.value.time.format(new Date(iso));
 
   return {
-    activityLabel,
-    securityEventLabel,
+    eventLabel,
+    anyEventLabel,
+    categoryLabel,
     fields,
     deviceName,
     dayLabel,

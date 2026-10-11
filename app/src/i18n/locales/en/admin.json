@@ -1,19 +1,15 @@
 {
   "nav": {
     "overview": "Overview",
+    "directory": "Directory",
+    "log": "Log",
     "users": "Users",
-    "reports": "Reports",
     "groups": "Groups",
-    "announcements": "Info"
+    "announcements": "Info",
+    "reports": "Reports"
   },
   "errors": {
     "action_failed": "Action failed."
-  },
-  "pagination": {
-    "total": "Total: {count}",
-    "page": "Page {page} of {count}",
-    "previous": "Previous page",
-    "next": "Next page"
   },
   "overview": {
     "title": "Dashboard Overview",
@@ -151,9 +147,12 @@
       "retry": "Try again"
     }
   },
+  "directory": {
+    "title": "Directory"
+  },
   "users": {
-    "title": "User Management",
     "empty": "No users found.",
+    "count": "{count} user | {count} users",
     "search_placeholder": "Search by email or ID…",
     "filters": {
       "all": "All users",
@@ -191,7 +190,6 @@
         "mfa_off": "Not set up",
         "groups": "Groups"
       },
-      "security_log": "Security log",
       "manage": {
         "title": "Account management",
         "superadmin_hint": "Superadmins can be neither banned nor deleted.",
@@ -220,9 +218,7 @@
       "groups": "Groups & roles",
       "no_groups": "No group memberships.",
       "joined": "Joined {date}",
-      "activity": "Activity",
-      "activity_hint": "The latest 200 entries. They are kept for 30 days.",
-      "no_activity": "No entries.",
+      "log": "Log",
       "role_changed": "Role changed."
     },
     "ban_modal": {
@@ -271,8 +267,8 @@
     }
   },
   "groups": {
-    "title": "Group Management",
     "empty": "No groups found.",
+    "count": "{count} group | {count} groups",
     "search_placeholder": "Search by name, owner email or ID…",
     "filters": {
       "all": "All types",
@@ -346,56 +342,65 @@
       "delete": "The info couldn't be deleted."
     }
   },
-  "security": {
-    "title": "Security events",
-    "error": "Security events could not be loaded.",
-    "outcome": {
+  "log": {
+    "title": "Log",
+    "hint": "Security events are kept for 90 days, activity for 30 days.",
+    "error": "The log could not be loaded.",
+    "empty": "No entries yet.",
+    "empty_filtered": "No entries match these filters.",
+    "load_more_failed": "Load more entries",
+    "sources": {
+      "all": "All",
+      "security": "Security",
+      "activity": "Activity"
+    },
+    "outcomes": {
       "success": "Succeeded",
       "failure": "Failed"
     },
-    "summary": {
-      "hint": "The last {days} days.",
-      "view_all": "All events",
-      "signals": {
-        "events": "Events",
-        "failed_sign_ins": "Failed sign-ins",
-        "lockouts": "Lockouts after failed attempts",
-        "stolen_sessions": "Stolen sessions detected"
-      },
-      "top_events": "Most frequent events",
-      "empty": "No events in this period.",
-      "failure_sources": "Failures by IP address",
-      "failure_sources_hint": "Many accounts from one address point to automated attacks.",
-      "no_failures": "No failures in this period.",
-      "failures": "{count} failure | {count} failures",
-      "accounts": "{count} account | {count} accounts",
-      "last_seen": "Last {date}"
+    "filters": {
+      "search_placeholder": "Email, IP address, group, details…",
+      "category": "Category",
+      "all_categories": "All categories",
+      "outcome": "Outcome",
+      "all_outcomes": "All outcomes",
+      "from": "From",
+      "to": "To",
+      "from_day": "From {date}",
+      "to_day": "Until {date}",
+      "newest_first": "Newest first",
+      "oldest_first": "Oldest first",
+      "ip": "IP: {value}",
+      "group": "Group: {value}",
+      "remove": "Remove filter “{filter}”",
+      "reset": "Reset filters"
     },
-    "log": {
-      "back": "Overview",
-      "hint": "The latest 200 matching entries. They are kept for 90 days.",
-      "empty": "No security events yet.",
-      "empty_filtered": "No events match these filters.",
-      "filters": {
-        "type": "Event",
-        "all_types": "All events",
-        "outcome": "Outcome",
-        "all_outcomes": "All outcomes",
-        "ip": "IP: {value}",
-        "userId": "Account: {value}",
-        "remove": "Remove filter “{filter}”",
-        "reset": "Reset filters"
-      },
+    "entry": {
       "user": "Account",
       "actor": "Performed by",
       "deleted_account": "Deleted account",
       "group": "Group",
       "ip": "IP address",
-      "filter_ip": "All events from this IP address",
-      "device": "Device"
-    }
-  },
-  "log": {
+      "device": "Device",
+      "filter_type": "Only entries of this kind",
+      "filter_group": "Only entries of this group",
+      "filter_ip": "Only entries from this IP address"
+    },
+    "categories": {
+      "auth": "Sign-in",
+      "account": "Account",
+      "mfa": "Two-factor",
+      "passkey": "Passkeys",
+      "group": "Groups",
+      "group_admin": "Group settings",
+      "admin": "Platform admin",
+      "item": "Tasks",
+      "todo": "To-dos",
+      "schedule": "Schedule",
+      "message": "Messages",
+      "profile": "Profile",
+      "page": "App opens"
+    },
     "today": "Today",
     "yesterday": "Yesterday",
     "yes": "Yes",

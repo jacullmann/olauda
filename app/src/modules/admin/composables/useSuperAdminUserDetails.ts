@@ -8,21 +8,19 @@ import type {
   MemberRole,
   SuperAdminMembership,
   SuperAdminUser,
-  SuperAdminUserActivity,
 } from '../types';
 
 const NOT_FOUND = 404;
 
 export type UserDetailsState = 'loading' | 'ready' | 'not-found' | 'failed';
 
-/** An account with its groups and recent activity, as its admin page shows it. */
+/** An account with its groups, as its admin page shows it. */
 export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
   const toast = useToast();
   const { t } = useI18n();
 
   const user = ref<SuperAdminUser | null>(null);
   const memberships = ref<SuperAdminMembership[]>([]);
-  const activity = ref<SuperAdminUserActivity[]>([]);
   const state = ref<UserDetailsState>('loading');
   const changingGroupId = ref<string | null>(null);
 
@@ -37,17 +35,12 @@ export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
     state.value = 'loading';
 
     try {
-      const [userRes, groupsRes, activityRes] = await Promise.all([
+      const [userRes, groupsRes] = await Promise.all([
         api.get<SuperAdminUser>(`/admin/users/${id}`, config),
         api.get<SuperAdminMembership[]>(`/admin/users/${id}/groups`, config),
-        api.get<SuperAdminUserActivity[]>(
-          `/admin/users/${id}/activity`,
-          config,
-        ),
       ]);
       user.value = userRes.data;
       memberships.value = groupsRes.data;
-      activity.value = activityRes.data;
       state.value = 'ready';
     } catch (error) {
       if (axios.isCancel(error)) return;
@@ -88,7 +81,6 @@ export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
     () => {
       user.value = null;
       memberships.value = [];
-      activity.value = [];
       void load();
     },
     { immediate: true },
@@ -97,7 +89,6 @@ export function useSuperAdminUserDetails(userId: MaybeRefOrGetter<string>) {
   return {
     user,
     memberships,
-    activity,
     state,
     reload: load,
     changingGroupId,

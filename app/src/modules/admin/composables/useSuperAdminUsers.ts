@@ -6,7 +6,7 @@ import type {
   UserSort,
   UserStatusFilter,
 } from '../types';
-import { usePaginatedList } from './usePaginatedList';
+import { useWindowedList } from './useWindowedList';
 
 export const USER_STATUS_FILTERS = [
   'all',
@@ -27,7 +27,7 @@ export function useSuperAdminUsers() {
   const toast = useToast();
   const { t } = useI18n();
 
-  return usePaginatedList<
+  return useWindowedList<
     SuperAdminUser,
     {
       search: string;
@@ -38,7 +38,7 @@ export function useSuperAdminUsers() {
   >({
     endpoint: '/admin/users',
     defaults: { search: '', status: 'all', sort: 'createdAt', order: 'desc' },
-    allowed: {
+    rules: {
       status: USER_STATUS_FILTERS,
       sort: USER_SORTS,
       order: SORT_ORDERS,
