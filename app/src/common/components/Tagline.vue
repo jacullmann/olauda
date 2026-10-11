@@ -39,6 +39,17 @@ const displayQuote = computed(() => {
   });
 });
 
+// v-for over a string iterates UTF-16 code units, which splits emoji into
+// lone surrogates that render as U+FFFD.
+const quoteGraphemes = computed(() =>
+  Array.from(
+    new Intl.Segmenter(locale.value, { granularity: 'grapheme' }).segment(
+      displayQuote.value,
+    ),
+    ({ segment }) => segment,
+  ),
+);
+
 onMounted(() => {
   const quotes = i18n.tm('common.footer.quotes');
 
@@ -62,9 +73,9 @@ onMounted(() => {
       })
     }}</span>
     <span
-      v-for="(char, index) in displayQuote"
+      v-for="(char, index) in quoteGraphemes"
       :key="index"
-      class="italic font-medium text-on-ghost-muted pr-1 -mr-1 transition-[opacity,filter,transform] duration-250"
+      class="italic [font-synthesis-style:none] font-medium text-on-ghost-muted pr-1 -mr-1 transition-[opacity,filter,transform] duration-250"
       :class="isVisible ? 'opacity-100 blur-none' : 'opacity-0 blur-[3px]'"
       :style="{ transitionDelay: `${index * 6}ms` }"
     >
