@@ -3,7 +3,7 @@ import { Plus } from '@lucide/vue';
 
 const { t, tm, rt } = useI18n();
 
-const CONTACT_EMAIL = 'kontakt@olauda.com';
+const CONTACT_EMAIL = 'contact@olauda.com';
 
 const questions = computed(() =>
   (tm('home.faq.items') as { q: string; a: string }[]).map((item) => ({

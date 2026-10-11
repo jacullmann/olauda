@@ -189,10 +189,10 @@ export default defineNuxtConfig({
                 name: 'Olauda',
                 url: 'https://olauda.com/',
                 logo: 'https://olauda.com/apple-touch-icon.png',
-                email: 'kontakt@olauda.com',
+                email: 'contact@olauda.com',
                 contactPoint: {
                   '@type': 'ContactPoint',
-                  email: 'kontakt@olauda.com',
+                  email: 'contact@olauda.com',
                   contactType: 'customer support',
                 },
               },

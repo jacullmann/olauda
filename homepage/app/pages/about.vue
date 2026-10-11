@@ -13,7 +13,7 @@ useSeoMetaWithI18n({
   },
 });
 
-const CONTACT_EMAIL = 'kontakt@olauda.com';
+const CONTACT_EMAIL = 'contact@olauda.com';
 
 const principles = computed(() =>
   (tm('about.principles.items') as [string, string][]).map(([refusal, detail]) => ({

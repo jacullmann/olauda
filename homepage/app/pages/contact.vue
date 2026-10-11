@@ -8,7 +8,7 @@ useSeoMetaWithI18n({
   description: () => t('pages.contact.description'),
 });
 
-const CONTACT_EMAIL = 'kontakt@olauda.com';
+const CONTACT_EMAIL = 'contact@olauda.com';
 
 const channels: { key: 'discord' | 'status' | 'bugs'; href?: string }[] = [
   { key: 'discord', href: 'https://discord.gg/schul-dashboard' },

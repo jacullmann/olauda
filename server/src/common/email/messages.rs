@@ -1,6 +1,6 @@
 use crate::common::locale::Locale;
 
-pub(super) const CONTACT_EMAIL: &str = "kontakt@olauda.com";
+pub(super) const CONTACT_EMAIL: &str = "contact@olauda.com";
 
 /// Links point at the public homepage in every environment: the legal pages
 /// only exist there, and the homepage prefixes every non-English route with
@@ -193,11 +193,11 @@ struct NoticeText {
     paragraphs: &'static [&'static str],
 }
 
-const ADVICE_DE: &str = "Warst du das nicht? Setze dein Passwort zurück, melde in den Kontoeinstellungen unter Sicherheit alle anderen Geräte ab und schreib uns an kontakt@olauda.com.";
-const ADVICE_EN: &str = "Wasn't you? Reset your password, sign out all other devices under Security in your account settings and write to us at kontakt@olauda.com.";
-const SUPPORT_ADVICE_DE: &str = "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an kontakt@olauda.com.";
+const ADVICE_DE: &str = "Warst du das nicht? Setze dein Passwort zurück, melde in den Kontoeinstellungen unter Sicherheit alle anderen Geräte ab und schreib uns an contact@olauda.com.";
+const ADVICE_EN: &str = "Wasn't you? Reset your password, sign out all other devices under Security in your account settings and write to us at contact@olauda.com.";
+const SUPPORT_ADVICE_DE: &str = "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an contact@olauda.com.";
 const SUPPORT_ADVICE_EN: &str =
-    "Didn't ask us for this? Please write to us at kontakt@olauda.com right away.";
+    "Didn't ask us for this? Please write to us at contact@olauda.com right away.";
 
 impl SecurityNotice {
     fn notice(self, locale: Locale) -> NoticeText {
