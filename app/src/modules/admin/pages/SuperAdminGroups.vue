@@ -9,6 +9,7 @@ import {
 } from '../composables/useSuperAdminGroups';
 import { useSuperAdminFormat } from '../composables/useSuperAdminFormat';
 import { useWindowVirtualList } from '../composables/useWindowVirtualList';
+import { fixedTableLayout } from '../utils/fixedTable';
 import AdminListToolbar from '../components/AdminListToolbar.vue';
 import AdminSortHeader from '../components/AdminSortHeader.vue';
 import DeleteGroupModal from '@/modules/groups/components/DeleteGroupModal.vue';
@@ -17,7 +18,9 @@ import type { GroupTypeFilter } from '../types';
 
 /** A row's height until it is measured, in px. */
 const ROW_HEIGHT = 48;
-const COLUMN_COUNT = 7;
+/** The columns' widths in rem, left to right. */
+const TABLE = fixedTableLayout([16, 8, 16, 8, 8, 8, 9]);
+const COLUMN_COUNT = TABLE.columns.length;
 
 const {
   params,
@@ -102,17 +105,13 @@ const visibleRows = computed(() =>
       {{ t('admin.groups.empty') }}
     </div>
     <BaseTableWrapper v-else>
-      <!-- Fixed columns: rows come and go while scrolling and must not
-           resize them. -->
-      <table class="table-fixed" :aria-rowcount="total + 1">
+      <table :style="TABLE.table" :aria-rowcount="total + 1">
         <colgroup>
-          <col class="w-64" />
-          <col class="w-32" />
-          <col class="w-64" />
-          <col class="w-32" />
-          <col class="w-32" />
-          <col class="w-32" />
-          <col class="w-36" />
+          <col
+            v-for="(column, index) in TABLE.columns"
+            :key="index"
+            :style="column"
+          />
         </colgroup>
         <thead>
           <tr aria-rowindex="1">

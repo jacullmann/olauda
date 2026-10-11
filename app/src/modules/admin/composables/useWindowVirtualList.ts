@@ -2,7 +2,6 @@ import {
   computed,
   onActivated,
   onDeactivated,
-  onMounted,
   ref,
   toValue,
   unref,
@@ -12,7 +11,7 @@ import {
   type MaybeRefOrGetter,
   type Ref,
 } from 'vue';
-import { useResizeObserver } from '@vueuse/core';
+import { useEventListener, useResizeObserver } from '@vueuse/core';
 import { useWindowVirtualizer, type VirtualItem } from '@tanstack/vue-virtual';
 
 export interface WindowVirtualListOptions {
@@ -47,11 +46,14 @@ export function useWindowVirtualList(options: WindowVirtualListOptions) {
     scrollMargin.value = el.getBoundingClientRect().top + window.scrollY;
   }
 
-  // Anything above the list that grows or shrinks changes the page's height too.
-  useResizeObserver(document.body, () => {
-    if (isActive.value) measureScrollMargin();
+  // Whatever changes height above the list moves it, and no element's size
+  // tells: the page itself is only as high as the viewport. So the offset is
+  // measured when the list appears or resizes, and on every scroll and resize
+  // of the window, where reading it is cheap as the layout is already done.
+  useResizeObserver(options.container, measureScrollMargin);
+  useEventListener(window, ['scroll', 'resize'], measureScrollMargin, {
+    passive: true,
   });
-  onMounted(measureScrollMargin);
   onActivated(() => {
     isActive.value = true;
     measureScrollMargin();
