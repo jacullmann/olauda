@@ -13,8 +13,8 @@ Web platform for schools and student groups.
 ## Setup
 
 ```bash
-git clone https://github.com/jacullmann/schul-dashboard.git
-cd schul-dashboard
+git clone https://github.com/jacullmann/olauda.git
+cd olauda
 ```
 
 ## Services

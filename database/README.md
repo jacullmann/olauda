@@ -18,7 +18,7 @@ therefore almost never fire. pg_cron runs in the DB container and is unaffected.
 | Item            | Value                                                       |
 |-----------------|-------------------------------------------------------------|
 | Base image      | `postgres:18` + `postgresql-18-cron` (see `Dockerfile`)     |
-| Registry        | `ghcr.io/jacullmann/schul-dashboard-database`               |
+| Registry        | `ghcr.io/jacullmann/olauda-database`                          |
 | Target database | `postgres` (the app uses the default DB, no separate one)   |
 | DB user         | `postgres`                                                  |
 | Schedule        | every 6h, staggered (see `pg_cron_setup.sql`)               |
@@ -85,7 +85,7 @@ image and pushes it to GHCR (tags `latest`, `18`, `sha-<commit>`). No manual
 In Coolify, on the DB resource (`db-prod`) -> **General** -> **Image**, set an
 immutable tag:
 ```
-ghcr.io/jacullmann/schul-dashboard-database:sha-<commit>
+ghcr.io/jacullmann/olauda-database:sha-<commit>
 ```
 Then start/deploy. The data volume is preserved.
 
