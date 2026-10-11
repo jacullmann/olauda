@@ -1,12 +1,16 @@
 use super::{
     dto::*,
+    event_log::{
+        dto::{EventLogPage, EventLogQuery},
+        service::EventLogService,
+    },
     service::{SuperAdminService, read_server_metrics, superadmin_caller},
 };
 use crate::{
     common::{
         client::ClientInfo,
         extractors::SuperAdmin,
-        pagination::Page,
+        pagination::Window,
         role::{MemberRole, Role},
     },
     error::AppResult,
@@ -75,7 +79,7 @@ pub async fn list_groups(
     State(s): State<AppState>,
     _: SuperAdmin,
     Query(q): Query<GroupsQuery>,
-) -> AppResult<Json<Page<AdminGroupDto>>> {
+) -> AppResult<Json<Window<AdminGroupDto>>> {
     Ok(Json(
         SuperAdminService::from_state(&s).list_groups(&q).await?,
     ))
@@ -99,7 +103,7 @@ pub async fn list_users(
     State(s): State<AppState>,
     _: SuperAdmin,
     Query(q): Query<UsersQuery>,
-) -> AppResult<Json<Page<AdminUserDto>>> {
+) -> AppResult<Json<Window<AdminUserDto>>> {
     Ok(Json(
         SuperAdminService::from_state(&s).list_users(&q).await?,
     ))
@@ -113,39 +117,12 @@ pub async fn get_user(
     Ok(Json(SuperAdminService::from_state(&s).get_user(id).await?))
 }
 
-pub async fn get_user_activity(
+pub async fn get_events(
     State(s): State<AppState>,
     _: SuperAdmin,
-    Path(id): Path<Uuid>,
-) -> AppResult<Json<Value>> {
-    Ok(Json(
-        SuperAdminService::from_state(&s)
-            .get_user_activity(id)
-            .await?,
-    ))
-}
-
-pub async fn get_security_events(
-    State(s): State<AppState>,
-    _: SuperAdmin,
-    Query(q): Query<SecurityEventsQuery>,
-) -> AppResult<Json<Vec<SecurityEventDto>>> {
-    Ok(Json(
-        SuperAdminService::from_state(&s)
-            .get_security_events(&q)
-            .await?,
-    ))
-}
-
-pub async fn get_security_event_summary(
-    State(s): State<AppState>,
-    _: SuperAdmin,
-) -> AppResult<Json<SecurityEventSummaryDto>> {
-    Ok(Json(
-        SuperAdminService::from_state(&s)
-            .get_security_event_summary()
-            .await?,
-    ))
+    Query(q): Query<EventLogQuery>,
+) -> AppResult<Json<EventLogPage>> {
+    Ok(Json(EventLogService::from_state(&s).page(&q).await?))
 }
 
 pub async fn get_user_memberships(

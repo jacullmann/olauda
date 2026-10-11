@@ -64,6 +64,10 @@ Removing a younger row by hand, e.g. for an erasure request, takes a
 deliberate `ALTER TABLE security_events DISABLE TRIGGER
 security_events_retention_only_delete` as the table owner.
 
+The superadmin log shows `security_events` and `user_activity` as one
+timeline through the read-only `event_log` view
+(`0075_event_log.sql`); each table keeps its own retention.
+
 ---
 
 ## Bootstrap (setting up the environment from scratch)

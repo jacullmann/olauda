@@ -1,34 +1,49 @@
-//! Fixed-size, offset-based paging for admin lists.
+//! Paging for the admin lists, which load further rows as they are scrolled.
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-pub const PAGE_SIZE: i64 = 50;
+const DEFAULT_LIMIT: i64 = 50;
+const MAX_LIMIT: i64 = 100;
 
-/// A 1-based page number. Anything below 1 is read as the first page, so a
-/// hand-edited URL can never produce a negative offset.
-#[derive(Debug, Clone, Copy, Deserialize)]
+/// How many rows to skip. Anything below zero reads as zero, so a hand-edited
+/// request can never produce a negative offset.
+#[derive(Debug, Clone, Copy, Default, Deserialize)]
 #[serde(from = "Option<i64>")]
-pub struct PageNumber(i64);
+pub struct Offset(i64);
 
-impl Default for PageNumber {
-    fn default() -> Self {
-        Self(1)
-    }
-}
-
-impl From<Option<i64>> for PageNumber {
+impl From<Option<i64>> for Offset {
     fn from(raw: Option<i64>) -> Self {
-        Self(raw.unwrap_or(1).max(1))
+        Self(raw.unwrap_or(0).max(0))
     }
 }
 
-impl PageNumber {
+impl Offset {
     pub const fn get(self) -> i64 {
         self.0
     }
+}
 
-    pub const fn offset(self) -> i64 {
-        (self.0 - 1).saturating_mul(PAGE_SIZE)
+/// How many rows to return, capped so no request can ask for a whole table.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(from = "Option<i64>")]
+pub struct Limit(i64);
+
+impl Default for Limit {
+    fn default() -> Self {
+        Self(DEFAULT_LIMIT)
+    }
+}
+
+impl From<Option<i64>> for Limit {
+    fn from(raw: Option<i64>) -> Self {
+        Self(raw.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT))
+    }
+}
+
+impl Limit {
+    pub const fn get(self) -> i64 {
+        self.0
     }
 }
 
@@ -49,26 +64,12 @@ impl SortOrder {
     }
 }
 
+/// The rows of a list from an offset on, with how many match in all, so the
+/// client can size its scrollbar before it has loaded everything.
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Page<T> {
+pub struct Window<T> {
     pub items: Vec<T>,
     pub total: i64,
-    pub page: i64,
-    pub page_size: i64,
-    pub page_count: i64,
-}
-
-impl<T> Page<T> {
-    pub fn new(items: Vec<T>, total: i64, page: PageNumber) -> Self {
-        Self {
-            items,
-            total,
-            page: page.get(),
-            page_size: PAGE_SIZE,
-            page_count: (total + PAGE_SIZE - 1) / PAGE_SIZE,
-        }
-    }
 }
 
 /// Turns free text into an `ILIKE` substring pattern. The wildcards are
@@ -91,25 +92,32 @@ pub fn search_term(raw: Option<&str>) -> Option<&str> {
     raw.map(str::trim).filter(|s| !s.is_empty())
 }
 
+/// Splits a search into the text pattern and, when it is one, the exact id.
+pub fn search_params(raw: Option<&str>) -> (Option<String>, Option<Uuid>) {
+    let term = search_term(raw);
+    (
+        term.map(contains_pattern),
+        term.and_then(|t| Uuid::parse_str(t).ok()),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn page_number_clamps_to_first_page() {
-        assert_eq!(PageNumber::from(None).get(), 1);
-        assert_eq!(PageNumber::from(Some(0)).get(), 1);
-        assert_eq!(PageNumber::from(Some(-5)).get(), 1);
-        assert_eq!(PageNumber::from(Some(3)).offset(), 2 * PAGE_SIZE);
+    fn offset_clamps_to_zero() {
+        assert_eq!(Offset::from(None).get(), 0);
+        assert_eq!(Offset::from(Some(-5)).get(), 0);
+        assert_eq!(Offset::from(Some(150)).get(), 150);
     }
 
     #[test]
-    fn page_count_rounds_up() {
-        let page = |total| Page::<()>::new(vec![], total, PageNumber::default()).page_count;
-        assert_eq!(page(0), 0);
-        assert_eq!(page(1), 1);
-        assert_eq!(page(PAGE_SIZE), 1);
-        assert_eq!(page(PAGE_SIZE + 1), 2);
+    fn limit_stays_within_bounds() {
+        assert_eq!(Limit::from(None).get(), DEFAULT_LIMIT);
+        assert_eq!(Limit::from(Some(0)).get(), 1);
+        assert_eq!(Limit::from(Some(10_000)).get(), MAX_LIMIT);
+        assert_eq!(Limit::from(Some(20)).get(), 20);
     }
 
     #[test]

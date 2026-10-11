@@ -11,7 +11,7 @@ use crate::{
         email::{EmailService, SecurityNotice},
         hetzner::{HetznerCloud, HetznerError},
         name_generator::generate_user_name,
-        pagination::{PAGE_SIZE, Page, contains_pattern, search_term},
+        pagination::{Window, search_params},
         role::{MemberRole, Role},
     },
     error::{AppError, AppResult},
@@ -20,11 +20,10 @@ use crate::{
         service::role_from_db,
     },
     mfa::service::disable_mfa,
-    security_log::{Outcome, SecurityEvent, SecurityEventKind},
+    security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
 use chrono::Utc;
-use ipnetwork::IpNetwork;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -33,9 +32,6 @@ const STATS_WINDOW_DAYS: i32 = 7;
 const DAILY_ACTIVITY_DAYS: i32 = 30;
 /// The longest whole number of weeks inside the 30 days of activity that are kept.
 const WEEKLY_RHYTHM_WEEKS: i32 = 4;
-const ACTIVITY_LOG_LIMIT: i64 = 200;
-const SECURITY_LOG_LIMIT: i64 = 200;
-const FAILURE_SOURCE_LIMIT: i64 = 5;
 
 /// The server's load as Hetzner measures it, read live on every request: the
 /// overview is opened rarely enough to stay far below the API's rate limit.
@@ -81,15 +77,6 @@ fn hetzner_failure(error: HetznerError) -> AppError {
         }
     };
     AppError::Upstream { code, message }
-}
-
-/// Splits a search into the text pattern and, when it is one, the exact id.
-fn search_params(raw: Option<&str>) -> (Option<String>, Option<Uuid>) {
-    let term = search_term(raw);
-    (
-        term.map(contains_pattern),
-        term.and_then(|t| Uuid::parse_str(t).ok()),
-    )
 }
 
 pub struct SuperAdminService {
@@ -247,7 +234,7 @@ impl SuperAdminService {
         Ok(jobs)
     }
 
-    pub async fn list_groups(&self, query: &GroupsQuery) -> AppResult<Page<AdminGroupDto>> {
+    pub async fn list_groups(&self, query: &GroupsQuery) -> AppResult<Window<AdminGroupDto>> {
         let (pattern, search_id) = search_params(query.search.as_deref());
         let group_type = match query.r#type {
             GroupTypeFilter::All => None,
@@ -281,8 +268,8 @@ impl SuperAdminService {
             group_type,
             query.sort.as_str(),
             query.order.as_str(),
-            PAGE_SIZE,
-            query.page.offset(),
+            query.limit.get(),
+            query.offset.get(),
         )
         .fetch_all(&self.db);
 
@@ -316,7 +303,10 @@ impl SuperAdminService {
             })
             .collect();
 
-        Ok(Page::new(groups, total, query.page))
+        Ok(Window {
+            items: groups,
+            total,
+        })
     }
 
     pub async fn delete_group(
@@ -350,7 +340,7 @@ impl SuperAdminService {
         Ok(json!({ "ok": true, "deletedGroupId": group_id }))
     }
 
-    pub async fn list_users(&self, query: &UsersQuery) -> AppResult<Page<AdminUserDto>> {
+    pub async fn list_users(&self, query: &UsersQuery) -> AppResult<Window<AdminUserDto>> {
         let (pattern, search_id) = search_params(query.search.as_deref());
         let superadmin_role = Role::Superadmin.db_id_i32();
 
@@ -387,8 +377,8 @@ impl SuperAdminService {
             superadmin_role,
             query.sort.as_str(),
             query.order.as_str(),
-            PAGE_SIZE,
-            query.page.offset(),
+            query.limit.get(),
+            query.offset.get(),
         )
         .fetch_all(&self.db);
 
@@ -415,7 +405,10 @@ impl SuperAdminService {
 
         let users = rows.into_iter().map(AdminUserDto::from).collect();
 
-        Ok(Page::new(users, total, query.page))
+        Ok(Window {
+            items: users,
+            total,
+        })
     }
 
     pub async fn get_user(&self, user_id: Uuid) -> AppResult<AdminUserDto> {
@@ -437,98 +430,6 @@ impl SuperAdminService {
         .ok_or_else(|| AppError::not_found("User not found."))?;
 
         Ok(row.into())
-    }
-
-    pub async fn get_user_activity(&self, user_id: Uuid) -> AppResult<Value> {
-        let rows = sqlx::query!(
-            r#"SELECT type, meta, created_at FROM user_activity
-               WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2"#,
-            user_id,
-            ACTIVITY_LOG_LIMIT
-        )
-        .fetch_all(&self.db)
-        .await?;
-
-        Ok(json!(
-            rows.into_iter()
-                .map(|r| json!({ "at": r.created_at, "type": r.r#type, "meta": r.meta }))
-                .collect::<Vec<_>>()
-        ))
-    }
-
-    /// The newest entries of the security log that match the filters.
-    pub async fn get_security_events(
-        &self,
-        query: &SecurityEventsQuery,
-    ) -> AppResult<Vec<SecurityEventDto>> {
-        let events = sqlx::query_as!(
-            SecurityEventDto,
-            r#"SELECT e.id, e.event_type, e.outcome,
-                      e.user_id, u.email AS "user_email?",
-                      e.actor_id, a.email AS "actor_email?",
-                      e.tenant_id AS group_id, g.name AS "group_name?",
-                      host(e.ip_address) AS ip_address, e.user_agent, e.metadata, e.created_at
-               FROM security_events e
-               LEFT JOIN users u ON u.id = e.user_id
-               LEFT JOIN users a ON a.id = e.actor_id
-               LEFT JOIN groups g ON g.id = e.tenant_id
-               WHERE ($2::text IS NULL OR e.event_type = $2)
-                 AND ($3::text IS NULL OR e.outcome = $3)
-                 AND ($4::inet IS NULL OR e.ip_address = $4)
-                 AND ($5::uuid IS NULL OR e.user_id = $5 OR e.actor_id = $5)
-               ORDER BY e.created_at DESC
-               LIMIT $1"#,
-            SECURITY_LOG_LIMIT,
-            query.event_type(),
-            query.outcome.map(Outcome::as_str),
-            query.ip.map(IpNetwork::from),
-            query.user_id,
-        )
-        .fetch_all(&self.db)
-        .await?;
-
-        Ok(events)
-    }
-
-    /// The security log of the past week at a glance: how often each kind of
-    /// event happened, and the addresses most failures came from.
-    pub async fn get_security_event_summary(&self) -> AppResult<SecurityEventSummaryDto> {
-        let counts_query = sqlx::query_as!(
-            SecurityEventCountDto,
-            r#"SELECT event_type, outcome, COUNT(*) AS "count!"
-               FROM security_events
-               WHERE created_at >= now() - make_interval(days => $1)
-               GROUP BY event_type, outcome
-               ORDER BY COUNT(*) DESC, event_type, outcome"#,
-            STATS_WINDOW_DAYS,
-        )
-        .fetch_all(&self.db);
-
-        let sources_query = sqlx::query_as!(
-            FailureSourceDto,
-            r#"SELECT host(ip_address) AS "ip_address!",
-                      COUNT(*) AS "count!",
-                      COUNT(DISTINCT user_id) AS "account_count!",
-                      MAX(created_at) AS "last_seen_at!"
-               FROM security_events
-               WHERE outcome = $2 AND ip_address IS NOT NULL
-                 AND created_at >= now() - make_interval(days => $1)
-               GROUP BY ip_address
-               ORDER BY COUNT(*) DESC, MAX(created_at) DESC
-               LIMIT $3"#,
-            STATS_WINDOW_DAYS,
-            Outcome::Failure.as_str(),
-            FAILURE_SOURCE_LIMIT,
-        )
-        .fetch_all(&self.db);
-
-        let (event_counts, failure_sources) = tokio::try_join!(counts_query, sources_query)?;
-
-        Ok(SecurityEventSummaryDto {
-            days: STATS_WINDOW_DAYS,
-            event_counts,
-            failure_sources,
-        })
     }
 
     /// The roles offered per group come from the same policy the group admin
