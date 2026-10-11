@@ -3,7 +3,7 @@ use super::{
     file_kind::{self, FileKind},
 };
 use crate::{
-    common::cloudinary::{Cloudinary, CloudinaryError, ResourceType},
+    common::cloudinary::{AssetFolder, Cloudinary, CloudinaryError, ResourceType},
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -29,6 +29,15 @@ pub enum AssetPurpose {
     Attachment,
     Thumbnail,
     GroupAvatar,
+}
+
+impl AssetPurpose {
+    pub const fn folder(self) -> AssetFolder {
+        match self {
+            Self::Attachment | Self::Thumbnail => AssetFolder::Tasks,
+            Self::GroupAvatar => AssetFolder::GroupPictures,
+        }
+    }
 }
 
 /// A file as received, before anything about it is trusted.
@@ -276,7 +285,8 @@ impl AssetService {
             FileKind::Office(office) => Some(office.extension()),
             FileKind::Image(_) | FileKind::Pdf => None,
         };
-        let public_id = self.cloudinary.new_public_id(raw_extension);
+        let folder = purpose.folder();
+        let public_id = folder.new_public_id(raw_extension);
 
         let id = sqlx::query_scalar!(
             r#"INSERT INTO assets
@@ -296,7 +306,7 @@ impl AssetService {
 
         let uploaded = match self
             .cloudinary
-            .upload(&public_id, resource_type, bytes)
+            .upload(&public_id, folder, resource_type, bytes)
             .await
         {
             Ok(uploaded) => uploaded,

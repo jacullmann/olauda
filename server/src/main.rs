@@ -81,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = AppState::new(db, config)?;
 
-    assets::sweep::spawn(state.db.clone(), state.cloudinary.clone());
+    assets::spawn_maintenance(state.db.clone(), state.cloudinary.clone());
 
     let cors = CorsLayer::new()
         .allow_origin(

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE assets a\n           SET public_id = moved.new_public_id\n           FROM unnest($1::uuid[], $2::text[]) AS moved(id, new_public_id)\n           WHERE a.id = moved.id",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "709dd9e87427218976124bcff0df26b1505906d5696f9ee82dd8aeaa091d0d76"
+}

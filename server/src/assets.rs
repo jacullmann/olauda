@@ -10,6 +10,21 @@
 pub mod dto;
 pub mod file_kind;
 pub mod handlers;
+mod relocate;
 pub mod routes;
 pub mod service;
-pub mod sweep;
+mod sweep;
+
+use crate::common::cloudinary::Cloudinary;
+use sqlx::PgPool;
+
+/// Relocation finishes before the first sweep, so the sweep never deletes a
+/// file by an ID that is being renamed at the same moment.
+pub fn spawn_maintenance(db: PgPool, cloudinary: Cloudinary) {
+    tokio::spawn(async move {
+        if let Err(e) = relocate::move_assets_into_their_folders(&db, &cloudinary).await {
+            tracing::warn!("Asset relocation failed: {e}");
+        }
+        sweep::run(db, cloudinary).await;
+    });
+}

@@ -25,7 +25,6 @@ pub struct Config {
     pub cloudinary_cloud_name: String,
     pub cloudinary_api_key: String,
     pub cloudinary_api_secret: String,
-    pub cloudinary_folder: String,
     pub resend_api_key: String,
     pub email_from: String,
     pub geoip_service_url: String,
@@ -103,8 +102,6 @@ impl Config {
             cloudinary_cloud_name: require("CLOUDINARY_CLOUD_NAME")?,
             cloudinary_api_key: require("CLOUDINARY_API_KEY")?,
             cloudinary_api_secret: require("CLOUDINARY_API_SECRET")?,
-            cloudinary_folder: std::env::var("CLOUDINARY_FOLDER")
-                .unwrap_or_else(|_| "hausaufgaben".into()),
             resend_api_key: require("RESEND_API_KEY")?,
             email_from: std::env::var("EMAIL_FROM")
                 .unwrap_or_else(|_| "Olauda <noreply@schul-dashboard.com>".into()),

@@ -5,7 +5,7 @@
 use crate::config::Config;
 use chrono::Utc;
 use reqwest::{
-    Client,
+    Client, Response, StatusCode,
     multipart::{Form, Part},
 };
 use serde::{Deserialize, Serialize};
@@ -66,6 +66,43 @@ struct DestroyResponse {
     result: String,
 }
 
+/// Where a file lives, both as the path of its public ID and as its folder
+/// in the Media Library. The product environment uses dynamic folders, where
+/// the two are independent and every upload has to name both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AssetFolder {
+    Tasks,
+    GroupPictures,
+}
+
+impl AssetFolder {
+    pub const fn path(self) -> &'static str {
+        match self {
+            Self::Tasks => "tasks",
+            Self::GroupPictures => "group-pictures",
+        }
+    }
+
+    /// A fresh, unguessable public ID in this folder. Raw assets keep their
+    /// extension in the ID, as Cloudinary requires.
+    pub fn new_public_id(self, raw_extension: Option<&str>) -> String {
+        let stem = format!("{}/{}", self.path(), Uuid::new_v4().simple());
+        match raw_extension {
+            Some(extension) => format!("{stem}.{extension}"),
+            None => stem,
+        }
+    }
+
+    /// The ID `public_id` gets in this folder, keeping its name. IDs already
+    /// in the folder map to themselves.
+    pub fn public_id_for(self, public_id: &str) -> String {
+        let name = public_id
+            .rsplit_once('/')
+            .map_or(public_id, |(_, name)| name);
+        format!("{}/{name}", self.path())
+    }
+}
+
 #[derive(Clone)]
 pub struct Cloudinary(Arc<Inner>);
 
@@ -74,7 +111,6 @@ struct Inner {
     cloud_name: String,
     api_key: String,
     api_secret: String,
-    folder: String,
 }
 
 impl Cloudinary {
@@ -84,18 +120,7 @@ impl Cloudinary {
             cloud_name: config.cloudinary_cloud_name.clone(),
             api_key: config.cloudinary_api_key.clone(),
             api_secret: config.cloudinary_api_secret.clone(),
-            folder: config.cloudinary_folder.clone(),
         }))
-    }
-
-    /// A fresh, unguessable public ID in this deployment's folder. Raw assets
-    /// keep their extension in the ID, as Cloudinary requires.
-    pub fn new_public_id(&self, raw_extension: Option<&str>) -> String {
-        let stem = format!("{}/{}", self.0.folder, Uuid::new_v4().simple());
-        match raw_extension {
-            Some(extension) => format!("{stem}.{extension}"),
-            None => stem,
-        }
     }
 
     /// The URL clients load an image from, in the best format the browser
@@ -126,6 +151,14 @@ impl Cloudinary {
         }
     }
 
+    fn endpoint(&self, resource_type: ResourceType, method: &str) -> String {
+        format!(
+            "https://api.cloudinary.com/v1_1/{}/{}/{method}",
+            self.0.cloud_name,
+            resource_type.as_str()
+        )
+    }
+
     /// Signs `params` as Cloudinary expects: sorted by name, joined as a query
     /// string suffixed with the API secret. Only `&` is escaped, so a value
     /// cannot smuggle in another signed parameter.
@@ -139,27 +172,52 @@ impl Cloudinary {
         hex::encode(Sha256::digest(format!("{joined}{}", self.0.api_secret)))
     }
 
-    /// Stores `bytes` under `public_id`. The caller has already verified the
-    /// content, so the resource type is never left for Cloudinary to guess.
+    /// Calls an Upload API method that takes no file, signing every parameter.
+    async fn post_signed(
+        &self,
+        resource_type: ResourceType,
+        method: &str,
+        params: &[(&str, &str)],
+    ) -> reqwest::Result<Response> {
+        let timestamp = Utc::now().timestamp().to_string();
+        let mut signed = [params, &[("timestamp", timestamp.as_str())]].concat();
+        let signature = self.sign(&mut signed);
+        let form = [
+            signed.as_slice(),
+            &[("api_key", &self.0.api_key), ("signature", &signature)],
+        ]
+        .concat();
+
+        self.0
+            .http
+            .post(self.endpoint(resource_type, method))
+            .form(&form)
+            .send()
+            .await
+    }
+
+    /// Stores `bytes` under `public_id` in `folder`. The caller has already
+    /// verified the content, so the resource type is never left for Cloudinary
+    /// to guess.
     pub async fn upload(
         &self,
         public_id: &str,
+        folder: AssetFolder,
         resource_type: ResourceType,
         bytes: Vec<u8>,
     ) -> Result<UploadResult, CloudinaryError> {
-        let url = format!(
-            "https://api.cloudinary.com/v1_1/{}/{}/upload",
-            self.0.cloud_name,
-            resource_type.as_str()
-        );
         let timestamp = Utc::now().timestamp().to_string();
-        let signature =
-            self.sign(&mut [("public_id", public_id), ("timestamp", timestamp.as_str())]);
+        let signature = self.sign(&mut [
+            ("asset_folder", folder.path()),
+            ("public_id", public_id),
+            ("timestamp", timestamp.as_str()),
+        ]);
 
         // The file name only names the part; Cloudinary stores the file under
         // the signed public ID.
         let form = Form::new()
             .text("api_key", self.0.api_key.clone())
+            .text("asset_folder", folder.path())
             .text("public_id", public_id.to_owned())
             .text("timestamp", timestamp)
             .text("signature", signature)
@@ -168,7 +226,7 @@ impl Cloudinary {
         let response = self
             .0
             .http
-            .post(url)
+            .post(self.endpoint(resource_type, "upload"))
             .timeout(UPLOAD_TIMEOUT)
             .multipart(form)
             .send()
@@ -176,12 +234,8 @@ impl Cloudinary {
 
         // A 400 means Cloudinary could not process the file itself, e.g. an
         // image whose signature is valid but whose content is broken.
-        if response.status() == reqwest::StatusCode::BAD_REQUEST {
-            let message = response
-                .json::<ErrorResponse>()
-                .await
-                .map_or_else(|_| "unreadable error".to_owned(), |body| body.error.message);
-            return Err(CloudinaryError::Rejected(message));
+        if response.status() == StatusCode::BAD_REQUEST {
+            return Err(rejection(response).await);
         }
 
         Ok(response.error_for_status()?.json().await?)
@@ -194,30 +248,12 @@ impl Cloudinary {
         public_id: &str,
         resource_type: ResourceType,
     ) -> Result<(), CloudinaryError> {
-        let url = format!(
-            "https://api.cloudinary.com/v1_1/{}/{}/destroy",
-            self.0.cloud_name,
-            resource_type.as_str()
-        );
-        let timestamp = Utc::now().timestamp().to_string();
-        let mut params = [
-            ("public_id", public_id),
-            ("invalidate", "true"),
-            ("timestamp", timestamp.as_str()),
-        ];
-        let signature = self.sign(&mut params);
-        let form = [
-            params.as_slice(),
-            &[("api_key", &self.0.api_key), ("signature", &signature)],
-        ]
-        .concat();
-
         let response: DestroyResponse = self
-            .0
-            .http
-            .post(url)
-            .form(&form)
-            .send()
+            .post_signed(
+                resource_type,
+                "destroy",
+                &[("public_id", public_id), ("invalidate", "true")],
+            )
             .await?
             .error_for_status()?
             .json()
@@ -226,6 +262,71 @@ impl Cloudinary {
         match response.result.as_str() {
             "ok" | "not found" => Ok(()),
             other => Err(CloudinaryError::Rejected(other.to_owned())),
+        }
+    }
+
+    /// Shows the asset in `folder` of the Media Library without changing its
+    /// public ID.
+    pub async fn move_to_folder(
+        &self,
+        public_id: &str,
+        folder: AssetFolder,
+        resource_type: ResourceType,
+    ) -> Result<(), CloudinaryError> {
+        let response = self
+            .post_signed(
+                resource_type,
+                "explicit",
+                &[
+                    ("public_id", public_id),
+                    ("type", "upload"),
+                    ("asset_folder", folder.path()),
+                ],
+            )
+            .await?;
+        succeeded_unless_missing(response).await
+    }
+
+    /// Gives the asset a new public ID and purges its old URLs from the CDN.
+    pub async fn rename(
+        &self,
+        from_public_id: &str,
+        to_public_id: &str,
+        resource_type: ResourceType,
+    ) -> Result<(), CloudinaryError> {
+        let response = self
+            .post_signed(
+                resource_type,
+                "rename",
+                &[
+                    ("from_public_id", from_public_id),
+                    ("to_public_id", to_public_id),
+                    ("invalidate", "true"),
+                ],
+            )
+            .await?;
+        succeeded_unless_missing(response).await
+    }
+}
+
+async fn rejection(response: Response) -> CloudinaryError {
+    let message = response
+        .json::<ErrorResponse>()
+        .await
+        .map_or_else(|_| "unreadable error".to_owned(), |body| body.error.message);
+    CloudinaryError::Rejected(message)
+}
+
+/// A missing asset counts as success, so a relocation interrupted between
+/// its steps can simply be repeated: the asset was either handled before or
+/// is lost either way.
+async fn succeeded_unless_missing(response: Response) -> Result<(), CloudinaryError> {
+    match response.status() {
+        StatusCode::NOT_FOUND => Ok(()),
+        StatusCode::BAD_REQUEST => Err(rejection(response).await),
+        _ => {
+            response.error_for_status()?;
+            Ok(())
         }
     }
 }
@@ -240,26 +341,44 @@ mod tests {
             cloud_name: "cloud".into(),
             api_key: "key".into(),
             api_secret: "secret".into(),
-            folder: "hausaufgaben".into(),
         }))
     }
 
     #[test]
-    fn new_public_ids_live_in_the_folder_and_keep_raw_extensions() {
-        let c = cloudinary();
-        let image = c.new_public_id(None);
-        let raw = c.new_public_id(Some("docx"));
+    fn new_public_ids_live_in_their_folder_and_keep_raw_extensions() {
+        let image = AssetFolder::Tasks.new_public_id(None);
+        let raw = AssetFolder::Tasks.new_public_id(Some("docx"));
+        let picture = AssetFolder::GroupPictures.new_public_id(None);
 
-        assert!(image.starts_with("hausaufgaben/") && !image.contains('.'));
-        assert!(raw.starts_with("hausaufgaben/") && raw.ends_with(".docx"));
-        assert_ne!(image, c.new_public_id(None));
+        assert!(image.starts_with("tasks/") && !image.contains('.'));
+        assert!(raw.starts_with("tasks/") && raw.ends_with(".docx"));
+        assert!(picture.starts_with("group-pictures/"));
+        assert_ne!(image, AssetFolder::Tasks.new_public_id(None));
+    }
+
+    #[test]
+    fn public_ids_move_between_folders_by_name() {
+        assert_eq!(
+            AssetFolder::Tasks.public_id_for("hausaufgaben/abc"),
+            "tasks/abc"
+        );
+        assert_eq!(
+            AssetFolder::Tasks.public_id_for("hausaufgaben/abc.docx"),
+            "tasks/abc.docx"
+        );
+        assert_eq!(
+            AssetFolder::GroupPictures.public_id_for("hausaufgaben/abc"),
+            "group-pictures/abc"
+        );
+        assert_eq!(AssetFolder::Tasks.public_id_for("abc"), "tasks/abc");
+        assert_eq!(AssetFolder::Tasks.public_id_for("tasks/abc"), "tasks/abc");
     }
 
     #[test]
     fn image_urls_point_at_the_cloud() {
         assert_eq!(
-            cloudinary().image_url("hausaufgaben/abc"),
-            "https://res.cloudinary.com/cloud/image/upload/f_auto,q_auto/hausaufgaben/abc"
+            cloudinary().image_url("tasks/abc"),
+            "https://res.cloudinary.com/cloud/image/upload/f_auto,q_auto/tasks/abc"
         );
     }
 
@@ -267,12 +386,12 @@ mod tests {
     fn original_urls_keep_the_uploaded_format() {
         let c = cloudinary();
         assert_eq!(
-            c.original_url("hausaufgaben/abc", ResourceType::Image, "png"),
-            "https://res.cloudinary.com/cloud/image/upload/hausaufgaben/abc.png"
+            c.original_url("tasks/abc", ResourceType::Image, "png"),
+            "https://res.cloudinary.com/cloud/image/upload/tasks/abc.png"
         );
         assert_eq!(
-            c.original_url("hausaufgaben/abc.docx", ResourceType::Raw, "docx"),
-            "https://res.cloudinary.com/cloud/raw/upload/hausaufgaben/abc.docx"
+            c.original_url("tasks/abc.docx", ResourceType::Raw, "docx"),
+            "https://res.cloudinary.com/cloud/raw/upload/tasks/abc.docx"
         );
     }
 
