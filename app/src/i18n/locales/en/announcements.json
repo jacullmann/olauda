@@ -5,7 +5,7 @@
   },
   "list": {
     "title": "Announcements",
-    "create_button": "New announcement",
+    "create_button": "New Announcement",
     "empty_state": "No announcements",
     "important": "Important"
   },
@@ -20,8 +20,8 @@
     "important_label": "Important"
   },
   "card": {
-    "acknowledge": "Got it",
-    "acknowledge_all": "Dismiss all"
+    "acknowledge": "Got It",
+    "acknowledge_all": "Dismiss All"
   },
   "system": {
     "source": "Info from Olauda"

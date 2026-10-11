@@ -59,7 +59,7 @@
         "unreachable": "The Hetzner API can't be reached right now.",
         "load": "Couldn't load the server usage."
       },
-      "retry": "Try again"
+      "retry": "Try Again"
     },
     "cleanup_jobs": {
       "title": "Automatic cleanup",
@@ -67,7 +67,7 @@
       "all_ok": "All OK",
       "jobs_overdue": "Overdue jobs: {count}",
       "overdue": "Overdue: {count}",
-      "retry": "Try again",
+      "retry": "Try Again",
       "jobs": {
         "cleanup-refresh-tokens": {
           "label": "Sessions",
@@ -136,9 +136,9 @@
       "shutdown_modal": {
         "title": "Turn on shutdown mode?",
         "content": "Everyone except superadmins immediately loses access to Olauda and can neither sign in nor sign up.",
-        "submit": "Turn on"
+        "submit": "Turn On"
       },
-      "retry": "Try again",
+      "retry": "Try Again",
       "errors": {
         "load": "Couldn't load the access settings.",
         "save": "Couldn't save the change."
@@ -176,7 +176,7 @@
     "actions": {
       "ban": "Ban",
       "unban": "Unban",
-      "reset_mfa": "Reset two-factor authentication"
+      "reset_mfa": "Reset Two-Factor Authentication"
     },
     "details": {
       "title": "User details",
@@ -255,7 +255,7 @@
     "empty": "No reports.",
     "reason": "Reason",
     "from": "From: {email} · {date}",
-    "delete": "Delete report",
+    "delete": "Delete Report",
     "deleted": "Content deleted",
     "message_by": "Message by {email}",
     "message_sender_deleted": "Message (sender deleted)",
@@ -365,12 +365,12 @@
       "to": "To",
       "from_day": "From {date}",
       "to_day": "Until {date}",
-      "newest_first": "Newest first",
-      "oldest_first": "Oldest first",
+      "newest_first": "Newest First",
+      "oldest_first": "Oldest First",
       "ip": "IP: {value}",
       "group": "Group: {value}",
       "remove": "Remove filter “{filter}”",
-      "reset": "Reset filters"
+      "reset": "Reset Filters"
     },
     "entry": {
       "user": "Account",
@@ -618,6 +618,6 @@
     "errors": {
       "load": "Couldn't load the log."
     },
-    "load_more": "Load more entries"
+    "load_more": "Load More Entries"
   }
 }

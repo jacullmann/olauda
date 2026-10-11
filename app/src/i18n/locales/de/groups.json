@@ -3,7 +3,7 @@
     "create_group": "Gruppe erstellen",
     "join_group_text": "Tritt einer bestehenden Gruppe bei oder erstelle eine neue, um loszulegen.",
     "no_groups": "Noch keine Gruppen",
-    "your_groups": "Deine Gruppen",
+    "title": "Gruppen",
     "tooltip": {
       "create_group": "Gruppe erstellen"
     }

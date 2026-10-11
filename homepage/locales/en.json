@@ -1,7 +1,7 @@
 {
   "common": {
-    "login": "Sign in",
-    "register": "Create account",
+    "login": "Sign In",
+    "register": "Create Account",
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
@@ -111,7 +111,7 @@
       "label": "Example: one change reaching a class of 28",
       "lesson": "Maths, period 3",
       "change": "Canceled",
-      "save": "Save change",
+      "save": "Save Change",
       "reset": "Undo",
       "idle": "Only you know so far.",
       "done": "All 28 see it now."
@@ -347,7 +347,7 @@
   "not_found": {
     "title": "Free period.",
     "body": "This page doesn't exist. Maybe it was moved, or the link has a typo.",
-    "link": "Back to the homepage"
+    "link": "Back to the Homepage"
   },
   "cookie": {
     "text": "We only use cookies the site needs to work. We count visits with Umami, without cookies or profiles.",

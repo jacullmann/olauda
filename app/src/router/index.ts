@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/modules/groups/pages/Groups.vue'),
         meta: {
           title: 'navigation.home',
-          headerTitle: 'groups.list.your_groups',
+          headerTitle: 'groups.list.title',
         },
       },
 

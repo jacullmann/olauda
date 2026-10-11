@@ -1,9 +1,9 @@
 {
   "list": {
-    "create_group": "Create group",
+    "create_group": "Create Group",
     "join_group_text": "Join an existing group or create a new one to get started.",
     "no_groups": "No groups yet",
-    "your_groups": "Your groups",
+    "title": "Groups",
     "tooltip": {
       "create_group": "Create group"
     }
@@ -24,9 +24,9 @@
         },
         "actions": {
           "change": "Change group picture",
-          "upload": "Upload image",
-          "capture": "Take photo",
-          "delete": "Delete image"
+          "upload": "Upload Image",
+          "capture": "Take Photo",
+          "delete": "Delete Image"
         },
         "title": "Group picture",
         "description": "Optionally choose a group picture",
@@ -39,7 +39,7 @@
       "delete_group": {
         "warning_text": "Deleting the group is permanent and cannot be undone. All associated data (tasks, schedule, announcements, etc.) will be deleted for all users.",
         "danger_zone_title": "Danger Zone",
-        "button": "Delete group"
+        "button": "Delete Group"
       },
       "appearance": {
         "name_placeholder": "New group name"
@@ -113,7 +113,7 @@
       "invite_links": {
         "title": "Invite Links",
         "empty": "No invite links",
-        "generate_button": "Generate link",
+        "generate_button": "Generate Link",
         "status": {
           "used": "Used",
           "revoked": "Revoked",
@@ -149,7 +149,7 @@
       "step_down_modal": {
         "title": "Lower your own role?",
         "message": "You cannot give this role back to yourself afterwards. Someone with a higher role will have to do that.",
-        "submit": "Lower role"
+        "submit": "Lower Role"
       },
       "errors": {
         "load": "Couldn't load the members.",
@@ -253,7 +253,7 @@
         "edit_button": "Edit configuration",
         "lesson_duration_label": "Lesson Duration (minutes)",
         "instruction_text": "Set the start time, lesson length and breaks.",
-        "add_break_button": "Add break",
+        "add_break_button": "Add Break",
         "start_time_label": "Start time",
         "slots_per_day_label": "Periods per day",
         "breaks_title": "Breaks",
@@ -267,7 +267,7 @@
         "no_day": "Every day has its own breaks, so no day uses these.",
         "day_follows_everyone": "{day} uses the standard breaks. Changes here apply to {day} only.",
         "day_has_own_breaks": "{day} has its own breaks.",
-        "use_everyones_breaks": "Use standard breaks",
+        "use_everyones_breaks": "Use Standard Breaks",
         "break_label": "Break",
         "break_minutes_label": "Length of the break after period {slot}, in minutes",
         "shorter_break": "5 minutes shorter",
@@ -323,13 +323,13 @@
         "delete_lesson_button": "Delete Lesson",
         "save_all_button": "Save Changes",
         "cancel_button": "Cancel",
-        "add_lesson_slot": "Add lesson",
+        "add_lesson_slot": "Add Lesson",
         "course_hint": "Without a course the lesson applies to the whole group.",
         "undo": "Undo (Ctrl+Z)",
         "redo": "Redo (Ctrl+Y)",
         "no_subjects": "This group has no subjects. Set them up in the settings to add lessons.",
         "no_subjects_title": "No subjects yet",
-        "set_up_subjects_button": "Set up subjects"
+        "set_up_subjects_button": "Set Up Subjects"
       }
     },
     "subjects": {
@@ -428,7 +428,7 @@
     },
     "irreversible": "Deleting is permanent and cannot be undone.",
     "confirmation_label": "To confirm, type the group name {name}:",
-    "submit": "Delete permanently"
+    "submit": "Delete Permanently"
   },
   "errors": {
     "create": "Couldn't create the group.",

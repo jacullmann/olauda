@@ -17,8 +17,8 @@
     "skip": "Skip",
     "saving": "Saving…",
     "refresh": "Refresh",
-    "retry": "Try again",
-    "logout": "Sign out",
+    "retry": "Try Again",
+    "logout": "Sign Out",
     "copied": "Copied"
   },
   "discard_changes": {
@@ -184,7 +184,7 @@
     "search": "Search",
     "tasks": "Tasks",
     "dashboard": "Dashboard",
-    "create": "Create group",
+    "create": "Create Group",
     "toggle": "Toggle Sidebar",
     "others": "others"
   },
@@ -216,8 +216,8 @@
   "loading": "Loading…",
   "notifications": "Notifications",
   "header": {
-    "switch_group": "Switch group",
-    "leave_group": "Leave group",
+    "switch_group": "Switch Group",
+    "leave_group": "Leave Group",
     "leave_group_confirm": {
       "title": "Leave Group?",
       "content": "Are you sure you want to leave the group \"{group}\"?",
@@ -233,7 +233,7 @@
       "schedule": "All of your lessons",
       "private": "Your private list of tasks"
     },
-    "go_back": "Go back"
+    "go_back": "Go Back"
   },
   "personalized_view": {
     "notice": "Only your courses are displayed",
@@ -262,7 +262,7 @@
     "unreachable": {
       "title": "Server unreachable",
       "message": "Olauda is not responding right now, it may be updating. You stay signed in.",
-      "retry": "Try again"
+      "retry": "Try Again"
     }
   },
   "search_results": {

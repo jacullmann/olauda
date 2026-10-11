@@ -76,6 +76,9 @@ Write **idiomatic, performant, secure code that speaks for itself.**
 - Wording: the fact in past tense, then at most one sentence on what to do next. "Link copied." / "Link kopiert." No "successfully"/"erfolgreich", no exclamation marks.
 - Keys mirror errors: `<section>.success.<verb>[_<object>]`, using the same name as the matching error (`chat.errors.report` / `chat.success.report`), and `<section>.notices.<condition>` (`groups.notices.already_member`).
 
+**Button labels:**
+- English labels on buttons, menu items and dialog submit actions use title case: "Delete Task", "Sign In with Google", "Use a Code from the Authenticator App". Articles, coordinating conjunctions and prepositions stay lowercase unless first or last; verb particles are capitalized ("Set Up", "Sign Out", "Move Up"). German keeps normal German capitalization.
+
 ---
 
 ## General

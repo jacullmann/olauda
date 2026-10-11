@@ -7,7 +7,7 @@
     "archive": {
       "archive": "Archive"
     },
-    "create_task": "Create task",
+    "create_task": "Create Task",
     "infopop": {
       "description": "Work collaboratively with others and keep track of everything.",
       "sections": [
@@ -58,7 +58,7 @@
     },
     "tasks": {
       "menu": {
-        "add_note": "Add note",
+        "add_note": "Add Note",
         "archive": "Archive",
         "delete": {
           "title": "Delete this task?"
@@ -91,7 +91,7 @@
         "not_found": "Task not found",
         "not_found_message": "This task was deleted or is no longer available.",
         "load_failed_message": "Check your connection and try again.",
-        "all_tasks": "All tasks",
+        "all_tasks": "All Tasks",
         "drop_files": "Drop to attach files",
         "load_failed": "Couldn't load the task",
         "list_load_failed": "Couldn't load the tasks"
@@ -102,7 +102,7 @@
       "note": "Note",
       "placeholder": "Add a note…"
     },
-    "reset_filters": "Reset filters",
+    "reset_filters": "Reset Filters",
     "sections": {
       "pinned": "Pinned",
       "unpinned": "Other Tasks",
@@ -130,7 +130,7 @@
       "title": "Task Already Exists?",
       "message": "There's already a {type} entry for {subject} on {date}. Could this be the same task?",
       "create_anyway": "Create anyway",
-      "view_existing": "View existing"
+      "view_existing": "View Existing"
     }
   },
   "private_tasks": {
@@ -175,8 +175,8 @@
       "tooltip": "Overview and features for private tasks"
     },
     "menu": {
-      "down": "Move down",
-      "up": "Move up"
+      "down": "Move Down",
+      "up": "Move Up"
     },
     "new_task": "New Task",
     "no_tasks": "No private tasks",
@@ -205,14 +205,14 @@
     "delete_modal": {
       "title": "Delete this task?",
       "message": "The task and all its files will be permanently deleted.",
-      "submit": "Delete task"
+      "submit": "Delete Task"
     }
   },
   "notes": {
     "delete_modal": {
       "title": "Delete note?",
       "message": "Are you sure you want to permanently delete this note?",
-      "submit": "Delete note"
+      "submit": "Delete Note"
     },
     "errors": {
       "save": "Couldn't save the note.",
@@ -223,7 +223,7 @@
     "delete_modal": {
       "title": "Delete this image?",
       "message": "If you delete this image, it will be permanently removed.",
-      "submit": "Delete image"
+      "submit": "Delete Image"
     },
     "upload": {
       "progress": "Uploading images"
