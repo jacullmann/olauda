@@ -126,6 +126,10 @@ const submitLabel = computed(() =>
     : t('common.buttons.done'),
 );
 
+const hasOpenLessons = computed(
+  () => isLessonStep.value && openSubjects.value.length > 0,
+);
+
 const openSubjectNames = computed(() =>
   openSubjects.value.map((subject) => translatedName(subject.name)),
 );
@@ -162,13 +166,7 @@ async function showLessonStep() {
 }
 
 async function submit() {
-  if (isLessonStep.value) {
-    if (openSubjects.value.length > 0) {
-      error.value = t('auth.courses.errors.lessons_missing');
-      return;
-    }
-    return saveAndFinish(enrollments.value, true);
-  }
+  if (isLessonStep.value) return saveAndFinish(enrollments.value, true);
 
   if (isAbitur.value ? !hasAllLevels.value : !hasRequiredSelections.value) {
     error.value = t('auth.courses.errors.required_courses_missing');
@@ -292,7 +290,7 @@ function goBack() {
         variant="action"
         class="w-full"
         :loading="saving"
-        :disabled="saving || loading"
+        :disabled="saving || loading || hasOpenLessons"
       >
         {{ submitLabel }}
       </BaseButton>
