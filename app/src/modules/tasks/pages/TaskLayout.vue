@@ -11,7 +11,8 @@ const route = useRoute();
 const isMobile = useIsMobileViewport();
 
 // Like a page pushed onto a phone's navigation stack, an opened task slides in
-// over the list. Stepping back swaps them at once: the list is still there.
+// over the list, which only shifts aside and dims beneath it. Stepping back
+// swaps them at once: the list is still there.
 const slidesIn = computed(() => isMobile.value && route.name === 'group-task');
 const isSliding = ref(false);
 
@@ -49,8 +50,8 @@ function unpinList(el: Element) {
         :css="slidesIn"
         enter-active-class="z-(--z-base) bg-canvas motion-safe:transition-[translate] duration-(--duration-page-push) ease-(--ease-settle)"
         enter-from-class="motion-safe:translate-x-full"
-        leave-active-class="absolute inset-x-0 motion-safe:transition-opacity duration-(--duration-page-push) ease-(--ease-settle)"
-        leave-to-class="motion-safe:opacity-60"
+        leave-active-class="absolute inset-x-0 motion-safe:transition-[translate,opacity] duration-(--duration-page-push) ease-(--ease-settle)"
+        leave-to-class="motion-safe:-translate-x-[15%] motion-safe:opacity-60"
         @before-enter="startSlide"
         @after-enter="endSlide"
         @enter-cancelled="endSlide"
