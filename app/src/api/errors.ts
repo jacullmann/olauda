@@ -54,6 +54,7 @@ const TOO_MANY_REQUESTS = 429;
 const FIRST_SERVER_ERROR = 500;
 const SERVICE_UNAVAILABLE = 503;
 const SHUTDOWN = 'SHUTDOWN';
+const GROUP_BANNED = 'GROUP_BANNED';
 
 /** Whether the API refused the request for being one too many. */
 export function isRateLimited(err: unknown): boolean {
@@ -110,6 +111,22 @@ export function isShutdown(err: unknown): boolean {
     apiErrorStatus(err) === SERVICE_UNAVAILABLE &&
     apiErrorCode(err) === SHUTDOWN
   );
+}
+
+/**
+ * The group a superadmin banned, when that is why the request was refused.
+ * The group is named because requests to several groups can be in flight.
+ */
+export function bannedGroupId(err: unknown): string | undefined {
+  if (
+    apiErrorStatus(err) !== FORBIDDEN ||
+    apiErrorCode(err) !== GROUP_BANNED ||
+    !isAxiosError<{ groupId?: unknown }>(err)
+  ) {
+    return undefined;
+  }
+  const groupId = err.response?.data?.groupId;
+  return typeof groupId === 'string' ? groupId : undefined;
 }
 
 /**

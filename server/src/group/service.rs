@@ -67,6 +67,7 @@ struct Membership {
     role_name: String,
     done_course_setup: bool,
     offers_course_choice: bool,
+    banned: bool,
 }
 
 pub struct AcceptInviteParams<'a> {
@@ -179,6 +180,7 @@ impl GroupService {
                     dalton_enabled: g.dalton_enabled,
                     effective_permissions,
                     course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
+                    banned: g.banned,
                 }
             })
             .collect();
@@ -195,7 +197,7 @@ impl GroupService {
             Membership,
             r#"SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS "avatar_public_id?",
                       g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,
-                      ur.done_course_setup,
+                      ur.done_course_setup, g.banned_at IS NOT NULL AS "banned!",
                       EXISTS (SELECT 1 FROM courses c
                               JOIN subjects s ON s.id = c.subject_id
                               WHERE s.tenant_id = g.id AND s.category <> 'core')
@@ -219,6 +221,7 @@ impl GroupService {
             r#"SELECT g.name AS "name!", g.schedule_config AS "schedule_config!",
                       avatar.public_id AS "avatar_public_id?",
                       g.group_type AS "group_type!", g.dalton_enabled AS "dalton_enabled!",
+                      g.banned_at IS NOT NULL AS "banned!",
                       COALESCE(ur.done_course_setup, false) AS "done_course_setup!",
                       ur.user_id IS NOT NULL AND EXISTS (
                           SELECT 1 FROM courses c
@@ -248,6 +251,7 @@ impl GroupService {
             dalton_enabled: g.dalton_enabled,
             effective_permissions: tc.effective_permission_keys(),
             course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
+            banned: g.banned,
         })
     }
 
@@ -413,7 +417,8 @@ impl GroupService {
                FROM group_invites gi
                JOIN groups g ON g.id = gi.tenant_id
                LEFT JOIN assets avatar ON avatar.id = g.avatar_id
-               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL"#,
+               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL
+                 AND g.banned_at IS NULL"#,
             token.as_str(),
             viewer_id
         )
@@ -437,10 +442,13 @@ impl GroupService {
 
         let mut tx = self.db.begin().await?;
 
-        // Invites are single-use, so an existing member must not burn the token.
+        // Invites are single-use, so an existing member must not burn the
+        // token. A banned group's invites stay valid but admit nobody until
+        // the ban is lifted.
         let invite = sqlx::query!(
             r#"UPDATE group_invites gi SET used_at = now(), used_by = $2
                WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL
+                 AND NOT EXISTS (SELECT 1 FROM groups g WHERE g.id = gi.tenant_id AND g.banned_at IS NOT NULL)
                  AND NOT EXISTS (
                      SELECT 1 FROM user_roles ur WHERE ur.tenant_id = gi.tenant_id AND ur.user_id = $2
                  )

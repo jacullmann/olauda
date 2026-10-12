@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT g.id,\n                      g.name,\n                      avatar.public_id AS \"avatar_public_id?\",\n                      (SELECT COUNT(*) FROM user_roles WHERE tenant_id = g.id) AS \"member_count!\",\n                      EXISTS (\n                          SELECT 1 FROM user_roles WHERE tenant_id = g.id AND user_id = $2\n                      ) AS \"already_member!\"\n               FROM group_invites gi\n               JOIN groups g ON g.id = gi.tenant_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL",
+  "query": "SELECT g.id,\n                      g.name,\n                      avatar.public_id AS \"avatar_public_id?\",\n                      (SELECT COUNT(*) FROM user_roles WHERE tenant_id = g.id) AS \"member_count!\",\n                      EXISTS (\n                          SELECT 1 FROM user_roles WHERE tenant_id = g.id AND user_id = $2\n                      ) AS \"already_member!\"\n               FROM group_invites gi\n               JOIN groups g ON g.id = gi.tenant_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL\n                 AND g.banned_at IS NULL",
   "describe": {
     "columns": [
       {
@@ -63,5 +63,5 @@
       null
     ]
   },
-  "hash": "7b9b294716a1b474e1bebe5850780208961b1657c351b158b427c1bb9f6d3d49"
+  "hash": "e5a0b54f7cdf040da13d13dd7498ae8788282b5b04c93aca2a2c39559b31bc81"
 }

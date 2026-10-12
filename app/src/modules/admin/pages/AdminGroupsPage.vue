@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
-import { ArrowUpRight, RotateCw, Trash2, UserRoundPlus } from '@lucide/vue';
+import { useRouter, type RouteLocationRaw } from 'vue-router';
+import { RotateCw } from '@lucide/vue';
 import {
   useAdminGroups,
   GROUP_TYPE_FILTERS,
@@ -12,13 +12,12 @@ import { useWindowVirtualList } from '@/modules/admin/composables/useWindowVirtu
 import { fixedTableLayout } from '@/modules/admin/utils/fixedTable';
 import AdminListToolbar from '@/modules/admin/components/AdminListToolbar.vue';
 import AdminSortHeader from '@/modules/admin/components/AdminSortHeader.vue';
-import GroupDeleteModal from '@/modules/groups/components/GroupDeleteModal.vue';
-import type { GroupTypeFilter } from '@/modules/admin/types';
+import type { AdminGroup, GroupTypeFilter } from '@/modules/admin/types';
 
 /** A row's height until it is measured, in px. */
 const ROW_HEIGHT = 48;
 /** The columns' widths in rem, left to right. */
-const TABLE = fixedTableLayout([16, 8, 16, 8, 8, 8, 9]);
+const TABLE = fixedTableLayout([18, 8, 16, 8, 8, 8]);
 const COLUMN_COUNT = TABLE.columns.length;
 
 const {
@@ -31,14 +30,6 @@ const {
   itemAt,
   ensureRange,
   refresh,
-  invitingGroupId,
-  inviteToGroup,
-  groupPendingDelete,
-  deleteModalOpen,
-  deletingGroup,
-  requestDeleteGroup,
-  cancelDeleteGroup,
-  confirmDeleteGroup,
 } = useAdminGroups();
 const { fmtDate } = useAdminFormat();
 const { t, n } = useI18n();
@@ -62,6 +53,23 @@ const { rows, offsetTop, offsetBottom, measureRow } = useWindowVirtualList({
 const visibleRows = computed(() =>
   rows.value.map((row) => ({ row, group: itemAt(row.index) })),
 );
+
+const groupRoute = (group: AdminGroup): RouteLocationRaw => ({
+  name: 'admin-group',
+  params: { adminGroupId: group.id },
+});
+
+/**
+ * The whole row opens the group. Its name and owner inside are real links, so
+ * the row can also be reached by keyboard and opened in a new tab; clicks on
+ * them are left to the links.
+ */
+function openGroup(group: AdminGroup, event: MouseEvent) {
+  if (event.target instanceof Element && event.target.closest('a')) return;
+  // Selecting a name to copy it is no request to open the group.
+  if (window.getSelection()?.toString()) return;
+  void router.push(groupRoute(group));
+}
 </script>
 
 <template>
@@ -144,7 +152,6 @@ const visibleRows = computed(() =>
               :order="params.order"
               @sort="toggleSort"
             />
-            <th>{{ t('admin.groups.table.actions') }}</th>
           </tr>
         </thead>
         <tbody ref="body">
@@ -161,11 +168,24 @@ const visibleRows = computed(() =>
               :ref="measureRow"
               :data-index="row.index"
               :aria-rowindex="row.index + 2"
+              class="group cursor-pointer"
+              :class="{ 'row-banned': g.bannedAt }"
+              @click="openGroup(g, $event)"
             >
               <td>
                 <div class="flex items-center gap-2 min-w-0">
                   <BaseAvatar :name="g.name" :picture="g.avatarUrl" :size="6" />
-                  <span class="truncate" :title="g.name">{{ g.name }}</span>
+                  <RouterLink
+                    :to="groupRoute(g)"
+                    class="truncate group-hover:underline"
+                    :title="g.name"
+                    >{{ g.name }}</RouterLink
+                  >
+                  <span
+                    v-if="g.bannedAt"
+                    class="shrink-0 text-xs font-semibold text-danger"
+                    >{{ t('admin.groups.status.banned') }}</span
+                  >
                 </div>
               </td>
               <td class="whitespace-nowrap">
@@ -182,46 +202,6 @@ const visibleRows = computed(() =>
               <td class="tabular-nums">{{ g.itemCount }}</td>
               <td class="whitespace-nowrap text-sm text-on-ghost-muted">
                 {{ fmtDate(g.createdAt) }}
-              </td>
-              <td class="py-0! px-2! min-w-0!">
-                <div class="flex gap-0.5 justify-end">
-                  <BaseTooltip
-                    :content="t('admin.groups.open_tooltip')"
-                    placement="bottom"
-                  >
-                    <BaseButton
-                      size="sm"
-                      :icon="ArrowUpRight"
-                      @click="
-                        router.push({
-                          name: 'group-dashboard',
-                          params: { groupId: g.id },
-                        })
-                      "
-                    />
-                  </BaseTooltip>
-                  <BaseTooltip
-                    :content="t('admin.groups.invite_tooltip')"
-                    placement="bottom"
-                  >
-                    <BaseButton
-                      size="sm"
-                      :icon="UserRoundPlus"
-                      :loading="invitingGroupId === g.id"
-                      @click="inviteToGroup(g)"
-                    />
-                  </BaseTooltip>
-                  <BaseTooltip
-                    :content="t('admin.groups.delete_tooltip')"
-                    placement="bottom"
-                  >
-                    <BaseButton
-                      size="sm"
-                      :icon="Trash2"
-                      @click="requestDeleteGroup(g)"
-                    />
-                  </BaseTooltip>
-                </div>
               </td>
             </tr>
             <tr
@@ -247,14 +227,10 @@ const visibleRows = computed(() =>
       </table>
     </BaseTableWrapper>
   </div>
-
-  <GroupDeleteModal
-    :open="deleteModalOpen"
-    :group-name="groupPendingDelete?.name ?? ''"
-    :member-count="groupPendingDelete?.memberCount"
-    :item-count="groupPendingDelete?.itemCount"
-    :loading="deletingGroup"
-    @cancel="cancelDeleteGroup"
-    @confirm="confirmDeleteGroup"
-  />
 </template>
+
+<style scoped>
+.row-banned td {
+  color: var(--color-on-ghost-muted);
+}
+</style>

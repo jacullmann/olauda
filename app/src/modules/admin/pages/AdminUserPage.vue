@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useTemplateRef, watchEffect } from 'vue';
+import { computed, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { ChevronLeft } from '@lucide/vue';
@@ -7,7 +7,7 @@ import { useAdminUser } from '@/modules/admin/composables/useAdminUser';
 import { useAdminUserActions } from '@/modules/admin/composables/useAdminUserActions';
 import { useAdminFormat } from '@/modules/admin/composables/useAdminFormat';
 import AdminUserActions from '@/modules/admin/components/AdminUserActions.vue';
-import AdminEventLog from '@/modules/admin/components/AdminEventLog.vue';
+import AdminEventLogLink from '@/modules/admin/components/AdminEventLogLink.vue';
 import AdminUserMemberships from '@/modules/admin/components/AdminUserMemberships.vue';
 
 const I18N_BASE = 'admin.users.details';
@@ -62,14 +62,6 @@ const facts = computed(() => {
 function leave() {
   if (router.options.history.state.back) router.back();
   else void router.push({ name: 'admin-users' });
-}
-
-// What was just done to the account is in its log right away.
-const log = useTemplateRef('log');
-
-async function runAndRefreshLog(action: () => Promise<unknown>) {
-  await action();
-  await log.value?.reload();
 }
 
 async function onDelete() {
@@ -141,8 +133,8 @@ watchEffect(() => {
           :user="user"
           :owns-group="ownsGroup"
           :pending-action="pendingAction"
-          @toggle-ban="runAndRefreshLog(toggleBan)"
-          @reset-mfa="runAndRefreshLog(resetMfa)"
+          @toggle-ban="toggleBan"
+          @reset-mfa="resetMfa"
           @delete="onDelete"
         />
       </section>
@@ -152,22 +144,11 @@ watchEffect(() => {
         <AdminUserMemberships
           :memberships="memberships"
           :changing-group-id="changingGroupId"
-          @change-role="
-            (membership, role) =>
-              runAndRefreshLog(() => changeRole(membership, role))
-          "
+          @change-role="changeRole"
         />
       </section>
 
-      <section class="flex flex-col gap-3">
-        <div>
-          <h3>{{ t(`${I18N_BASE}.log`) }}</h3>
-          <p class="text-sm text-on-ghost-muted">
-            {{ t('admin.log.hint') }}
-          </p>
-        </div>
-        <AdminEventLog ref="log" :user-id="user.id" />
-      </section>
+      <AdminEventLogLink :filter="{ userId: user.id }" />
     </div>
   </div>
 </template>

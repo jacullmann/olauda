@@ -9,7 +9,11 @@ import AdminAccessControls from '@/modules/admin/components/AdminAccessControls.
 import AdminCleanupJobs from '@/modules/admin/components/AdminCleanupJobs.vue';
 import AdminServerMetrics from '@/modules/admin/components/AdminServerMetrics.vue';
 import AdminWeeklyRhythmHeatmap from '@/modules/admin/components/AdminWeeklyRhythmHeatmap.vue';
+import AdminAccountSecurity from '@/modules/admin/components/AdminAccountSecurity.vue';
+import AdminEmailActivity from '@/modules/admin/components/AdminEmailActivity.vue';
+import AdminEmailQuota from '@/modules/admin/components/AdminEmailQuota.vue';
 import { useAdminStats } from '@/modules/admin/composables/useAdminStats';
+import { useEmailStats } from '@/modules/admin/composables/useEmailStats';
 import type { DailyMetric } from '@/modules/admin/types';
 
 interface DailyChart {
@@ -26,6 +30,11 @@ const {
   loadDailyActivity,
   loadWeeklyRhythm,
 } = useAdminStats();
+const {
+  activity: emailActivity,
+  quota: emailQuota,
+  load: loadEmailStats,
+} = useEmailStats();
 const { t } = useI18n();
 
 const headlineStats = computed(() =>
@@ -66,7 +75,9 @@ const charts = computed(() =>
 );
 
 // The stats themselves are loaded once by the dashboard shell.
-onMounted(() => Promise.all([loadDailyActivity(), loadWeeklyRhythm()]));
+onMounted(() =>
+  Promise.all([loadDailyActivity(), loadWeeklyRhythm(), loadEmailStats()]),
+);
 </script>
 
 <template>
@@ -76,7 +87,7 @@ onMounted(() => Promise.all([loadDailyActivity(), loadWeeklyRhythm()]));
     <BaseSpinner on="ghost" size="24px" />
   </div>
   <div v-else-if="stats" class="flex flex-col gap-7">
-    <div class="grid max-md:grid-rows-2 md:grid-cols-2 px-4 gap-8">
+    <div class="grid md:grid-cols-2 xl:grid-cols-3 px-4 gap-8">
       <div v-for="s in headlineStats" :key="s.key">
         <div class="text-base font-medium text-on-ghost-muted">
           {{ t(`admin.overview.stats.${s.key}`) }}
@@ -125,7 +136,10 @@ onMounted(() => Promise.all([loadDailyActivity(), loadWeeklyRhythm()]));
           </div>
         </div>
       </div>
+      <AdminEmailQuota v-if="emailQuota" :quota="emailQuota" />
     </div>
+
+    <AdminAccountSecurity />
 
     <section class="flex flex-col gap-3">
       <h3>{{ t('admin.overview.chart.title') }}</h3>
@@ -137,6 +151,7 @@ onMounted(() => Promise.all([loadDailyActivity(), loadWeeklyRhythm()]));
           :points="chart.points"
           :summary="chart.summary"
         />
+        <AdminEmailActivity v-if="emailActivity" :activity="emailActivity" />
       </div>
     </section>
 

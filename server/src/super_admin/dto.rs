@@ -4,6 +4,8 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::common::{
+    cloudinary::Cloudinary,
+    email::{EmailActivity, EmailQuota},
     hetzner::MetricPoint,
     name_generator::generate_user_name,
     pagination::{Limit, Offset, SortOrder},
@@ -155,6 +157,35 @@ pub struct DailyActivityDto {
     pub failed_logins: i64,
 }
 
+/// How every account, superadmins included, is secured and signs in. Each
+/// breakdown splits all accounts into disjoint parts that add up to the total.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountSecurityDto {
+    pub second_factor: SecondFactorBreakdown,
+    pub google: GoogleBreakdown,
+}
+
+/// Authenticator app (TOTP) and passkeys, each on its own or both.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecondFactorBreakdown {
+    pub neither: i64,
+    pub mfa_only: i64,
+    pub passkey_only: i64,
+    pub both: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoogleBreakdown {
+    pub not_linked: i64,
+    /// Google linked next to a password.
+    pub linked: i64,
+    /// No password: the account signs in with Google or a passkey only.
+    pub google_only: i64,
+}
+
 pub const HOURS_PER_DAY: usize = 24;
 pub const DAYS_PER_WEEK: usize = 7;
 
@@ -210,6 +241,22 @@ impl From<AdminUserRow> for AdminUserDto {
     }
 }
 
+/// A group as the admin queries select it, before its avatar and owner name
+/// are derived.
+#[derive(Debug)]
+pub struct AdminGroupRow {
+    pub id: Uuid,
+    pub name: String,
+    pub avatar_public_id: Option<String>,
+    pub group_type: String,
+    pub owner_id: Uuid,
+    pub owner_email: String,
+    pub created_at: DateTime<Utc>,
+    pub banned_at: Option<DateTime<Utc>>,
+    pub member_count: i64,
+    pub item_count: i64,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminGroupDto {
@@ -221,8 +268,28 @@ pub struct AdminGroupDto {
     pub owner_email: String,
     pub owner_name: String,
     pub created_at: DateTime<Utc>,
+    /// Set while the group is banned.
+    pub banned_at: Option<DateTime<Utc>>,
     pub member_count: i64,
     pub item_count: i64,
+}
+
+impl AdminGroupDto {
+    pub fn from_row(row: AdminGroupRow, cloudinary: &Cloudinary) -> Self {
+        Self {
+            owner_name: generate_user_name(&row.owner_id.to_string()),
+            avatar_url: row.avatar_public_id.map(|id| cloudinary.image_url(&id)),
+            id: row.id,
+            name: row.name,
+            group_type: row.group_type,
+            owner_id: row.owner_id,
+            owner_email: row.owner_email,
+            created_at: row.created_at,
+            banned_at: row.banned_at,
+            member_count: row.member_count,
+            item_count: row.item_count,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -233,6 +300,62 @@ pub struct UserMembershipDto {
     pub role: MemberRole,
     pub joined_at: DateTime<Utc>,
     pub assignable_roles: Vec<MemberRole>,
+}
+
+/// The emails Resend sent per day and what became of them, over the same days
+/// as the daily activity.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmailActivityDto {
+    pub days: Vec<DailyEmailsDto>,
+    pub delivered: u64,
+    pub bounced: u64,
+    pub failed: u64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DailyEmailsDto {
+    pub day: NaiveDate,
+    pub sent: u64,
+}
+
+impl From<EmailActivity> for EmailActivityDto {
+    fn from(activity: EmailActivity) -> Self {
+        Self {
+            days: activity
+                .days
+                .into_iter()
+                .map(|d| DailyEmailsDto {
+                    day: d.day,
+                    sent: d.sent,
+                })
+                .collect(),
+            delivered: activity.outcomes.delivered,
+            bounced: activity.outcomes.bounced,
+            failed: activity.outcomes.failed,
+        }
+    }
+}
+
+/// Emails used in the current billing month of the Resend plan.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmailQuotaDto {
+    pub used: u32,
+    /// Absent on plans without a monthly limit.
+    pub limit: Option<u32>,
+    pub resets_at: String,
+}
+
+impl From<EmailQuota> for EmailQuotaDto {
+    fn from(quota: EmailQuota) -> Self {
+        Self {
+            used: quota.used,
+            limit: quota.limit,
+            resets_at: quota.resets_at,
+        }
+    }
 }
 
 /// A pg_cron cleanup (or the asset worker), named as scheduled, with the rows

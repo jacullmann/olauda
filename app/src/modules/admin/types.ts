@@ -83,6 +83,41 @@ export interface WeeklyRhythm {
 
 export type DailyMetric = Exclude<keyof DailyActivity, 'day'>;
 
+/** Every account split by how it is secured and how it signs in. Each
+ * breakdown's parts add up to all accounts. */
+export interface AccountSecurity {
+  secondFactor: {
+    neither: number;
+    mfaOnly: number;
+    passkeyOnly: number;
+    both: number;
+  };
+  google: {
+    notLinked: number;
+    /** Linked next to a password. */
+    linked: number;
+    /** No password: Google (or a passkey) is the only way in. */
+    googleOnly: number;
+  };
+}
+
+/** Emails Resend sent per UTC day over the daily activity's days, and what
+ * became of them; emails still on their way have no outcome yet. */
+export interface EmailActivity {
+  days: { day: string; sent: number }[];
+  delivered: number;
+  bounced: number;
+  failed: number;
+}
+
+/** Emails used in the current month of the Resend plan. */
+export interface EmailQuota {
+  used: number;
+  /** Absent on plans without a monthly limit. */
+  limit: number | null;
+  resetsAt: string;
+}
+
 export type MetricsRange = '1h' | '24h' | '7d' | '30d';
 
 /** A sample in Unix seconds; a `null` value is a gap in the measurement. */
@@ -157,6 +192,8 @@ export interface AdminGroup {
   ownerEmail: string;
   ownerName: string;
   createdAt: string;
+  /** Set while a superadmin has banned the group. */
+  bannedAt: string | null;
   memberCount: number;
   itemCount: number;
 }

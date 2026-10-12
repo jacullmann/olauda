@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS \"avatar_public_id?\",\n                      g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,\n                      ur.done_course_setup,\n                      EXISTS (SELECT 1 FROM courses c\n                              JOIN subjects s ON s.id = c.subject_id\n                              WHERE s.tenant_id = g.id AND s.category <> 'core')\n                          AS \"offers_course_choice!\"\n               FROM user_roles ur\n               JOIN groups g ON g.id = ur.tenant_id\n               JOIN roles r ON r.id = ur.role_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE ur.user_id = $1\n               ORDER BY ur.assigned_at",
+  "query": "SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS \"avatar_public_id?\",\n                      g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,\n                      ur.done_course_setup, g.banned_at IS NOT NULL AS \"banned!\",\n                      EXISTS (SELECT 1 FROM courses c\n                              JOIN subjects s ON s.id = c.subject_id\n                              WHERE s.tenant_id = g.id AND s.category <> 'core')\n                          AS \"offers_course_choice!\"\n               FROM user_roles ur\n               JOIN groups g ON g.id = ur.tenant_id\n               JOIN roles r ON r.id = ur.role_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE ur.user_id = $1\n               ORDER BY ur.assigned_at",
   "describe": {
     "columns": [
       {
@@ -115,6 +115,12 @@
       },
       {
         "ordinal": 10,
+        "name": "banned!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 11,
         "name": "offers_course_choice!",
         "type_info": "Bool",
         "origin": "Expression"
@@ -136,8 +142,9 @@
       false,
       false,
       false,
+      null,
       null
     ]
   },
-  "hash": "eb8b56b0a3425af10437162ea0c42811e46cf79a71aec56ce07489215a8f52ec"
+  "hash": "91742fde349422d8965a9b870d1de1ea75b879078fbd85f32ebd348e1beffa60"
 }

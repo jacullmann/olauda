@@ -441,5 +441,9 @@
   },
   "notices": {
     "already_member": "Du bist schon Mitglied dieser Gruppe."
+  },
+  "banned": {
+    "title": "Deine Gruppe ist leider gerade gesperrt.",
+    "message": "Versuche es später erneut."
   }
 }

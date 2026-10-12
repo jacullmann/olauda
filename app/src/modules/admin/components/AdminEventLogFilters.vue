@@ -21,6 +21,8 @@ const props = defineProps<{
   hasFilters: boolean;
   /** The name of the filtered group, once an entry has shown it. */
   groupName?: string | null;
+  /** The address of the filtered account, once an entry has shown it. */
+  userEmail?: string;
 }>();
 
 const search = defineModel<string>('search', { required: true });
@@ -73,12 +75,16 @@ interface FilterChip {
 
 /** Filters set from an entry or a date, shown so they can be seen and removed. */
 const chips = computed(() => {
-  const { type, ip, groupId, from, to } = props.filters;
+  const { type, ip, userId, groupId, from, to } = props.filters;
   const day = (key: string) => fmtDate(localDayStart(key));
   const result: FilterChip[] = [];
   if (type) result.push({ key: 'type', label: anyEventLabel(type) });
   if (ip)
     result.push({ key: 'ip', label: t(`${I18N_BASE}.ip`, { value: ip }) });
+  if (userId) {
+    const value = props.userEmail ?? userId;
+    result.push({ key: 'userId', label: t(`${I18N_BASE}.user`, { value }) });
+  }
   if (groupId) {
     const value = props.groupName ?? groupId;
     result.push({ key: 'groupId', label: t(`${I18N_BASE}.group`, { value }) });

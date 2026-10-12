@@ -18,6 +18,23 @@
       "pending_sign_ups": "Unconfirmed",
       "last_week": "last 7 days"
     },
+    "accounts": {
+      "title": "Accounts",
+      "summary": "{count} account | {count} accounts",
+      "second_factor": {
+        "title": "Two-factor and passkeys",
+        "neither": "Neither",
+        "mfa_only": "Two-factor only",
+        "passkey_only": "Passkey only",
+        "both": "Two-factor and passkey"
+      },
+      "google": {
+        "title": "Google sign-in",
+        "not_linked": "Without Google",
+        "linked": "Linked to Google",
+        "google_only": "Google only, no password"
+      }
+    },
     "chart": {
       "title": "Last 30 days",
       "app_opens": "App opens per day",
@@ -28,6 +45,28 @@
       "failed_logins": "Failed logins per day",
       "total": "Total: {count}",
       "average": "Avg. {value} per day"
+    },
+    "emails": {
+      "sent": "Emails sent per day",
+      "outcomes": {
+        "title": "Email delivery",
+        "summary": "{count} email delivered or rejected | {count} emails delivered or rejected",
+        "delivered": "Delivered",
+        "bounced": "Bounced",
+        "failed": "Failed"
+      },
+      "quota": {
+        "title": "Emails this month",
+        "of_limit": "of {limit}",
+        "unlimited": "no limit",
+        "resets": "Resets on {date}"
+      },
+      "errors": {
+        "not_configured": "Resend is not set up. Set RESEND_API_KEY on the backend.",
+        "key_rejected": "Resend rejects the API key for statistics. RESEND_API_KEY needs full access, not just sending access.",
+        "unreachable": "The Resend API can't be reached right now.",
+        "load": "Couldn't load the email statistics."
+      }
     },
     "weekly_rhythm": {
       "title": "Weekly rhythm",
@@ -214,8 +253,7 @@
       },
       "groups": "Groups & roles",
       "no_groups": "No group memberships.",
-      "joined": "Joined {date}",
-      "log": "Log"
+      "joined": "Joined {date}"
     },
     "ban_modal": {
       "title": "Ban user?",
@@ -271,20 +309,78 @@
       "regular": "Standard",
       "abitur": "Abitur"
     },
+    "status": {
+      "active": "Active",
+      "banned": "Banned"
+    },
     "table": {
       "name": "Name",
       "type": "Type",
       "owner": "Owner",
       "members": "Members",
       "tasks": "Tasks",
-      "created": "Created",
-      "actions": "Actions"
+      "created": "Created"
     },
-    "open_tooltip": "Open group",
-    "invite_tooltip": "Generate invite link",
-    "delete_tooltip": "Delete group",
+    "actions": {
+      "ban": "Ban",
+      "unban": "Unban"
+    },
+    "details": {
+      "back": "Groups",
+      "not_found": "This group does not exist (anymore).",
+      "owner": "Owner:",
+      "facts": {
+        "type": "Type",
+        "created": "Created",
+        "members": "Members",
+        "tasks": "Tasks",
+        "banned_since": "Banned since"
+      },
+      "manage": {
+        "title": "Group management",
+        "open": {
+          "label": "Open group",
+          "hint": "Shows the group as its members see it, with owner rights.",
+          "button": "Open"
+        },
+        "invite": {
+          "label": "Create invite link",
+          "hint": "A link that lets you or someone else join the group.",
+          "button": "Create"
+        },
+        "ban": {
+          "label": "Ban group",
+          "hint": "Nobody but superadmins can open or join the group. Nothing is deleted.",
+          "button": "Ban"
+        },
+        "unban": {
+          "label": "Lift ban",
+          "hint": "The members will be able to open the group again.",
+          "button": "Unban"
+        },
+        "delete": {
+          "label": "Delete group",
+          "hint": "Permanently deletes the group with all its content and memberships.",
+          "button": "Delete"
+        }
+      }
+    },
+    "ban_modal": {
+      "title": "Ban group?",
+      "content": "Nobody can open “{name}” until you lift the ban. Members and content are kept."
+    },
+    "unban_modal": {
+      "title": "Lift ban?",
+      "content": "The members of “{name}” will be able to open the group again."
+    },
     "errors": {
-      "load": "Couldn't load the groups."
+      "load": "Couldn't load the groups.",
+      "load_group": "Couldn't load the group.",
+      "ban": "Couldn't ban the group.",
+      "unban": "Couldn't lift the ban."
+    },
+    "success": {
+      "delete": "Group deleted."
     }
   },
   "announcements": {
@@ -338,6 +434,11 @@
   "log": {
     "title": "Log",
     "hint": "Security events are kept for 90 days, activity for 30 days.",
+    "scoped_hint": {
+      "user": "Everything this user did and everything that happened to their account.",
+      "group": "This group's security events, such as joins, role changes and admin actions."
+    },
+    "open": "Open Log",
     "empty": "No entries yet.",
     "empty_filtered": "No entries match these filters.",
     "sources": {
@@ -362,6 +463,7 @@
       "newest_first": "Newest First",
       "oldest_first": "Oldest First",
       "ip": "IP: {value}",
+      "user": "User: {value}",
       "group": "Group: {value}",
       "remove": "Remove filter “{filter}”",
       "reset": "Reset Filters"
@@ -596,6 +698,8 @@
         "user_unbanned": "Admin: user unbanned",
         "user_deleted": "Admin: user deleted",
         "mfa_reset": "Admin: two-factor reset",
+        "group_banned": "Admin: group banned",
+        "group_unbanned": "Admin: group unbanned",
         "group_deleted": "Admin: group deleted",
         "access_controls_changed": "Admin: access controls changed",
         "announcement_created": "Admin: announcement created",

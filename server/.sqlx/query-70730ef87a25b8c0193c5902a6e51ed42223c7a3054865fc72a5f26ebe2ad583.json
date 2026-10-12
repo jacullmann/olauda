@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE group_invites gi SET used_at = now(), used_by = $2\n               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL\n                 AND NOT EXISTS (\n                     SELECT 1 FROM user_roles ur WHERE ur.tenant_id = gi.tenant_id AND ur.user_id = $2\n                 )\n               RETURNING gi.id, gi.tenant_id",
+  "query": "UPDATE group_invites gi SET used_at = now(), used_by = $2\n               WHERE gi.token = $1 AND gi.expires_at > now() AND gi.used_at IS NULL AND gi.revoked_at IS NULL\n                 AND NOT EXISTS (SELECT 1 FROM groups g WHERE g.id = gi.tenant_id AND g.banned_at IS NOT NULL)\n                 AND NOT EXISTS (\n                     SELECT 1 FROM user_roles ur WHERE ur.tenant_id = gi.tenant_id AND ur.user_id = $2\n                 )\n               RETURNING gi.id, gi.tenant_id",
   "describe": {
     "columns": [
       {
@@ -37,5 +37,5 @@
       false
     ]
   },
-  "hash": "b556bcb0cf9f12be772e64f6cfbf1de557116a2a1a74513151ef2dab1ba8f3b4"
+  "hash": "70730ef87a25b8c0193c5902a6e51ed42223c7a3054865fc72a5f26ebe2ad583"
 }

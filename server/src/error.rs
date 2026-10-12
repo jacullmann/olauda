@@ -5,6 +5,7 @@ use axum::{
 };
 use serde_json::json;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -69,6 +70,10 @@ pub enum AppError {
     /// The user tried to join a group that banned them.
     #[error("You have been banned from this group.")]
     BannedFromGroup,
+
+    /// A superadmin banned the whole group, so its members cannot open it.
+    #[error("This group has been banned.")]
+    GroupBanned { group_id: Uuid },
 
     #[error("{0}")]
     Forbidden(String),
@@ -190,6 +195,12 @@ impl IntoResponse for AppError {
             AppError::BannedFromGroup => (
                 StatusCode::FORBIDDEN,
                 json!({ "error": self.to_string(), "code": "BANNED_FROM_GROUP" }),
+            ),
+            // The group is named so a client with several groups open knows
+            // which one to close.
+            AppError::GroupBanned { group_id } => (
+                StatusCode::FORBIDDEN,
+                json!({ "error": self.to_string(), "code": "GROUP_BANNED", "groupId": group_id }),
             ),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, json!({ "error": msg })),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, json!({ "error": msg })),

@@ -101,6 +101,7 @@ const routes: RouteRecordRaw[] = [
 
       {
         path: 'groups/:groupId',
+        component: () => import('@/modules/groups/pages/GroupLayout.vue'),
         children: [
           {
             path: '',
@@ -252,6 +253,14 @@ const routes: RouteRecordRaw[] = [
                 component: () =>
                   import('@/modules/admin/pages/AdminUserPage.vue'),
                 props: true,
+              },
+              {
+                // Not `:groupId`, which the router treats as opening the group itself.
+                path: 'groups/:adminGroupId',
+                name: 'admin-group',
+                component: () =>
+                  import('@/modules/admin/pages/AdminGroupPage.vue'),
+                props: (route) => ({ groupId: route.params.adminGroupId }),
               },
             ],
           },
@@ -458,8 +467,21 @@ router.beforeEach(async (to, from) => {
       return { name: 'groups', replace: true };
     }
 
+    const group = findGroup(routeGroupId);
+    // A banned group's layout tells its members so. The course setup lies
+    // outside that layout, so it leads to the group instead.
+    if (group?.banned && !userStore.isSuperadmin) {
+      if (to.name !== 'group-course-setup') return;
+      finish();
+      return {
+        name: 'group-dashboard',
+        params: { groupId: routeGroupId },
+        replace: true,
+      };
+    }
+
     if (
-      findGroup(routeGroupId)?.courseSetup === 'pending' &&
+      group?.courseSetup === 'pending' &&
       !OPEN_DURING_COURSE_SETUP.has(to.name as string)
     ) {
       finish();

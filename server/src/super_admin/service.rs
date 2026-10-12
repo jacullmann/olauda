@@ -8,9 +8,8 @@ use crate::{
     common::{
         client::ClientInfo,
         cloudinary::Cloudinary,
-        email::{EmailService, SecurityNotice},
+        email::{EmailService, EmailStatsError, SecurityNotice},
         hetzner::{HetznerCloud, HetznerError},
-        name_generator::generate_user_name,
         pagination::{Window, search_params},
         role::{MemberRole, Role},
     },
@@ -56,6 +55,32 @@ pub async fn read_server_metrics(
         network_in: metrics.network_in,
         network_out: metrics.network_out,
     })
+}
+
+/// Resend's numbers, read live like the server metrics: the overview is
+/// opened far too rarely to need a cache.
+pub async fn read_email_activity(email: &EmailService) -> AppResult<EmailActivityDto> {
+    let days = DAILY_ACTIVITY_DAYS.unsigned_abs();
+    Ok(email.activity(days).await.map_err(resend_failure)?.into())
+}
+
+pub async fn read_email_quota(email: &EmailService) -> AppResult<EmailQuotaDto> {
+    Ok(email.monthly_quota().await.map_err(resend_failure)?.into())
+}
+
+fn resend_failure(error: EmailStatsError) -> AppError {
+    let (code, message) = match error {
+        EmailStatsError::NotConfigured => ("RESEND_NOT_CONFIGURED", "RESEND_API_KEY is not set."),
+        EmailStatsError::KeyRejected => (
+            "RESEND_KEY_REJECTED",
+            "Resend refused RESEND_API_KEY; reading metrics needs a full access key.",
+        ),
+        EmailStatsError::Resend(e) => {
+            tracing::error!("Resend API request failed: {e}");
+            ("RESEND_UNREACHABLE", "The Resend API could not be reached.")
+        }
+    };
+    AppError::Upstream { code, message }
 }
 
 fn hetzner_failure(error: HetznerError) -> AppError {
@@ -131,6 +156,42 @@ impl SuperAdminService {
             item_count: row.item_count,
             new_items_this_week: row.new_items,
             report_count: row.report_count,
+        })
+    }
+
+    /// One scan of the accounts, with the passkey and Google lookups served by
+    /// the indexes on `user_id`.
+    pub async fn get_account_security(&self) -> AppResult<AccountSecurityDto> {
+        let row = sqlx::query!(
+            r#"SELECT COUNT(*) FILTER (WHERE NOT mfa AND NOT passkey) AS "neither!",
+                      COUNT(*) FILTER (WHERE mfa AND NOT passkey) AS "mfa_only!",
+                      COUNT(*) FILTER (WHERE passkey AND NOT mfa) AS "passkey_only!",
+                      COUNT(*) FILTER (WHERE mfa AND passkey) AS "both!",
+                      COUNT(*) FILTER (WHERE NOT google) AS "not_linked!",
+                      COUNT(*) FILTER (WHERE google AND password) AS "linked!",
+                      COUNT(*) FILTER (WHERE google AND NOT password) AS "google_only!"
+               FROM (SELECT u.mfa_enabled AND u.mfa_secret IS NOT NULL AS mfa,
+                            u.password_hash IS NOT NULL AS password,
+                            EXISTS (SELECT 1 FROM passkeys p WHERE p.user_id = u.id) AS passkey,
+                            EXISTS (SELECT 1 FROM oauth_accounts o
+                                    WHERE o.user_id = u.id AND o.provider = 'google') AS google
+                     FROM users u) accounts"#
+        )
+        .fetch_one(&self.db)
+        .await?;
+
+        Ok(AccountSecurityDto {
+            second_factor: SecondFactorBreakdown {
+                neither: row.neither,
+                mfa_only: row.mfa_only,
+                passkey_only: row.passkey_only,
+                both: row.both,
+            },
+            google: GoogleBreakdown {
+                not_linked: row.not_linked,
+                linked: row.linked,
+                google_only: row.google_only,
+            },
         })
     }
 
@@ -241,9 +302,10 @@ impl SuperAdminService {
             filter => Some(filter.as_str()),
         };
 
-        let rows_query = sqlx::query!(
+        let rows_query = sqlx::query_as!(
+            AdminGroupRow,
             r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type,
-                      g.owner_id, g.created_at, u.email AS owner_email,
+                      g.owner_id, g.created_at, g.banned_at, u.email AS owner_email,
                       members.n AS "member_count!", items.n AS "item_count!"
                FROM groups g
                JOIN users u ON u.id = g.owner_id
@@ -289,24 +351,96 @@ impl SuperAdminService {
 
         let groups = rows
             .into_iter()
-            .map(|g| AdminGroupDto {
-                owner_name: generate_user_name(&g.owner_id.to_string()),
-                id: g.id,
-                name: g.name,
-                avatar_url: g.avatar_public_id.map(|id| self.cloudinary.image_url(&id)),
-                group_type: g.group_type,
-                owner_id: g.owner_id,
-                owner_email: g.owner_email,
-                created_at: g.created_at,
-                member_count: g.member_count,
-                item_count: g.item_count,
-            })
+            .map(|row| AdminGroupDto::from_row(row, &self.cloudinary))
             .collect();
 
         Ok(Window {
             items: groups,
             total,
         })
+    }
+
+    pub async fn get_group(&self, group_id: Uuid) -> AppResult<AdminGroupDto> {
+        let row = sqlx::query_as!(
+            AdminGroupRow,
+            r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type,
+                      g.owner_id, g.created_at, g.banned_at, u.email AS owner_email,
+                      (SELECT COUNT(*) FROM user_roles WHERE tenant_id = g.id) AS "member_count!",
+                      (SELECT COUNT(*) FROM items WHERE tenant_id = g.id) AS "item_count!"
+               FROM groups g
+               JOIN users u ON u.id = g.owner_id
+               LEFT JOIN assets avatar ON avatar.id = g.avatar_id
+               WHERE g.id = $1"#,
+            group_id,
+        )
+        .fetch_optional(&self.db)
+        .await?
+        .ok_or_else(group_not_found)?;
+
+        Ok(AdminGroupDto::from_row(row, &self.cloudinary))
+    }
+
+    /// Members keep their memberships and content; the tenant check turns
+    /// every request to the group away until the ban is lifted.
+    pub async fn ban_group(
+        &self,
+        group_id: Uuid,
+        admin_id: Uuid,
+        client: &ClientInfo,
+    ) -> AppResult<Value> {
+        let mut tx = self.db.begin().await?;
+
+        // Banning twice keeps the original date.
+        let group = sqlx::query!(
+            r#"UPDATE groups SET banned_at = COALESCE(banned_at, now())
+               WHERE id = $1
+               RETURNING name, banned_at AS "banned_at!""#,
+            group_id
+        )
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(group_not_found)?;
+
+        SecurityEvent::new(SecurityEventKind::AdminGroupBanned)
+            .actor(admin_id)
+            .tenant(group_id)
+            .client(client)
+            .metadata(json!({ "groupName": group.name }))
+            .record(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+
+        Ok(json!({ "ok": true, "bannedAt": group.banned_at }))
+    }
+
+    pub async fn unban_group(
+        &self,
+        group_id: Uuid,
+        admin_id: Uuid,
+        client: &ClientInfo,
+    ) -> AppResult<Value> {
+        let mut tx = self.db.begin().await?;
+
+        let name = sqlx::query_scalar!(
+            r#"UPDATE groups SET banned_at = NULL WHERE id = $1 RETURNING name"#,
+            group_id
+        )
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(group_not_found)?;
+
+        SecurityEvent::new(SecurityEventKind::AdminGroupUnbanned)
+            .actor(admin_id)
+            .tenant(group_id)
+            .client(client)
+            .metadata(json!({ "groupName": name }))
+            .record(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+
+        Ok(json!({ "ok": true, "bannedAt": null }))
     }
 
     pub async fn delete_group(
@@ -325,7 +459,7 @@ impl SuperAdminService {
         )
         .fetch_optional(&mut *tx)
         .await?
-        .ok_or_else(|| AppError::not_found("Group not found."))?;
+        .ok_or_else(group_not_found)?;
 
         SecurityEvent::new(SecurityEventKind::AdminGroupDeleted)
             .actor(admin_id)
@@ -613,6 +747,10 @@ impl SuperAdminService {
 
         Ok(json!({ "ok": true }))
     }
+}
+
+fn group_not_found() -> AppError {
+    AppError::not_found("Group not found.")
 }
 
 /// Superadmins act with owner rights in every group, whether or not they are

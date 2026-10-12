@@ -1,7 +1,9 @@
 mod messages;
 mod render;
+mod stats;
 
 pub use messages::SecurityNotice;
+pub use stats::{EmailActivity, EmailQuota, EmailStatsError};
 
 use crate::{
     auth::email_code::EmailCode,

@@ -44,7 +44,11 @@ function roleOptions(current: MemberRole, assignable: MemberRole[]) {
       class="flex items-center justify-between gap-3 px-4 py-3"
     >
       <div class="min-w-0">
-        <div class="font-semibold truncate">{{ m.groupName }}</div>
+        <RouterLink
+          :to="{ name: 'admin-group', params: { adminGroupId: m.groupId } }"
+          class="block font-semibold truncate hover:underline"
+          >{{ m.groupName }}</RouterLink
+        >
         <div class="text-sm text-on-ghost-muted">
           {{ t('admin.users.details.joined', { date: fmtDate(m.joinedAt) }) }}
         </div>

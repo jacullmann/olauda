@@ -9,6 +9,7 @@ import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useAccessStatusStore } from '@/modules/auth/stores/useAccessStatusStore';
 import { useSession } from '@/modules/auth/composables/useSession';
 import { useOAuth } from '@/modules/auth/composables/useOAuth';
+import { markGroupBanned } from '@/modules/groups/composables/useGroups';
 import { useLoadingBar } from '@/shell/composables/useLoadingBar';
 import {
   consumeLoginReturn,
@@ -99,6 +100,11 @@ onMounted(() => {
 
   useEventListener(window, 'auth-expired', () => void returnToLogin());
   useEventListener(window, 'shutdown', handleShutdown);
+  useEventListener(window, 'group-banned', (event) => {
+    if (event instanceof CustomEvent && typeof event.detail === 'string') {
+      markGroupBanned(event.detail);
+    }
+  });
 });
 </script>
 

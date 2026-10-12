@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT g.name AS \"name!\", g.schedule_config AS \"schedule_config!\",\n                      avatar.public_id AS \"avatar_public_id?\",\n                      g.group_type AS \"group_type!\", g.dalton_enabled AS \"dalton_enabled!\",\n                      COALESCE(ur.done_course_setup, false) AS \"done_course_setup!\",\n                      ur.user_id IS NOT NULL AND EXISTS (\n                          SELECT 1 FROM courses c\n                          JOIN subjects s ON s.id = c.subject_id\n                          WHERE s.tenant_id = g.id AND s.category <> 'core'\n                      ) AS \"offers_course_choice!\"\n               FROM groups g\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               LEFT JOIN user_roles ur ON ur.tenant_id = g.id AND ur.user_id = $2\n               WHERE g.id = $1",
+  "query": "SELECT g.name AS \"name!\", g.schedule_config AS \"schedule_config!\",\n                      avatar.public_id AS \"avatar_public_id?\",\n                      g.group_type AS \"group_type!\", g.dalton_enabled AS \"dalton_enabled!\",\n                      g.banned_at IS NOT NULL AS \"banned!\",\n                      COALESCE(ur.done_course_setup, false) AS \"done_course_setup!\",\n                      ur.user_id IS NOT NULL AND EXISTS (\n                          SELECT 1 FROM courses c\n                          JOIN subjects s ON s.id = c.subject_id\n                          WHERE s.tenant_id = g.id AND s.category <> 'core'\n                      ) AS \"offers_course_choice!\"\n               FROM groups g\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               LEFT JOIN user_roles ur ON ur.tenant_id = g.id AND ur.user_id = $2\n               WHERE g.id = $1",
   "describe": {
     "columns": [
       {
@@ -60,12 +60,18 @@
       },
       {
         "ordinal": 5,
-        "name": "done_course_setup!",
+        "name": "banned!",
         "type_info": "Bool",
         "origin": "Expression"
       },
       {
         "ordinal": 6,
+        "name": "done_course_setup!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
         "name": "offers_course_choice!",
         "type_info": "Bool",
         "origin": "Expression"
@@ -84,8 +90,9 @@
       false,
       false,
       null,
+      null,
       null
     ]
   },
-  "hash": "a89c0adc630b2d42ad6fafc1127849e363341c7b1e6b2f0fb6638c87c246bc0f"
+  "hash": "0ddcb6618fdb691a6fb06e559cd5d7d0adb7e76fef93f321edf369db44e3dc41"
 }

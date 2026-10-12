@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { RotateCw } from '@lucide/vue';
 import { useEventLog } from '@/modules/admin/composables/useEventLog';
 import { useLogFormat } from '@/modules/admin/composables/useLogFormat';
@@ -19,13 +18,7 @@ const LOAD_AHEAD_ROWS = 15;
 const ESTIMATED_HEIGHT = { day: 40, entry: 96, more: 64 } as const;
 const MORE_ROW_KEY = 'more';
 
-const props = defineProps<{
-  /** Shows only what happened to this account or what it did. */
-  userId?: string;
-}>();
-
 const { t, n } = useI18n();
-const router = useRouter();
 const { dayLabel } = useLogFormat();
 const {
   params,
@@ -41,7 +34,7 @@ const {
   loadMoreFailed,
   loadMore,
   reload,
-} = useEventLog(() => props.userId);
+} = useEventLog();
 
 const rows = computed(() => eventLogRows(entries.value));
 const hasMoreRow = computed(() => hasMore.value || loadMoreFailed.value);
@@ -78,19 +71,21 @@ const groupName = computed(
       ?.groupName,
 );
 
-/**
- * An entry's type narrows the log it is in. Its address or group leads from
- * an account's log on to everything else that involved them.
- */
-function onPivot(key: EventLogPivot, value: string) {
-  if (props.userId && key !== 'type') {
-    void router.push({ name: 'admin-log', query: { [key]: value } });
-  } else {
-    void setFilters({ [key]: value });
+/** The filtered account's address, from the first entry that names it. */
+const userEmail = computed(() => {
+  const { userId } = params.value;
+  if (!userId) return undefined;
+  for (const entry of entries.value) {
+    if (entry.userId === userId && entry.userEmail) return entry.userEmail;
+    if (entry.actorId === userId && entry.actorEmail) return entry.actorEmail;
   }
-}
+  return undefined;
+});
 
-defineExpose({ reload });
+/** An entry's type, address or group narrows the log down to it. */
+function onPivot(key: EventLogPivot, value: string) {
+  void setFilters({ [key]: value });
+}
 
 // Changed filters show their results from the start, filters included.
 const rootEl = useTemplateRef<HTMLElement>('root');
@@ -109,6 +104,7 @@ watch(params, () => {
       :filters="params"
       :has-filters="hasFilters"
       :group-name="groupName"
+      :user-email="userEmail"
       @change="setFilters"
       @clear="clearFilters"
     />
@@ -176,7 +172,7 @@ watch(params, () => {
           >
             <AdminEventLogEntry
               :entry="row.entry"
-              :scoped-user-id="userId"
+              :scoped-user-id="params.userId || undefined"
               @pivot="onPivot"
             />
           </div>

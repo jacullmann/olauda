@@ -201,6 +201,7 @@ impl TenantContext {
             r#"
             SELECT g.owner_id,
                    g.permissions,
+                   g.banned_at IS NOT NULL AS "banned!",
                    (SELECT r.name FROM user_roles ur
                     JOIN roles r ON r.id = ur.role_id
                     WHERE ur.user_id = $1 AND ur.tenant_id = g.id) AS "tenant_role?",
@@ -239,6 +240,14 @@ impl TenantContext {
             (false, Some(role)) => Role::from_str_or_user(role),
             (false, None) => return Err(group_not_found()),
         };
+
+        // Checked after membership, so non-members still cannot tell a banned
+        // group from a missing one. Superadmins keep access to review it.
+        if row.banned && !row.is_superadmin {
+            return Err(AppError::GroupBanned {
+                group_id: tenant_id,
+            });
+        }
 
         Ok(Self {
             tenant_id,

@@ -441,5 +441,9 @@
   },
   "notices": {
     "already_member": "You're already a member of this group."
+  },
+  "banned": {
+    "title": "Your group is currently banned.",
+    "message": "Try again later."
   }
 }

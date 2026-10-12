@@ -1,11 +1,4 @@
-import {
-  computed,
-  ref,
-  shallowRef,
-  toValue,
-  watch,
-  type MaybeRefOrGetter,
-} from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import axios from 'axios';
 import api from '@/api/client';
 import { isUuid } from '@/common/utils/uuid';
@@ -42,6 +35,8 @@ export type EventLogFilters = {
   type: string;
   outcome: '' | EventOutcome;
   ip: string;
+  /** What happened to this account as well as what it did. */
+  userId: string;
   groupId: string;
   /** The first local day shown, as `YYYY-MM-DD`. */
   from: string;
@@ -57,6 +52,7 @@ const DEFAULTS: EventLogFilters = {
   type: '',
   outcome: '',
   ip: '',
+  userId: '',
   groupId: '',
   from: '',
   to: '',
@@ -67,10 +63,10 @@ export type EventLogState = 'loading' | 'ready' | 'failed';
 
 /**
  * The security and activity log as one timeline, filtered by the URL query
- * and loaded page by page as it is scrolled. Scoped to an account, it holds
- * what happened to that account as well as what it did.
+ * and loaded page by page as it is scrolled. The detail pages of accounts and
+ * groups link here with the filter for them set.
  */
-export function useEventLog(userId?: MaybeRefOrGetter<string | undefined>) {
+export function useEventLog() {
   const { params, isDefault, setParams } = useRouteQueryState<EventLogFilters>({
     defaults: DEFAULTS,
     rules: {
@@ -79,17 +75,13 @@ export function useEventLog(userId?: MaybeRefOrGetter<string | undefined>) {
       type: (raw) => TYPE_PATTERN.test(raw),
       outcome: OUTCOMES,
       ip: (raw) => IP_PATTERN.test(raw),
+      userId: isUuid,
       groupId: isUuid,
       from: isDateKey,
       to: isDateKey,
       order: ORDERS,
     },
   });
-  // An account's log is one section of its page, so filtering it replaces the
-  // history entry: stepping back leaves the page instead of undoing filters.
-  const setFilters = (patch: Partial<EventLogFilters>) =>
-    setParams(patch, toValue(userId) !== undefined);
-
   const searchInput = useSearchInput(
     () => params.value.search,
     (search) => setParams({ search }, true),
@@ -102,7 +94,7 @@ export function useEventLog(userId?: MaybeRefOrGetter<string | undefined>) {
   );
 
   function clearFilters() {
-    return setFilters({ ...DEFAULTS, order: params.value.order });
+    return setParams({ ...DEFAULTS, order: params.value.order });
   }
 
   // Appended to, never edited in place.
@@ -119,7 +111,7 @@ export function useEventLog(userId?: MaybeRefOrGetter<string | undefined>) {
     return api.get<EventLogPage>('/admin/events', {
       signal,
       params: {
-        userId: toValue(userId),
+        userId: set(p.userId),
         search: set(p.search),
         source: set(p.source),
         category: set(p.category),
@@ -179,11 +171,11 @@ export function useEventLog(userId?: MaybeRefOrGetter<string | undefined>) {
     }
   }
 
-  watch([params, () => toValue(userId)], load, { immediate: true });
+  watch(params, load, { immediate: true });
 
   return {
     params,
-    setFilters,
+    setFilters: setParams,
     searchInput,
     hasFilters,
     clearFilters,

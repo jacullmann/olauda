@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) FILTER (WHERE NOT mfa AND NOT passkey) AS \"neither!\",\n                      COUNT(*) FILTER (WHERE mfa AND NOT passkey) AS \"mfa_only!\",\n                      COUNT(*) FILTER (WHERE passkey AND NOT mfa) AS \"passkey_only!\",\n                      COUNT(*) FILTER (WHERE mfa AND passkey) AS \"both!\",\n                      COUNT(*) FILTER (WHERE NOT google) AS \"not_linked!\",\n                      COUNT(*) FILTER (WHERE google AND password) AS \"linked!\",\n                      COUNT(*) FILTER (WHERE google AND NOT password) AS \"google_only!\"\n               FROM (SELECT u.mfa_enabled AND u.mfa_secret IS NOT NULL AS mfa,\n                            u.password_hash IS NOT NULL AS password,\n                            EXISTS (SELECT 1 FROM passkeys p WHERE p.user_id = u.id) AS passkey,\n                            EXISTS (SELECT 1 FROM oauth_accounts o\n                                    WHERE o.user_id = u.id AND o.provider = 'google') AS google\n                     FROM users u) accounts",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "neither!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "mfa_only!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "passkey_only!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "both!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "not_linked!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "linked!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "google_only!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "c2f6bd935bb9f115f0c12aaead7cd1c5bc22644d50856c7d8ef5fc432bfe82c8"
+}

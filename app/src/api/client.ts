@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import {
+  bannedGroupId,
   isAccessTokenRejected,
   isShutdown,
   isReauthRequired,
@@ -91,6 +92,10 @@ function notifyShutdown(): void {
   window.dispatchEvent(new CustomEvent('shutdown'));
 }
 
+function notifyGroupBanned(groupId: string): void {
+  window.dispatchEvent(new CustomEvent('group-banned', { detail: groupId }));
+}
+
 /**
  * Rotates the session's tokens. A failure has no side effects, so callers
  * that resolve the session themselves (e.g. at startup) decide what it means.
@@ -124,6 +129,14 @@ api.interceptors.response.use(
     // Nothing is retried: it lasts until a superadmin ends it.
     if (isShutdown(error)) {
       notifyShutdown();
+      return Promise.reject(error);
+    }
+
+    // A group banned while it is open closes at once instead of failing
+    // request by request.
+    const groupId = bannedGroupId(error);
+    if (groupId) {
+      notifyGroupBanned(groupId);
       return Promise.reject(error);
     }
 

@@ -13,11 +13,18 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route("/admin/stats", get(get_stats))
         .route("/admin/stats/daily", get(get_daily_activity))
         .route("/admin/stats/weekly-rhythm", get(get_weekly_rhythm))
+        .route("/admin/stats/account-security", get(get_account_security))
         .route("/admin/server-metrics", get(get_server_metrics))
+        .route("/admin/emails/activity", get(get_email_activity))
+        .route("/admin/emails/quota", get(get_email_quota))
         .route("/admin/cleanup-jobs", get(get_cleanup_jobs))
         .route("/admin/events", get(get_events))
         .route("/admin/groups", get(list_groups))
-        .route("/admin/groups/{id}", delete(delete_group))
+        .route("/admin/groups/{id}", get(get_group).delete(delete_group))
+        .route(
+            "/admin/groups/{id}/ban",
+            post(ban_group).delete(unban_group),
+        )
         .route("/admin/users", get(list_users))
         .route("/admin/users/{id}", get(get_user).delete(delete_user))
         .route("/admin/users/{id}/groups", get(get_user_memberships))

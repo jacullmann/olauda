@@ -18,6 +18,23 @@
       "pending_sign_ups": "Unbestätigt",
       "last_week": "letzte 7 Tage"
     },
+    "accounts": {
+      "title": "Konten",
+      "summary": "{count} Konto | {count} Konten",
+      "second_factor": {
+        "title": "Zwei-Faktor und Passkeys",
+        "neither": "Weder noch",
+        "mfa_only": "Nur Zwei-Faktor",
+        "passkey_only": "Nur Passkey",
+        "both": "Zwei-Faktor und Passkey"
+      },
+      "google": {
+        "title": "Google-Anmeldung",
+        "not_linked": "Ohne Google",
+        "linked": "Mit Google verknüpft",
+        "google_only": "Nur Google, ohne Passwort"
+      }
+    },
     "chart": {
       "title": "Letzte 30 Tage",
       "app_opens": "App-Aufrufe pro Tag",
@@ -28,6 +45,28 @@
       "failed_logins": "Fehlgeschlagene Anmeldungen pro Tag",
       "total": "Gesamt: {count}",
       "average": "Ø {value} pro Tag"
+    },
+    "emails": {
+      "sent": "Gesendete E-Mails pro Tag",
+      "outcomes": {
+        "title": "E-Mail-Zustellung",
+        "summary": "{count} E-Mail zugestellt oder abgelehnt | {count} E-Mails zugestellt oder abgelehnt",
+        "delivered": "Zugestellt",
+        "bounced": "Unzustellbar (Bounce)",
+        "failed": "Fehlgeschlagen"
+      },
+      "quota": {
+        "title": "E-Mails diesen Monat",
+        "of_limit": "von {limit}",
+        "unlimited": "ohne Limit",
+        "resets": "Wird am {date} zurückgesetzt"
+      },
+      "errors": {
+        "not_configured": "Resend ist nicht eingerichtet. Setze RESEND_API_KEY im Backend.",
+        "key_rejected": "Resend lehnt den API-Key für Statistiken ab. RESEND_API_KEY braucht vollen Zugriff, nicht nur Senderechte.",
+        "unreachable": "Die Resend-API ist gerade nicht erreichbar.",
+        "load": "Die E-Mail-Statistiken konnten nicht geladen werden."
+      }
     },
     "weekly_rhythm": {
       "title": "Wochenrhythmus",
@@ -214,8 +253,7 @@
       },
       "groups": "Gruppen & Rollen",
       "no_groups": "Keine Gruppenmitgliedschaften.",
-      "joined": "Beigetreten am {date}",
-      "log": "Protokoll"
+      "joined": "Beigetreten am {date}"
     },
     "ban_modal": {
       "title": "Benutzer bannen?",
@@ -271,20 +309,78 @@
       "regular": "Standard",
       "abitur": "Abitur"
     },
+    "status": {
+      "active": "Aktiv",
+      "banned": "Gebannt"
+    },
     "table": {
       "name": "Name",
       "type": "Typ",
       "owner": "Besitzer",
       "members": "Mitglieder",
       "tasks": "Aufgaben",
-      "created": "Erstellt",
-      "actions": "Aktionen"
+      "created": "Erstellt"
     },
-    "open_tooltip": "Gruppe öffnen",
-    "invite_tooltip": "Einladungslink generieren",
-    "delete_tooltip": "Gruppe löschen",
+    "actions": {
+      "ban": "Bannen",
+      "unban": "Entbannen"
+    },
+    "details": {
+      "back": "Gruppen",
+      "not_found": "Diese Gruppe gibt es nicht (mehr).",
+      "owner": "Besitzer:",
+      "facts": {
+        "type": "Typ",
+        "created": "Erstellt",
+        "members": "Mitglieder",
+        "tasks": "Aufgaben",
+        "banned_since": "Gebannt seit"
+      },
+      "manage": {
+        "title": "Gruppenverwaltung",
+        "open": {
+          "label": "Gruppe öffnen",
+          "hint": "Zeigt die Gruppe so, wie ihre Mitglieder sie sehen, mit Besitzerrechten.",
+          "button": "Öffnen"
+        },
+        "invite": {
+          "label": "Einladungslink erstellen",
+          "hint": "Ein Link, mit dem du oder jemand anderes der Gruppe beitreten kann.",
+          "button": "Erstellen"
+        },
+        "ban": {
+          "label": "Gruppe bannen",
+          "hint": "Niemand außer Superadmins kann die Gruppe öffnen oder ihr beitreten. Nichts wird gelöscht.",
+          "button": "Bannen"
+        },
+        "unban": {
+          "label": "Bann aufheben",
+          "hint": "Die Mitglieder können die Gruppe danach wieder öffnen.",
+          "button": "Entbannen"
+        },
+        "delete": {
+          "label": "Gruppe löschen",
+          "hint": "Löscht die Gruppe mit allen Inhalten und Mitgliedschaften unwiderruflich.",
+          "button": "Löschen"
+        }
+      }
+    },
+    "ban_modal": {
+      "title": "Gruppe bannen?",
+      "content": "Niemand kann „{name}“ mehr öffnen, bis du den Bann aufhebst. Mitglieder und Inhalte bleiben erhalten."
+    },
+    "unban_modal": {
+      "title": "Bann aufheben?",
+      "content": "Die Mitglieder von „{name}“ können die Gruppe danach wieder öffnen."
+    },
     "errors": {
-      "load": "Die Gruppen konnten nicht geladen werden."
+      "load": "Die Gruppen konnten nicht geladen werden.",
+      "load_group": "Die Gruppe konnte nicht geladen werden.",
+      "ban": "Die Gruppe konnte nicht gebannt werden.",
+      "unban": "Der Bann konnte nicht aufgehoben werden."
+    },
+    "success": {
+      "delete": "Gruppe gelöscht."
     }
   },
   "announcements": {
@@ -338,6 +434,11 @@
   "log": {
     "title": "Protokoll",
     "hint": "Sicherheitsereignisse werden 90 Tage aufbewahrt, Aktivität 30 Tage.",
+    "scoped_hint": {
+      "user": "Alles, was dieser Benutzer getan hat und was mit seinem Konto geschehen ist.",
+      "group": "Die Sicherheitsereignisse dieser Gruppe, etwa Beitritte, Rollenwechsel und Admin-Aktionen."
+    },
+    "open": "Protokoll anzeigen",
     "empty": "Noch keine Einträge.",
     "empty_filtered": "Keine Einträge passen zu diesen Filtern.",
     "sources": {
@@ -362,6 +463,7 @@
       "newest_first": "Neueste zuerst",
       "oldest_first": "Älteste zuerst",
       "ip": "IP: {value}",
+      "user": "Benutzer: {value}",
       "group": "Gruppe: {value}",
       "remove": "Filter „{filter}“ entfernen",
       "reset": "Filter zurücksetzen"
@@ -596,6 +698,8 @@
         "user_unbanned": "Admin: Benutzer entbannt",
         "user_deleted": "Admin: Benutzer gelöscht",
         "mfa_reset": "Admin: Zwei-Faktor zurückgesetzt",
+        "group_banned": "Admin: Gruppe gebannt",
+        "group_unbanned": "Admin: Gruppe entbannt",
         "group_deleted": "Admin: Gruppe gelöscht",
         "access_controls_changed": "Admin: Zugangssteuerung geändert",
         "announcement_created": "Admin: Info erstellt",

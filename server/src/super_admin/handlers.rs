@@ -4,7 +4,10 @@ use super::{
         dto::{EventLogPage, EventLogQuery},
         service::EventLogService,
     },
-    service::{SuperAdminService, read_server_metrics, superadmin_caller},
+    service::{
+        SuperAdminService, read_email_activity, read_email_quota, read_server_metrics,
+        superadmin_caller,
+    },
 };
 use crate::{
     common::{
@@ -47,6 +50,17 @@ pub async fn get_daily_activity(
     ))
 }
 
+pub async fn get_account_security(
+    State(s): State<AppState>,
+    _: SuperAdmin,
+) -> AppResult<Json<AccountSecurityDto>> {
+    Ok(Json(
+        SuperAdminService::from_state(&s)
+            .get_account_security()
+            .await?,
+    ))
+}
+
 pub async fn get_weekly_rhythm(
     State(s): State<AppState>,
     _: SuperAdmin,
@@ -66,6 +80,20 @@ pub async fn get_server_metrics(
     Ok(Json(read_server_metrics(&s.hetzner, q.range).await?))
 }
 
+pub async fn get_email_activity(
+    State(s): State<AppState>,
+    _: SuperAdmin,
+) -> AppResult<Json<EmailActivityDto>> {
+    Ok(Json(read_email_activity(&s.email).await?))
+}
+
+pub async fn get_email_quota(
+    State(s): State<AppState>,
+    _: SuperAdmin,
+) -> AppResult<Json<EmailQuotaDto>> {
+    Ok(Json(read_email_quota(&s.email).await?))
+}
+
 pub async fn get_cleanup_jobs(
     State(s): State<AppState>,
     _: SuperAdmin,
@@ -82,6 +110,40 @@ pub async fn list_groups(
 ) -> AppResult<Json<Window<AdminGroupDto>>> {
     Ok(Json(
         SuperAdminService::from_state(&s).list_groups(&q).await?,
+    ))
+}
+
+pub async fn get_group(
+    State(s): State<AppState>,
+    _: SuperAdmin,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<AdminGroupDto>> {
+    Ok(Json(SuperAdminService::from_state(&s).get_group(id).await?))
+}
+
+pub async fn ban_group(
+    State(s): State<AppState>,
+    SuperAdmin(admin): SuperAdmin,
+    client: ClientInfo,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<Value>> {
+    Ok(Json(
+        SuperAdminService::from_state(&s)
+            .ban_group(id, admin.user_id, &client)
+            .await?,
+    ))
+}
+
+pub async fn unban_group(
+    State(s): State<AppState>,
+    SuperAdmin(admin): SuperAdmin,
+    client: ClientInfo,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<Value>> {
+    Ok(Json(
+        SuperAdminService::from_state(&s)
+            .unban_group(id, admin.user_id, &client)
+            .await?,
     ))
 }
 

@@ -40,6 +40,8 @@ pub struct GroupSummaryDto {
     pub dalton_enabled: bool,
     pub effective_permissions: Vec<&'static str>,
     pub course_setup: CourseSetup,
+    /// A superadmin banned the group: only superadmins can still open it.
+    pub banned: bool,
 }
 
 /// Where the caller stands with picking their courses in a group.

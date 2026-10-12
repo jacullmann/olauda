@@ -27,16 +27,19 @@ export type UserGroup = {
   daltonEnabled: boolean;
   effectivePermissions: PermissionKey[];
   courseSetup: CourseSetup;
+  /** A superadmin banned the group: members cannot open it until it is lifted. */
+  banned: boolean;
 };
 
 /** A group as the API sends it, before unknown values are normalized. */
 export type RawGroup = Omit<
   UserGroup,
-  'groupType' | 'effectivePermissions' | 'courseSetup'
+  'groupType' | 'effectivePermissions' | 'courseSetup' | 'banned'
 > & {
   groupType?: string;
   effectivePermissions?: string[];
   courseSetup?: string;
+  banned?: boolean;
 };
 
 const userGroups = ref<UserGroup[]>([]);
@@ -83,6 +86,7 @@ function toUserGroup(raw: RawGroup): UserGroup {
       isPermissionKey,
     ),
     courseSetup: toCourseSetup(raw.courseSetup),
+    banned: raw.banned === true,
   };
 }
 
@@ -110,6 +114,12 @@ function findGroup(groupId: string | null): UserGroup | null {
     userGroups.value.find((g) => g.id === groupId) ??
     (foreignGroup.value?.id === groupId ? foreignGroup.value : null)
   );
+}
+
+/** Mirrors a ban the server reported on a request, e.g. one placed mid-session. */
+export function markGroupBanned(groupId: string): void {
+  const group = findGroup(groupId);
+  if (group) group.banned = true;
 }
 
 const activeGroup = computed(() => findGroup(activeGroupId.value));
