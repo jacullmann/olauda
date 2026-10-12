@@ -8,25 +8,25 @@ const props = defineProps<{
 }>();
 
 // The pane on top slides across the full width, the one beneath only shifts
-// and dims, like a phone's navigation stack.
+// aside, like a phone's navigation stack.
 const classes = computed(() =>
   props.direction === 'forward'
     ? {
         enterActive: 'z-2',
         enterFrom: 'motion-safe:translate-x-full',
         leaveActive: 'z-1',
-        leaveTo: 'motion-safe:-translate-x-[15%] motion-safe:opacity-60',
+        leaveTo: 'motion-safe:translate-x-(--page-push-shift)',
       }
     : {
         enterActive: 'z-1',
-        enterFrom: 'motion-safe:-translate-x-[15%] motion-safe:opacity-60',
+        enterFrom: 'motion-safe:translate-x-(--page-push-shift)',
         leaveActive: 'z-2',
         leaveTo: 'motion-safe:translate-x-full',
       },
 );
 
 const motion =
-  'motion-safe:transition-[translate,opacity] duration-(--duration-page-push) ease-(--ease-settle)';
+  'motion-safe:transition-[translate] duration-(--duration-page-push) ease-(--ease-settle)';
 
 // Panes scroll with the page, so content passes beneath the header. The next
 // one opens at the top, so the leaving one is shifted up by as far as it was

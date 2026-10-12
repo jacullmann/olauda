@@ -106,6 +106,7 @@
   --ease-sidebar-collapse: cubic-bezier(0.32, 0, 0.67, 1);
 
   --duration-page-push: 400ms;
+  --page-push-shift: -20%;
 
   --header-height: calc(var(--spacing) * 12);
 
