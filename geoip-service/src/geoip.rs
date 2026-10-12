@@ -119,7 +119,7 @@ impl GeoIpState {
     }
 }
 
-fn is_private_ip(ip: IpAddr) -> bool {
+pub fn is_private_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(ipv4) => ipv4.is_private(),
         IpAddr::V6(ipv6) => {

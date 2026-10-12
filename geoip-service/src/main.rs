@@ -18,7 +18,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod geoip;
 mod update;
 
-use crate::geoip::GeoIpState;
+use crate::geoip::{is_private_ip, GeoIpState};
 
 struct AppConfig {
     port: u16,
@@ -237,15 +237,4 @@ async fn update_handler(
             "message": "Database update has been triggered in the background."
         })),
     )
-}
-
-fn is_private_ip(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(ipv4) => ipv4.is_private(),
-        IpAddr::V6(ipv6) => {
-            let segments = ipv6.segments();
-            let first_byte = (segments[0] >> 8) as u8;
-            first_byte == 0xfc || first_byte == 0xfd || (segments[0] & 0xffc0) == 0xfe80
-        }
-    }
 }

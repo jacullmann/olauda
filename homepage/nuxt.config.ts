@@ -104,10 +104,6 @@ export default defineNuxtConfig({
           content:
             'Homework, exams and timetable changes in one place your whole class shares. Free and without ads.',
         },
-        {
-          name: 'keywords',
-          content: 'homework planner, timetable, schedule changes, class, school, students, free',
-        },
         { name: 'author', content: 'Olauda' },
         {
           name: 'robots',

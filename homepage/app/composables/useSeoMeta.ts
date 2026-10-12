@@ -1,7 +1,6 @@
 export const useSeoMetaWithI18n = (options: {
   title: () => string;
   description: () => string;
-  keywords?: string;
   ogImage?: string;
   ogType?: 'website' | 'article';
   structuredData?: Record<string, unknown>;
@@ -13,7 +12,6 @@ export const useSeoMetaWithI18n = (options: {
   useSeoMeta({
     title: options.title,
     description: options.description,
-    keywords: options.keywords,
     ogTitle: options.title,
     ogDescription: options.description,
     ogImage,
