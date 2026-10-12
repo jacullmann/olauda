@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useIsMobileViewport } from '@/common/composables/useViewport';
 
 const props = defineProps<{
   /** Changing it pushes the new pane on, or pops back to it. */
@@ -7,8 +8,10 @@ const props = defineProps<{
   direction: 'forward' | 'backward';
 }>();
 
+const isMobile = useIsMobileViewport();
+
 // The pane on top slides across the full width, the one beneath only shifts
-// aside, like a phone's navigation stack.
+// aside, like a phone's navigation stack. Wider screens swap panes at once.
 const classes = computed(() =>
   props.direction === 'forward'
     ? {
@@ -43,6 +46,7 @@ function scrollToTop() {
 <template>
   <div class="relative flex flex-1 flex-col">
     <Transition
+      :css="isMobile"
       :enter-active-class="`${classes.enterActive} ${motion}`"
       :enter-from-class="classes.enterFrom"
       :leave-active-class="`absolute inset-x-0 ${classes.leaveActive} ${motion}`"
