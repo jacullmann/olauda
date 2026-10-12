@@ -4,12 +4,23 @@ import { useI18n } from 'vue-i18n';
 import { pieArcs } from '@/modules/admin/utils/pieChart';
 import AdminChartCard from './AdminChartCard.vue';
 
+/** The colours slices may take. Blue leads; red stays for what went wrong. */
+const PIE_COLORS = {
+  blue: 'text-accent',
+  purple: 'text-violet-500',
+  yellow: 'text-warn',
+  red: 'text-danger',
+  gray: 'text-on-ghost-subtle',
+  orange: 'text-orange-400',
+} as const;
+
+export type PieColor = keyof typeof PIE_COLORS;
+
 export interface PieSlice {
   key: string;
   label: string;
   value: number;
-  /** A `text-*` class; the slice and its legend dot are drawn in `currentColor`. */
-  color: string;
+  color: PieColor;
 }
 
 const props = defineProps<{
@@ -36,6 +47,7 @@ const shares = computed(() => {
     const { fraction, start } = arcs[i]!;
     return {
       ...slice,
+      colorClass: PIE_COLORS[slice.color],
       fraction,
       dashArray: `${fraction * 100} ${100 - fraction * 100}`,
       dashOffset: -start * 100,
@@ -81,7 +93,7 @@ const dimmed = (key: string) =>
             :r="RADIUS"
             :stroke-width="RING_WIDTH"
             class="fill-none stroke-current transition-opacity"
-            :class="[share.color, { 'opacity-40': dimmed(share.key) }]"
+            :class="[share.colorClass, { 'opacity-40': dimmed(share.key) }]"
             :stroke-dasharray="share.dashArray"
             :stroke-dashoffset="share.dashOffset"
             pointer-events="stroke"
@@ -102,7 +114,7 @@ const dimmed = (key: string) =>
         >
           <span
             class="size-2 shrink-0 rounded-full bg-current"
-            :class="share.color"
+            :class="share.colorClass"
             aria-hidden="true"
           />
           <span class="min-w-0 flex-1 text-on-ghost-muted">

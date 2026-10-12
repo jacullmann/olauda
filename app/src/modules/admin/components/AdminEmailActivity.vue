@@ -19,13 +19,14 @@ const sentPerDay = computed(() =>
 
 const outcomes = computed<PieSlice[]>(() => {
   const { delivered, bounced, failed } = props.activity;
-  return [
-    { key: 'delivered', value: delivered, color: 'text-success' },
-    { key: 'bounced', value: bounced, color: 'text-warn' },
-    { key: 'failed', value: failed, color: 'text-danger' },
-  ].map((outcome) => ({
-    ...outcome,
-    label: t(`${I18N_BASE}.outcomes.${outcome.key}`),
+  const slices: Omit<PieSlice, 'label'>[] = [
+    { key: 'delivered', value: delivered, color: 'blue' },
+    { key: 'bounced', value: bounced, color: 'yellow' },
+    { key: 'failed', value: failed, color: 'red' },
+  ];
+  return slices.map((slice) => ({
+    ...slice,
+    label: t(`${I18N_BASE}.outcomes.${slice.key}`),
   }));
 });
 

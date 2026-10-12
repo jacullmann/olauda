@@ -2,7 +2,10 @@
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountSecurity } from '@/modules/admin/composables/useAccountSecurity';
-import AdminPieChart, { type PieSlice } from './AdminPieChart.vue';
+import AdminPieChart, {
+  type PieColor,
+  type PieSlice,
+} from './AdminPieChart.vue';
 
 const I18N_BASE = 'admin.overview.accounts';
 
@@ -21,7 +24,7 @@ const charts = computed(() => {
     group: string,
     key: string,
     value: number,
-    color: string,
+    color: PieColor,
   ): PieSlice => ({
     key,
     label: t(`${I18N_BASE}.${group}.${key}`),
@@ -34,29 +37,19 @@ const charts = computed(() => {
       key: 'second_factor',
       summary,
       slices: [
-        slice(
-          'second_factor',
-          'neither',
-          factor.neither,
-          'text-on-ghost-subtle',
-        ),
-        slice('second_factor', 'mfa_only', factor.mfaOnly, 'text-accent'),
-        slice(
-          'second_factor',
-          'passkey_only',
-          factor.passkeyOnly,
-          'text-indigo-500',
-        ),
-        slice('second_factor', 'both', factor.both, 'text-success'),
+        slice('second_factor', 'neither', factor.neither, 'gray'),
+        slice('second_factor', 'mfa_only', factor.mfaOnly, 'purple'),
+        slice('second_factor', 'passkey_only', factor.passkeyOnly, 'yellow'),
+        slice('second_factor', 'both', factor.both, 'blue'),
       ],
     },
     {
       key: 'google',
       summary,
       slices: [
-        slice('google', 'not_linked', google.notLinked, 'text-on-ghost-subtle'),
-        slice('google', 'linked', google.linked, 'text-accent'),
-        slice('google', 'google_only', google.googleOnly, 'text-indigo-500'),
+        slice('google', 'not_linked', google.notLinked, 'gray'),
+        slice('google', 'linked', google.linked, 'blue'),
+        slice('google', 'google_only', google.googleOnly, 'purple'),
       ],
     },
   ];
