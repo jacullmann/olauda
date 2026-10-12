@@ -130,7 +130,6 @@ pub async fn leave_group(State(s): State<AppState>, tc: TenantContext) -> AppRes
     GroupService::from_state(&s)
         .leave_group(tc.user.user_id, tc.tenant_id)
         .await?;
-    s.message_bus.membership_changed(tc.tenant_id).await;
 
     Ok(Json(json!({ "ok": true })))
 }
@@ -237,7 +236,6 @@ pub async fn remove_member(
             &client,
         )
         .await?;
-    s.message_bus.membership_changed(tc.tenant_id).await;
 
     Ok(Json(body))
 }
@@ -332,7 +330,6 @@ pub async fn delete_group(
     let body = GroupAdminService::from_state(&s)
         .delete_group(tc.tenant_id, tc.user.user_id, &client)
         .await?;
-    s.message_bus.membership_changed(tc.tenant_id).await;
 
     Ok(Json(body))
 }

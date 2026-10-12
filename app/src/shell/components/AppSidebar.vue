@@ -12,8 +12,6 @@ import {
   Settings,
   Lock as LockIcon,
   Search,
-  // TODO(chat): disabled until chat is ready.
-  // MessageCircle,
   Plus,
   Star,
 } from '@lucide/vue';
@@ -242,16 +240,6 @@ onUnmounted(() => {
           :icon="CalendarDays"
           @click="openGroupPage('group-schedule')"
         />
-
-        <!-- TODO(chat): disabled until chat is ready.
-        <AppSidebarButton
-          :label="t('common.sidebar.messages')"
-          :expanded="isExpanded"
-          :active="$route.name === 'group-messages'"
-          :icon="MessageCircle"
-          @click="openGroupPage('group-messages')"
-        />
-        -->
 
         <AppSidebarButton
           v-if="contextGroupId"

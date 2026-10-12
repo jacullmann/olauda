@@ -8,7 +8,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 pub const FORMAT: &str = "olauda/data-export";
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 3;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -71,7 +71,6 @@ pub struct LinkedAccount {
 #[serde(rename_all = "camelCase")]
 pub struct GroupsExport {
     pub memberships: Vec<Membership>,
-    pub visits: Vec<GroupVisit>,
     pub courses: Vec<CourseChoice>,
     pub bans: Vec<GroupBan>,
     pub invites: Vec<GroupInvite>,
@@ -86,14 +85,6 @@ pub struct Membership {
     pub is_owner: bool,
     pub done_course_setup: bool,
     pub joined_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GroupVisit {
-    pub group_id: Uuid,
-    pub group_name: String,
-    pub last_messages_visit_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -137,7 +128,6 @@ pub struct ContentExport {
     pub files: Vec<UploadedFile>,
     pub announcements: Vec<Announcement>,
     pub system_announcements: Vec<SystemAnnouncement>,
-    pub messages: Vec<Message>,
     pub private_todos: Vec<Value>,
 }
 
@@ -193,18 +183,6 @@ pub struct SystemAnnouncement {
     pub starts_at: DateTime<Utc>,
     pub ends_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Message {
-    pub id: Uuid,
-    pub group_id: Uuid,
-    pub group_name: String,
-    pub content: String,
-    pub reply_to: Option<Uuid>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]

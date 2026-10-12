@@ -179,7 +179,6 @@
       "categories": {
         "general": "Gruppeneinstellungen",
         "tasks": "Aufgaben",
-        "chat": "Chat",
         "info": "Informationen",
         "moderation": "Moderation"
       },
@@ -211,10 +210,6 @@
         "manage_notes": {
           "title": "Notizen",
           "description": "Bei allen Aufgaben Notizen hinzufügen, bearbeiten und löschen"
-        },
-        "send_messages": {
-          "title": "Nachrichten senden",
-          "description": "Nachrichten senden"
         },
         "manage_schedule_changes": {
           "title": "Stundenplanänderungen",
@@ -421,7 +416,7 @@
     "counts_members": "{count} Mitglied | {count} Mitglieder",
     "counts_items": "{count} Aufgabe | {count} Aufgaben",
     "consequences": {
-      "content": "Alle Aufgaben, Prüfungen, Ankündigungen und Chatnachrichten der Gruppe werden gelöscht.",
+      "content": "Alle Aufgaben, Prüfungen und Ankündigungen der Gruppe werden gelöscht.",
       "schedule": "Fächer, Kurse und der Stundenplan samt Planänderungen werden entfernt.",
       "members": "Alle Mitglieder verlieren sofort den Zugriff auf die Gruppe.",
       "invites": "Bestehende Einladungslinks werden ungültig."

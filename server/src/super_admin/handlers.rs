@@ -94,7 +94,6 @@ pub async fn delete_group(
     let body = SuperAdminService::from_state(&s)
         .delete_group(id, admin.user_id, &client)
         .await?;
-    s.message_bus.membership_changed(id).await;
 
     Ok(Json(body))
 }
@@ -176,7 +175,6 @@ pub async fn ban_user(
     let body = SuperAdminService::from_state(&s)
         .ban_user(target, admin.user_id, &client)
         .await?;
-    s.message_bus.end_sessions(target);
 
     Ok(Json(body))
 }
@@ -216,7 +214,6 @@ pub async fn delete_user(
     let body = SuperAdminService::from_state(&s)
         .delete_user(target, admin.user_id, &client)
         .await?;
-    s.message_bus.end_sessions(target);
 
     Ok(Json(body))
 }

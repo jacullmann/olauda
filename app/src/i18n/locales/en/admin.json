@@ -77,10 +77,6 @@
           "label": "2FA setup",
           "rule": "Abandoned setups once expired"
         },
-        "cleanup-group-messages": {
-          "label": "Chat messages",
-          "rule": "Older than 7 days"
-        },
         "cleanup-group-invites": {
           "label": "Invite links",
           "rule": "30 days after expiry, use or revocation"
@@ -257,8 +253,6 @@
     "from": "From: {email} · {date}",
     "delete": "Delete Report",
     "deleted": "Content deleted",
-    "message_by": "Message by {email}",
-    "message_sender_deleted": "Message (sender deleted)",
     "delete_modal": {
       "title": "Delete report?",
       "content": "Are you sure you want to delete this report?"
@@ -394,7 +388,6 @@
       "item": "Tasks",
       "todo": "To-dos",
       "schedule": "Schedule",
-      "message": "Messages",
       "profile": "Profile",
       "page": "App opens"
     },
@@ -439,8 +432,7 @@
       "permissions": "Permissions",
       "codeSent": "Code sent",
       "reportId": "Report",
-      "targetUserId": "Affected account",
-      "messageId": "Message"
+      "targetUserId": "Affected account"
     },
     "values": {
       "reason": {
@@ -534,9 +526,6 @@
         "update": "Edited a to-do",
         "toggle": "Checked or reopened a to-do",
         "delete": "Deleted a to-do"
-      },
-      "message": {
-        "report": "Reported a message"
       },
       "mfa": {
         "setup": {

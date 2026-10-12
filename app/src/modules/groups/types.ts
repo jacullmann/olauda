@@ -119,7 +119,6 @@ export type ConfigurablePermissionKey =
   | 'create_items'
   | 'upload_images'
   | 'manage_notes'
-  | 'send_messages'
   | 'manage_schedule_changes'
   | 'manage_announcements'
   | 'moderate_members'

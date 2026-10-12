@@ -130,7 +130,7 @@ export interface AdminReport {
   contentDeleted: boolean;
   reason?: string | null;
   reporterEmail?: string;
-  reportType: 'task' | 'message';
+  reportType: 'task';
   itemId?: string;
   itemTitle?: string;
   itemType?: string;
@@ -142,9 +142,6 @@ export interface AdminReport {
   itemDueDate?: string;
   itemEditorNote?: string;
   creatorEmail?: string;
-  messageId?: string;
-  messageContent?: string;
-  messageSenderEmail?: string | null;
 }
 
 export type GroupTypeFilter = 'all' | 'regular' | 'abitur';

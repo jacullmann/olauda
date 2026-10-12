@@ -5,7 +5,5 @@
 set -eu
 
 api_origin=$(printf '%s' "${VITE_API_URL:-}" | sed -E 's#^(https?://[^/]+).*#\1#')
-api_ws_origin=$(printf '%s' "$api_origin" | sed -E 's#^http#ws#')
 
-API_ORIGIN="$api_origin" API_WS_ORIGIN="$api_ws_origin" \
-    envsubst '${API_ORIGIN} ${API_WS_ORIGIN}' < "$1" > "$2"
+API_ORIGIN="$api_origin" envsubst '${API_ORIGIN}' < "$1" > "$2"

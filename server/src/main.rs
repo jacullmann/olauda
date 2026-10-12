@@ -8,7 +8,6 @@ mod data_export;
 mod error;
 mod group;
 mod items;
-mod messages;
 mod mfa;
 mod oauth;
 mod passkeys;
@@ -112,7 +111,6 @@ async fn main() -> anyhow::Result<()> {
         .merge(announcements::routes::group_router())
         .merge(group::routes::group_router())
         .merge(items::routes::group_router())
-        .merge(messages::routes::group_router())
         .merge(schedule::routes::group_router())
         .merge(user::routes::group_router())
         .route_layer(middleware::from_fn_with_state(
@@ -142,7 +140,6 @@ async fn main() -> anyhow::Result<()> {
         .merge(data_export::routes::router())
         .merge(group::routes::router())
         .merge(todos::routes::router())
-        .merge(messages::routes::router())
         .merge(mfa::routes::router())
         .merge(oauth::routes::router())
         .merge(passkeys::routes::router())

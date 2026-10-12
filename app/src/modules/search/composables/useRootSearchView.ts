@@ -9,8 +9,6 @@ import {
   House,
   ListTodo,
   CalendarDays,
-  // TODO(chat): disabled until chat is ready.
-  // MessageCircle,
   Lock,
   Megaphone,
   UsersRound,
@@ -120,15 +118,6 @@ export function useRootSearchView(): ComputedRef<SearchView> {
         icon: CalendarDays,
         run: () => navigateInGroup('group-schedule'),
       },
-      // TODO(chat): disabled until chat is ready.
-      // {
-      //   id: 'messages',
-      //   label: t('common.sidebar.messages'),
-      //   description: t('search.descriptions.messages'),
-      //   kind: 'link',
-      //   icon: MessageCircle,
-      //   run: () => navigateInGroup('group-messages'),
-      // },
       {
         id: 'admin',
         label: t('common.sidebar.admin'),

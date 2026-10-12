@@ -13,12 +13,6 @@ SELECT cron.schedule(
        );
 
 SELECT cron.schedule(
-               'cleanup-group-messages',
-               '30 */6 * * *',
-               $$SELECT public.cleanup_old_group_messages()$$
-       );
-
-SELECT cron.schedule(
                'cleanup-group-invites',
                '45 */6 * * *',
                $$SELECT public.cleanup_expired_group_invites()$$

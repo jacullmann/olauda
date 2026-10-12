@@ -163,15 +163,6 @@ const routes: RouteRecordRaw[] = [
             meta: { title: 'schedule.title', headerTitle: 'schedule.title' },
           },
           {
-            path: 'messages',
-            name: 'group-messages',
-            component: () => import('@/modules/chat/pages/ChatPage.vue'),
-            meta: {
-              title: 'common.sidebar.messages',
-              headerTitle: 'common.sidebar.messages',
-            },
-          },
-          {
             path: 'settings/:tab?/:subTab?',
             name: 'group-admin',
             component: () =>

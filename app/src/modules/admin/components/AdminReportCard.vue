@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Trash2 } from '@lucide/vue';
 import TaskPreview from '@/modules/tasks/components/TaskPreview.vue';
 import { useAdminFormat } from '@/modules/admin/composables/useAdminFormat';
 import type { AdminReport } from '@/modules/admin/types';
 
-const props = defineProps<{
+defineProps<{
   report: AdminReport;
 }>();
 
@@ -16,28 +15,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { getTypeLabel, getSubjectName, fmtDate } = useAdminFormat();
-
-const isMessage = computed(() => props.report.reportType === 'message');
-
-const title = computed(() => {
-  const r = props.report;
-  if (isMessage.value) {
-    return r.messageSenderEmail
-      ? t('admin.reports.message_by', { email: r.messageSenderEmail })
-      : t('admin.reports.message_sender_deleted');
-  }
-  return r.itemTitle ?? '';
-});
-
-const body = computed(() =>
-  isMessage.value ? props.report.messageContent : props.report.itemDescription,
-);
 </script>
 
 <template>
   <TaskPreview
-    :title="title"
-    :description="body"
+    :title="report.itemTitle ?? ''"
+    :description="report.itemDescription"
     :note="report.itemEditorNote"
     :attachments="report.itemAttachments"
   >
@@ -48,7 +31,7 @@ const body = computed(() =>
         <span v-if="report.contentDeleted" class="text-danger font-bold">{{
           t('admin.reports.deleted')
         }}</span>
-        <template v-if="!isMessage && report.itemType">
+        <template v-if="report.itemType">
           <span v-if="report.contentDeleted">·</span>
           <span>{{ getTypeLabel(report.itemType) }}</span>
           <span>·</span>

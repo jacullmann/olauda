@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult};
 
-/// Free text people write and others read, such as a chat message or a note:
+/// Free text people write and others read, such as a task description or a note:
 /// trimmed and bounded in length. Unlike a [`DisplayName`] it may span several
 /// lines, but it holds no other control characters, which never belong in
 /// prose and which Postgres rejects in `text` columns in the case of NUL.

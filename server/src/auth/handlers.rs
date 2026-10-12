@@ -139,7 +139,6 @@ pub async fn delete_me(
     let svc = AuthService::from_state(&state);
 
     let jar = svc.delete_me(user.user_id, &client).await?;
-    state.message_bus.end_sessions(user.user_id);
 
     Ok((jar, Json(json!({ "ok": true }))))
 }

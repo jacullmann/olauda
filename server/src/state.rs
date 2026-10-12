@@ -4,7 +4,6 @@ use crate::{
         hetzner::HetznerCloud, jwt::JwtService,
     },
     config::Config,
-    messages::gateway::MessageBus,
     mfa::{recovery_codes::RecoveryCodeHasher, second_factor::SecondFactorKeys},
     passkeys::relying_party,
 };
@@ -25,7 +24,6 @@ pub struct AppState {
     pub email: EmailService,
     pub encryption: EncryptionService,
     pub recovery_codes: RecoveryCodeHasher,
-    pub message_bus: MessageBus,
     pub webauthn: Arc<Webauthn>,
 }
 
@@ -66,7 +64,6 @@ impl AppState {
             email,
             encryption,
             recovery_codes,
-            message_bus: MessageBus::default(),
             webauthn: Arc::new(webauthn),
         })
     }

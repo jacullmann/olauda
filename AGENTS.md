@@ -60,7 +60,7 @@ src/
     pages/ components/ composables/ stores/ utils/ types.ts
 ```
 
-- Modules: `account` (the signed-in user: settings, preferences, profile), `admin` (platform admin), `announcements`, `auth` (session, sign-in and sign-up, MFA, reauth), `chat`, `courses` (subjects, courses, enrollment and course setup), `dashboard`, `groups` (membership, the group on screen, permissions, invites, group settings), `schedule`, `search`, `tasks` (group tasks), `todos` (private todos).
+- Modules: `account` (the signed-in user: settings, preferences, profile), `admin` (platform admin), `announcements`, `auth` (session, sign-in and sign-up, MFA, reauth), `courses` (subjects, courses, enrollment and course setup), `dashboard`, `groups` (membership, the group on screen, permissions, invites, group settings), `schedule`, `search`, `tasks` (group tasks), `todos` (private todos).
 - A file lives in the module that owns its concept, even when other modules use it more; they import it from there. Domain-bound code never moves to `common/` (task swipe actions stay in `tasks`, `todos` imports them).
 - Domain-free code lives in its only module until a second module needs it; then it moves to `common/`. Base components are the exception: every generic UI primitive is a `Base*` component in `common/components`, however many modules use it.
 - Only the folders a module needs exist, and they stay flat: no subfolders inside `components/`, `composables/` and so on. Related files group through their name prefix instead.
@@ -75,7 +75,7 @@ src/
 - Delete what nothing imports.
 
 **Naming:**
-- Components: PascalCase, at least two words, file name = component name. They start with their owner: `Base` in `common/`, `App` in `shell/`, the module's name in singular in a module (`Task`, `Todo`, `Group`, `Course`, `Account`, `Auth`, `Admin`, `Announcement`, `Chat`, `Dashboard`, `Schedule`, `Search`). Then general to specific, so related files sort together: `GroupSettingsMembers`, `GroupSettingsMembersInvites`, `AccountMenuTheme`.
+- Components: PascalCase, at least two words, file name = component name. They start with their owner: `Base` in `common/`, `App` in `shell/`, the module's name in singular in a module (`Task`, `Todo`, `Group`, `Course`, `Account`, `Auth`, `Admin`, `Announcement`, `Dashboard`, `Schedule`, `Search`). Then general to specific, so related files sort together: `GroupSettingsMembers`, `GroupSettingsMembersInvites`, `AccountMenuTheme`.
 - Suffixes say the role: `*Page` for a route without child routes, `*Layout` for a route that frames child routes (both only in `pages/`), `*Modal` for a component that is a modal (its root is `BaseModal` or another modal), `*Menu` for a floating menu, `*Form` for an inline form. Nothing else in `pages/`.
 - Base components are never imported; they are registered globally. Every other component is imported explicitly.
 - Composables: `use<Thing>.ts` exporting `use<Thing>`, plus the types and constants that belong to it. A function without reactivity, lifecycle or injection is not a composable: it goes to `utils/` without the `use` prefix.
@@ -116,7 +116,7 @@ src/
 - Confirm success only when the user cannot see the result: it is off screen (copied to the clipboard, reported, an email sent, a task added from a form opened outside its list) or the action took them away from it (password changed, group or account deleted). A copy button that turns into a check mark needs no toast either.
 - A notice (info or warning) only tells the user something unexpected they should know or act on: why they were redirected, that they must repeat an action, that recovery codes are running low.
 - Wording: the fact in past tense, then at most one sentence on what to do next. "Link copied." / "Link kopiert." No "successfully"/"erfolgreich", no exclamation marks.
-- Keys mirror errors: `<section>.success.<verb>[_<object>]`, using the same name as the matching error (`chat.errors.report` / `chat.success.report`), and `<section>.notices.<condition>` (`groups.notices.already_member`).
+- Keys mirror errors: `<section>.success.<verb>[_<object>]`, using the same name as the matching error (`tasks.errors.report` / `tasks.success.report`), and `<section>.notices.<condition>` (`groups.notices.already_member`).
 
 **Button labels:**
 - English labels on buttons, menu items and dialog submit actions use title case: "Delete Task", "Sign In with Google", "Use a Code from the Authenticator App". Articles, coordinating conjunctions and prepositions stay lowercase unless first or last; verb particles are capitalized ("Set Up", "Sign Out", "Move Up"). German keeps normal German capitalization.

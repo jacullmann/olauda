@@ -30,7 +30,6 @@ therefore almost never fire. pg_cron runs in the DB container and is unaffected.
 |--------------------------------|------------------------------------------|-------------------------------------------------|
 | `cleanup-refresh-tokens`       | `cleanup_expired_refresh_tokens()`       | expired tokens, revoked ones after 7 days       |
 | `cleanup-mfa-pending`          | `cleanup_expired_mfa_pending()`          | expired 2FA setups                              |
-| `cleanup-group-messages`       | `cleanup_old_group_messages()`           | chat messages older than 7 days                 |
 | `cleanup-group-invites`        | `cleanup_expired_group_invites()`        | invites 30 days after expiry, use or revocation |
 | `cleanup-user-activity`        | `cleanup_old_user_activity()`            | activity log older than 30 days                 |
 | `cleanup-security-events`      | `cleanup_old_security_events()`          | security events older than 90 days              |
@@ -54,7 +53,8 @@ means the job is not running.
   (`server/migrations/0006_consolidate_cleanup.sql`, `0012_…`,
   `0040_scheduled_retention.sql`, `0041_delete_items_after_due_date.sql` and
   `0050_limit_email_codes_per_address.sql`, `0051_system_announcements.sql`,
-  `0063_pending_sign_ups.sql` and `0072_security_audit_log.sql`),
+  `0063_pending_sign_ups.sql`, `0072_security_audit_log.sql` and
+  `0077_drop_chat.sql`),
   not here.
 
 `security_events` is the security audit log and is append-only: a trigger
@@ -160,7 +160,7 @@ A single job can be triggered manually for testing:
 ```sql
 SELECT public.cleanup_expired_refresh_tokens();
 SELECT public.cleanup_expired_mfa_pending();
-SELECT public.cleanup_old_group_messages();
+SELECT public.cleanup_old_items();
 
 -- Rows each job should already have removed (all 0 when healthy)
 SELECT * FROM public.cleanup_job_backlog();
@@ -177,7 +177,7 @@ SELECT * FROM public.cleanup_job_backlog();
 - **Change retention/interval:** adjust the cron expressions in
   `pg_cron_setup.sql` and re-run (idempotent). The retention logic itself lives
   in the functions -> change it via a new migration.
-- **Pause a job:** `SELECT cron.unschedule('cleanup-group-messages');`
+- **Pause a job:** `SELECT cron.unschedule('cleanup-old-items');`
 - **Once after migration 0043:** clients used to upload straight to
   Cloudinary, where the server could not check what arrived. In the Media
   Library, filter the deployment's folder by type *video* and delete anything

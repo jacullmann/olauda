@@ -11,7 +11,6 @@ pub enum Permission {
     CreateItems,
     UploadImages,
     ManageNotes,
-    SendMessages,
     ManageScheduleChanges,
     ManageAnnouncements,
     ModerateMembers,
@@ -30,7 +29,6 @@ impl Permission {
             Self::CreateItems => "create_items",
             Self::UploadImages => "upload_images",
             Self::ManageNotes => "manage_notes",
-            Self::SendMessages => "send_messages",
             Self::ManageScheduleChanges => "manage_schedule_changes",
             Self::ManageAnnouncements => "manage_announcements",
             Self::ModerateMembers => "moderate_members",
@@ -40,7 +38,7 @@ impl Permission {
         }
     }
 
-    pub const ALL: [Permission; 14] = [
+    pub const ALL: [Permission; 13] = [
         Self::EditGroupProfile,
         Self::EditGroupConfiguration,
         Self::EditSubjectsCourses,
@@ -48,7 +46,6 @@ impl Permission {
         Self::CreateItems,
         Self::UploadImages,
         Self::ManageNotes,
-        Self::SendMessages,
         Self::ManageScheduleChanges,
         Self::ManageAnnouncements,
         Self::ModerateMembers,
@@ -76,7 +73,6 @@ impl Permission {
             | Self::CreateItems
             | Self::UploadImages
             | Self::ManageNotes
-            | Self::SendMessages
             | Self::ManageScheduleChanges
             | Self::InviteMembers => Some(Role::User),
         }
@@ -99,7 +95,6 @@ pub struct GroupPermissions {
     pub create_items: Role,
     pub upload_images: Role,
     pub manage_notes: Role,
-    pub send_messages: Role,
     pub manage_schedule_changes: Role,
     pub manage_announcements: Role,
     pub moderate_members: Role,
@@ -117,7 +112,6 @@ impl Default for GroupPermissions {
             create_items: Role::User,
             upload_images: Role::User,
             manage_notes: Role::Moderator,
-            send_messages: Role::User,
             manage_schedule_changes: Role::Moderator,
             manage_announcements: Role::Moderator,
             moderate_members: Role::Moderator,
@@ -140,7 +134,6 @@ impl GroupPermissions {
             Permission::CreateItems => self.create_items,
             Permission::UploadImages => self.upload_images,
             Permission::ManageNotes => self.manage_notes,
-            Permission::SendMessages => self.send_messages,
             Permission::ManageScheduleChanges => self.manage_schedule_changes,
             Permission::ManageAnnouncements => self.manage_announcements,
             Permission::ModerateMembers => self.moderate_members,
@@ -159,7 +152,6 @@ impl GroupPermissions {
             Permission::CreateItems => &mut self.create_items,
             Permission::UploadImages => &mut self.upload_images,
             Permission::ManageNotes => &mut self.manage_notes,
-            Permission::SendMessages => &mut self.send_messages,
             Permission::ManageScheduleChanges => &mut self.manage_schedule_changes,
             Permission::ManageAnnouncements => &mut self.manage_announcements,
             Permission::ModerateMembers => &mut self.moderate_members,
@@ -237,7 +229,6 @@ mod tests {
     #[test]
     fn defaults_match_original_hardcodes() {
         let p = GroupPermissions::default();
-        assert_eq!(p.send_messages, Role::User);
         assert_eq!(p.create_items, Role::User);
         assert_eq!(p.upload_images, Role::User);
         assert_eq!(p.edit_group_profile, Role::Moderator);
@@ -254,13 +245,13 @@ mod tests {
     #[test]
     fn json_merge_overrides_and_ignores_superadmin() {
         let raw = serde_json::json!({
-            "send_messages": "moderator",
-            "send_messages_typo": "user",
-            "create_items": "superadmin",
+            "create_items": "moderator",
+            "create_items_typo": "user",
+            "upload_images": "superadmin",
         });
         let p = GroupPermissions::from_json_with_defaults(&raw);
-        assert_eq!(p.send_messages, Role::Moderator);
-        assert_eq!(p.create_items, Role::User); // default
+        assert_eq!(p.create_items, Role::Moderator);
+        assert_eq!(p.upload_images, Role::User); // default
     }
 
     #[test]
@@ -333,7 +324,6 @@ mod tests {
     fn allowed_keys_user_role() {
         let p = GroupPermissions::default();
         let keys = p.allowed_keys_for_role(Role::User);
-        assert!(keys.contains(&"send_messages"));
         assert!(keys.contains(&"create_items"));
         assert!(!keys.contains(&"edit_other_content"));
         assert!(!keys.contains(&"delete_other_content"));

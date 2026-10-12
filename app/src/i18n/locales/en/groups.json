@@ -179,7 +179,6 @@
       "categories": {
         "general": "Group Settings",
         "tasks": "Tasks",
-        "chat": "Chat",
         "info": "Information",
         "moderation": "Moderation"
       },
@@ -211,10 +210,6 @@
         "manage_notes": {
           "title": "Notes",
           "description": "Add, edit, and delete notes for all tasks"
-        },
-        "send_messages": {
-          "title": "Send messages",
-          "description": "Send messages"
         },
         "manage_schedule_changes": {
           "title": "Schedule changes",
@@ -421,7 +416,7 @@
     "counts_members": "{count} member | {count} members",
     "counts_items": "{count} task | {count} tasks",
     "consequences": {
-      "content": "All of the group's tasks, exams, announcements and chat messages are deleted.",
+      "content": "All of the group's tasks, exams and announcements are deleted.",
       "schedule": "Subjects, courses and the schedule including schedule changes are removed.",
       "members": "All members immediately lose access to the group.",
       "invites": "Existing invite links stop working."

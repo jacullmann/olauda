@@ -19,7 +19,7 @@
           "title": "Überblick",
           "paragraphs": [
             "Diese Datenschutzerklärung gilt für die Website olauda.com und die App unter app.olauda.com. Sie erklärt, welche personenbezogenen Daten wir verarbeiten, wofür wir sie brauchen, wie lange wir sie speichern und welche Rechte du hast.",
-            "Stand: 9. Oktober 2026"
+            "Stand: 12. Oktober 2026"
           ]
         },
         {
@@ -58,7 +58,7 @@
         {
           "title": "Gruppen und Inhalte",
           "paragraphs": [
-            "In Gruppen verarbeiten wir die Inhalte, die du und andere Mitglieder anlegen: Aufgaben und Klausuren mit Beschreibungen, Bildern und Dateien, Ankündigungen, Stundenplan und Vertretungen sowie Chatnachrichten. Dazu speichern wir deine Mitgliedschaft, deine Rolle und wann du die Gruppe zuletzt geöffnet hast, damit wir dir neue Inhalte anzeigen können.",
+            "In Gruppen verarbeiten wir die Inhalte, die du und andere Mitglieder anlegen: Aufgaben und Klausuren mit Beschreibungen, Bildern und Dateien, Ankündigungen, sowie Stundenplan und Vertretungen. Dazu speichern wir deine Mitgliedschaft und deine Rolle.",
             "Andere Mitglieder sehen dich nur unter einem zufällig erzeugten Namen, nicht unter deiner E-Mail-Adresse. Sie sehen aber alles, was du in der Gruppe veröffentlichst.",
             "Private Aufgaben speichern wir verschlüsselt (AES-256-GCM). Die Verschlüsselung geschieht auf unserem Server: Sie schützt die Daten in der Datenbank, ist aber keine Ende-zu-Ende-Verschlüsselung.",
             "Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO)."
@@ -115,7 +115,7 @@
         {
           "title": "Meldungen",
           "paragraphs": [
-            "Wenn du eine Aufgabe oder Nachricht meldest, speichern wir den gemeldeten Inhalt, deine Begründung, deine E-Mail-Adresse und die E-Mail-Adresse der Person, die den Inhalt erstellt hat. So können wir die Meldung prüfen und bei Bedarf nachfragen. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO)."
+            "Wenn du eine Aufgabe meldest, speichern wir den gemeldeten Inhalt, deine Begründung, deine E-Mail-Adresse und die E-Mail-Adresse der Person, die den Inhalt erstellt hat. So können wir die Meldung prüfen und bei Bedarf nachfragen. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO)."
           ]
         },
         {
@@ -146,7 +146,6 @@
             "Codes zum Zurücksetzen oder Festlegen des Passworts sind 30 Minuten gültig. Wir löschen sie nach 24 Stunden; bis dahin begrenzen wir mit ihnen, wie viele Codes eine E-Mail-Adresse erhält.",
             "Sitzungsdaten mit IP-Adresse und Browserkennung löschen wir etwa 7 Tage nach ihrer letzten Nutzung.",
             "Das Aktivitätsprotokoll löschen wir nach 30 Tagen, das Sicherheitsprotokoll nach 90 Tagen. Angriffe auf ein Konto fallen oft erst Wochen später auf, deshalb bewahren wir es länger auf.",
-            "Chatnachrichten löschen wir nach 7 Tagen automatisch.",
             "Aufgaben und Klausuren in Gruppen löschen wir automatisch 90 Tage nach ihrem Fälligkeitsdatum.",
             "Stundenplanänderungen wie Vertretungen und Ausfälle löschen wir automatisch 90 Tage nach dem Tag, für den sie gelten.",
             "Meldungen speichern wir, bis wir sie bearbeitet haben.",
@@ -157,7 +156,7 @@
           "title": "Löschung deines Kontos",
           "paragraphs": [
             "Du kannst dein Konto jederzeit in den Kontoeinstellungen löschen. Wenn du Eigentümer einer Gruppe bist, musst du sie vorher übertragen oder löschen.",
-            "Beim Löschen entfernen wir sofort deine Kontodaten, Sitzungen, Gruppenmitgliedschaften, Chatnachrichten, privaten Aufgaben, die Verknüpfung mit Google und dein Aktivitätsprotokoll.",
+            "Beim Löschen entfernen wir sofort deine Kontodaten, Sitzungen, Gruppenmitgliedschaften, privaten Aufgaben, die Verknüpfung mit Google und dein Aktivitätsprotokoll.",
             "Aufgaben und Ankündigungen, die du in Gruppen erstellt hast, bleiben für die Gruppe erhalten, sind aber nicht mehr deinem Konto zugeordnet. Einträge im Sicherheitsprotokoll löschen wir nach Ablauf ihrer Frist von 90 Tagen, Meldungen nach ihrer Bearbeitung."
           ]
         },

@@ -27,7 +27,6 @@ const REPORTED_TASK_FIELDS: &[&str] = &[
     "itemDueDate",
     "itemTenantId",
 ];
-const REPORTED_MESSAGE_FIELDS: &[&str] = &["messageId", "messageContent", "messageTenantId"];
 
 pub struct DataExportService {
     db: PgPool,
@@ -97,19 +96,6 @@ impl DataExportService {
                JOIN roles r ON r.id = ur.role_id
                WHERE ur.user_id = $1
                ORDER BY ur.assigned_at"#,
-            user_id
-        )
-        .fetch_all(&mut *tx)
-        .await?;
-
-        let visits = sqlx::query_as!(
-            GroupVisit,
-            r#"SELECT s.tenant_id AS group_id, g.name AS group_name,
-                      s.last_messages_visit_at
-               FROM user_tenant_state s
-               JOIN groups g ON g.id = s.tenant_id
-               WHERE s.user_id = $1
-               ORDER BY g.name"#,
             user_id
         )
         .fetch_all(&mut *tx)
@@ -225,19 +211,6 @@ impl DataExportService {
         .fetch_all(&mut *tx)
         .await?;
 
-        let messages = sqlx::query_as!(
-            Message,
-            r#"SELECT m.id, m.tenant_id AS group_id, g.name AS group_name,
-                      m.content, m.parent_id AS reply_to, m.created_at, m.updated_at
-               FROM group_messages m
-               JOIN groups g ON g.id = m.tenant_id
-               WHERE m.user_id = $1
-               ORDER BY m.created_at"#,
-            user_id
-        )
-        .fetch_all(&mut *tx)
-        .await?;
-
         let task_states = sqlx::query_as!(
             TaskState,
             r#"SELECT x.task_id AS "task_id!", x.state AS "state!", x.at AS "at!"
@@ -298,13 +271,12 @@ impl DataExportService {
         })
         .collect();
 
-        // Task snapshots name their author by email only, message snapshots by id.
+        // Task snapshots name their author by email only.
         let reports_about_you = sqlx::query!(
             r#"SELECT report_type, reported_at, details
                FROM reports
-               WHERE details->>'messageSenderId' = $1 OR details->>'creatorEmail' = $2
+               WHERE details->>'creatorEmail' = $1
                ORDER BY reported_at"#,
-            user_id.to_string(),
             account.email
         )
         .fetch_all(&mut *tx)
@@ -427,7 +399,6 @@ impl DataExportService {
             linked_accounts,
             groups: GroupsExport {
                 memberships,
-                visits,
                 courses,
                 bans,
                 invites,
@@ -437,7 +408,6 @@ impl DataExportService {
                 files,
                 announcements,
                 system_announcements,
-                messages,
                 private_todos,
             },
             interactions: InteractionsExport {
@@ -479,7 +449,6 @@ impl DataExportService {
 fn reported_content(report_type: &str, details: Value) -> Value {
     let allowed = match report_type {
         "task" => REPORTED_TASK_FIELDS,
-        "message" => REPORTED_MESSAGE_FIELDS,
         _ => &[],
     };
 
@@ -509,21 +478,6 @@ mod tests {
         assert_eq!(
             reported_content("task", details),
             json!({ "itemId": "i", "itemTitle": "Mathe" })
-        );
-    }
-
-    #[test]
-    fn message_snapshots_drop_the_sender() {
-        let details = json!({
-            "messageId": "m",
-            "messageContent": "hi",
-            "messageSenderId": "s",
-            "messageSenderEmail": "sender@example.com",
-        });
-
-        assert_eq!(
-            reported_content("message", details),
-            json!({ "messageId": "m", "messageContent": "hi" })
         );
     }
 

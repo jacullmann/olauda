@@ -1,6 +1,6 @@
-# Rendered at image build time; ${API_ORIGIN} and ${API_WS_ORIGIN} come from
-# the VITE_API_URL build argument (see ../Dockerfile).
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com; connect-src 'self' ${API_ORIGIN} ${API_WS_ORIGIN} https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev; frame-src https://res.cloudinary.com https://view.officeapps.live.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+# Rendered at image build time; ${API_ORIGIN} comes from the VITE_API_URL
+# build argument (see ../Dockerfile).
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://cloud.umami.is; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com; connect-src 'self' ${API_ORIGIN} https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev; frame-src https://res.cloudinary.com https://view.officeapps.live.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "DENY" always;

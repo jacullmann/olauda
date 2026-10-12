@@ -19,7 +19,7 @@
           "title": "Overview",
           "paragraphs": [
             "This privacy policy covers the website olauda.com and the app at app.olauda.com. It explains which personal data we process, why we need it, how long we keep it and what rights you have.",
-            "Last updated: October 9, 2026"
+            "Last updated: October 12, 2026"
           ]
         },
         {
@@ -58,7 +58,7 @@
         {
           "title": "Groups and content",
           "paragraphs": [
-            "In groups we process the content you and other members create: tasks and exams with descriptions, images and files, announcements, timetables and substitutions, and chat messages. We also store your membership, your role and when you last opened the group, so we can show you what is new.",
+            "In groups we process the content you and other members create: tasks and exams with descriptions, images and files, announcements, and timetables and substitutions. We also store your membership and your role.",
             "Other members only see you under a randomly generated name, not your email address. They do see everything you post in the group.",
             "We store private tasks encrypted (AES-256-GCM). Encryption happens on our server: it protects the data in the database but is not end-to-end encryption.",
             "The legal basis is the performance of our terms of use (Art. 6(1)(b) GDPR)."
@@ -115,7 +115,7 @@
         {
           "title": "Reports",
           "paragraphs": [
-            "When you report a task or message, we store the reported content, your reason, your email address and the email address of the person who created the content. This lets us review the report and follow up if needed. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR)."
+            "When you report a task, we store the reported content, your reason, your email address and the email address of the person who created the content. This lets us review the report and follow up if needed. The legal basis is our legitimate interest in a safe service (Art. 6(1)(f) GDPR)."
           ]
         },
         {
@@ -146,7 +146,6 @@
             "Codes to reset or set your password are valid for 30 minutes. We delete them after 24 hours; until then, we use them to limit how many codes an email address receives.",
             "We delete session data with IP address and browser identifier about 7 days after it was last used.",
             "We delete the activity log after 30 days and the security log after 90 days. Attacks on an account are often noticed only weeks later, so we keep it longer.",
-            "We delete chat messages automatically after 7 days.",
             "We delete tasks and exams in groups automatically 90 days after their due date.",
             "We delete schedule changes such as substitutions and cancellations automatically 90 days after the day they apply to.",
             "We keep reports until we have handled them.",
@@ -157,7 +156,7 @@
           "title": "Deleting your account",
           "paragraphs": [
             "You can delete your account at any time in your account settings. If you own a group, you need to transfer or delete it first.",
-            "On deletion we immediately remove your account data, sessions, group memberships, chat messages, private tasks, your Google link and your activity log.",
+            "On deletion we immediately remove your account data, sessions, group memberships, private tasks, your Google link and your activity log.",
             "Tasks and announcements you created in groups remain available to the group but are no longer linked to your account. Security log entries are deleted once their 90-day period ends, reports once they have been handled."
           ]
         },

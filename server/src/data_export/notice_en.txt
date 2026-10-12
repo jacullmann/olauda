@@ -26,12 +26,12 @@ account            Your account: email address, whether a password and
                    randomly generated name other members see you as.
 linkedAccounts     Sign-in services linked to your account (e.g. Google) with
                    your account ID and email address at that service.
-groups             Your group memberships and roles, when you last opened each
-                   group, your course selection, bans in groups and invite
-                   links you created, used or revoked.
+groups             Your group memberships and roles, your course selection,
+                   bans in groups and invite links you created, used or
+                   revoked.
 content            What you created yourself: tasks and exams, uploaded files
-                   and group pictures, announcements, chat messages and your
-                   private tasks (decrypted).
+                   and group pictures, announcements and your private tasks
+                   (decrypted).
 interactions       Tasks you checked off, pinned, archived or kept, and
                    announcements you have read.
 reports            Reports you filed and reports about content you created.
@@ -97,7 +97,6 @@ and Microsoft where they transfer data to the USA.
 - Sessions: about 7 days after they were last used.
 - Activity log: 30 days.
 - Security events: 90 days, even if you delete your account before then.
-- Chat messages: 7 days.
 - Tasks and exams in groups: 90 days after their due date.
 - Password reset codes: 30 minutes; unconfirmed sign-ups with their
   confirmation codes: 2 days.

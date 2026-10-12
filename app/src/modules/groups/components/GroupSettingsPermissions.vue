@@ -21,9 +21,7 @@ const props = defineProps<{
 }>();
 
 interface PermissionSection {
-  category: 'general' | 'tasks' | 'chat' | 'info' | 'moderation';
-  /** Still enforced by the server, just not offered for editing. */
-  hidden?: boolean;
+  category: 'general' | 'tasks' | 'info' | 'moderation';
   /** Mirrors `Permission::lowest_role`, which the server enforces. */
   permissions: { key: ConfigurablePermissionKey; lowestRole: PermissionRole }[];
 }
@@ -47,11 +45,6 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
     ],
   },
   {
-    category: 'chat',
-    hidden: true,
-    permissions: [{ key: 'send_messages', lowestRole: 'user' }],
-  },
-  {
     category: 'info',
     permissions: [
       { key: 'manage_schedule_changes', lowestRole: 'user' },
@@ -67,10 +60,6 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
     ],
   },
 ];
-
-const VISIBLE_PERMISSION_SECTIONS = PERMISSION_SECTIONS.filter(
-  ({ hidden }) => !hidden,
-);
 
 const ROLES: { role: PermissionRole; label: string }[] = [
   { role: 'user', label: 'all' },
@@ -178,7 +167,7 @@ onMounted(() => {
       </div>
 
       <section
-        v-for="section in VISIBLE_PERMISSION_SECTIONS"
+        v-for="section in PERMISSION_SECTIONS"
         :key="section.category"
         class="flex flex-col gap-2"
       >

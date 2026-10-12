@@ -28,13 +28,12 @@ account            Dein Konto: E-Mail-Adresse, ob ein Passwort und die
                    Name, unter dem dich andere Mitglieder sehen.
 linkedAccounts     Mit deinem Konto verknüpfte Anmeldedienste (z. B. Google)
                    mit der Konto-ID und E-Mail-Adresse bei diesem Dienst.
-groups             Deine Gruppenmitgliedschaften und Rollen, wann du welche
-                   Gruppe zuletzt geöffnet hast, deine Kurswahl, Sperren in
-                   Gruppen und Einladungslinks, die du erstellt, genutzt oder
-                   widerrufen hast.
+groups             Deine Gruppenmitgliedschaften und Rollen, deine Kurswahl,
+                   Sperren in Gruppen und Einladungslinks, die du erstellt,
+                   genutzt oder widerrufen hast.
 content            Was du selbst angelegt hast: Aufgaben und Klausuren, hoch-
-                   geladene Dateien und Gruppenbilder, Ankündigungen, Chat-
-                   nachrichten und deine privaten Aufgaben (entschlüsselt).
+                   geladene Dateien und Gruppenbilder, Ankündigungen und deine
+                   privaten Aufgaben (entschlüsselt).
 interactions       Aufgaben, die du abgehakt, angeheftet, archiviert oder
                    behalten hast, und gelesene Ankündigungen.
 reports            Meldungen, die du abgegeben hast, und Meldungen zu Inhalten,
@@ -104,7 +103,6 @@ für Google und Microsoft, soweit sie Daten in die USA übermitteln.
 - Sitzungen: etwa 7 Tage nach ihrer letzten Nutzung.
 - Aktivitätsprotokoll: 30 Tage.
 - Sicherheitsereignisse: 90 Tage, auch wenn du dein Konto vorher löschst.
-- Chatnachrichten: 7 Tage.
 - Aufgaben und Klausuren in Gruppen: 90 Tage nach dem Fälligkeitsdatum.
 - Codes zum Zurücksetzen des Passworts: 30 Minuten; unbestätigte
   Registrierungen mit ihren Bestätigungscodes: 2 Tage.

@@ -77,10 +77,6 @@
           "label": "2FA-Einrichtung",
           "rule": "Abgebrochene Einrichtungen nach Ablauf"
         },
-        "cleanup-group-messages": {
-          "label": "Chatnachrichten",
-          "rule": "Älter als 7 Tage"
-        },
         "cleanup-group-invites": {
           "label": "Einladungslinks",
           "rule": "30 Tage nach Ablauf, Nutzung oder Widerruf"
@@ -257,8 +253,6 @@
     "from": "Von: {email} · {date}",
     "delete": "Meldung löschen",
     "deleted": "Inhalt gelöscht",
-    "message_by": "Nachricht von {email}",
-    "message_sender_deleted": "Nachricht (Absender gelöscht)",
     "delete_modal": {
       "title": "Meldung löschen?",
       "content": "Bist du dir sicher, dass du diese Meldung löschen willst?"
@@ -394,7 +388,6 @@
       "item": "Aufgaben",
       "todo": "To-dos",
       "schedule": "Stundenplan",
-      "message": "Nachrichten",
       "profile": "Profil",
       "page": "App-Aufrufe"
     },
@@ -439,8 +432,7 @@
       "permissions": "Berechtigungen",
       "codeSent": "Code gesendet",
       "reportId": "Meldung",
-      "targetUserId": "Betroffenes Konto",
-      "messageId": "Nachricht"
+      "targetUserId": "Betroffenes Konto"
     },
     "values": {
       "reason": {
@@ -534,9 +526,6 @@
         "update": "To-do bearbeitet",
         "toggle": "To-do abgehakt oder geöffnet",
         "delete": "To-do gelöscht"
-      },
-      "message": {
-        "report": "Nachricht gemeldet"
       },
       "mfa": {
         "setup": {

@@ -16,7 +16,6 @@ export const EVENT_CATEGORIES = [
   { id: 'item', sources: ['activity'] },
   { id: 'todo', sources: ['activity'] },
   { id: 'schedule', sources: ['activity'] },
-  { id: 'message', sources: ['activity'] },
   { id: 'profile', sources: ['activity'] },
   { id: 'page', sources: ['activity'] },
 ] as const satisfies readonly {

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT report_type, reported_at, details\n               FROM reports\n               WHERE details->>'messageSenderId' = $1 OR details->>'creatorEmail' = $2\n               ORDER BY reported_at",
+  "query": "SELECT report_type, reported_at, details\n               FROM reports\n               WHERE details->>'creatorEmail' = $1\n               ORDER BY reported_at",
   "describe": {
     "columns": [
       {
@@ -39,7 +39,6 @@
     ],
     "parameters": {
       "Left": [
-        "Text",
         "Text"
       ]
     },
@@ -49,5 +48,5 @@
       false
     ]
   },
-  "hash": "a7ecc7aa4d36e66e0ba17775ef5a217d844b082df5b33c017418680c24b63105"
+  "hash": "1bcbb28b459e7751c77bcead568293b5ae0c01bcd87d1c56e6472e710dae4319"
 }

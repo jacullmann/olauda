@@ -136,7 +136,6 @@ mod tests {
             linked_accounts: vec![],
             groups: GroupsExport {
                 memberships: vec![],
-                visits: vec![],
                 courses: vec![],
                 bans: vec![],
                 invites: vec![],
@@ -146,7 +145,6 @@ mod tests {
                 files: vec![],
                 announcements: vec![],
                 system_announcements: vec![],
-                messages: vec![],
                 private_todos: vec![],
             },
             interactions: InteractionsExport {

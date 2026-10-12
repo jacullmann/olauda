@@ -14,14 +14,12 @@ pub const REASON_MAX_CHARS: usize = 5000;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ReportType {
     Task,
-    Message,
 }
 
 impl ReportType {
     fn as_str(self) -> &'static str {
         match self {
             ReportType::Task => "task",
-            ReportType::Message => "message",
         }
     }
 }
@@ -98,55 +96,6 @@ impl ReportsService {
         Ok(json!({ "ok": true, "message": "Item reported successfully." }))
     }
 
-    pub async fn report_message(
-        &self,
-        tenant_id: Uuid,
-        reporter_id: Uuid,
-        reporter_email: &str,
-        message_id: Uuid,
-        reason: Option<&DisplayText>,
-    ) -> AppResult<Value> {
-        let msg = sqlx::query!(
-            r#"SELECT m.id, m.content, m.user_id, m.tenant_id,
-                      u.email AS "sender_email?: String"
-               FROM group_messages m
-               LEFT JOIN users u ON u.id = m.user_id
-               WHERE m.id = $1 AND m.tenant_id = $2"#,
-            message_id,
-            tenant_id
-        )
-        .fetch_optional(&self.db)
-        .await?
-        .ok_or_else(|| AppError::not_found("Message not found."))?;
-
-        let details = json!({
-            "messageId": msg.id,
-            "messageContent": msg.content,
-            "messageSenderId": msg.user_id,
-            "messageSenderEmail": msg.sender_email,
-            "messageTenantId": msg.tenant_id,
-        });
-
-        self.insert(
-            ReportType::Message,
-            reason,
-            reporter_id,
-            reporter_email,
-            details,
-        )
-        .await?;
-
-        sqlx::query!(
-            r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, 'message:report', $2)"#,
-            reporter_id,
-            json!({ "messageId": msg.id })
-        )
-        .execute(&self.db)
-        .await?;
-
-        Ok(json!({ "ok": true, "message": "Nachricht gemeldet." }))
-    }
-
     async fn insert(
         &self,
         report_type: ReportType,
@@ -170,19 +119,15 @@ impl ReportsService {
         Ok(())
     }
 
-    /// `contentDeleted` tells the admin UI that the reported task or message
-    /// no longer exists, so it shows the snapshot kept in `details` instead.
+    /// `contentDeleted` tells the admin UI that the reported task no longer
+    /// exists, so it shows the snapshot kept in `details` instead.
     pub async fn list(&self) -> AppResult<Value> {
         let rows = sqlx::query!(
             r#"SELECT r.id, r.report_type, r.reason, r.reporter_id, r.reporter_email,
                       r.reported_at, r.details,
-                      CASE r.report_type
-                        WHEN 'task' THEN NOT EXISTS (
-                          SELECT 1 FROM items WHERE id = (r.details->>'itemId')::uuid)
-                        WHEN 'message' THEN NOT EXISTS (
-                          SELECT 1 FROM group_messages WHERE id = (r.details->>'messageId')::uuid)
-                        ELSE false
-                      END AS "content_deleted!"
+                      NOT EXISTS (
+                        SELECT 1 FROM items WHERE id = (r.details->>'itemId')::uuid
+                      ) AS "content_deleted!"
                FROM reports r
                ORDER BY r.reported_at DESC"#
         )
