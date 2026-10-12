@@ -38,7 +38,7 @@ onMounted(loadJobs);
       <span
         v-if="!loading && !failed && rows.length"
         class="shrink-0 text-sm font-semibold"
-        :class="overdueJobCount ? 'text-warn' : 'text-success'"
+        :class="overdueJobCount ? 'text-warn' : 'text-accent'"
       >
         {{
           overdueJobCount
@@ -76,7 +76,7 @@ onMounted(loadJobs);
             </span>
             <span
               class="shrink-0 font-semibold tabular-nums"
-              :class="row.overdueCount > 0 ? 'text-warn' : 'text-success'"
+              :class="row.overdueCount > 0 ? 'text-warn' : 'text-accent'"
             >
               {{
                 row.overdueCount > 0
