@@ -16,13 +16,21 @@
         :root {
             --initial-loading-background: oklch(1 0 0);
             --initial-loading-spinner: oklch(0 0 0);
-            --initial-loading-label: oklch(0.3753 0 0);
+            --initial-loading-label: oklch(0 0 0);
         }
 
         :root.dark {
             --initial-loading-background: oklch(0.1684 0 0);
             --initial-loading-spinner: oklch(1 0 0);
-            --initial-loading-label: oklch(0.8452 0 0);
+            --initial-loading-label: oklch(1 0 0);
+        }
+
+        @font-face {
+            font-family: 'Satoshi';
+            src: url('/src/assets/fonts/Satoshi-Variable.woff2') format('woff2');
+            font-weight: 300 900;
+            font-display: swap;
+            font-style: normal;
         }
 
         body {
@@ -60,13 +68,19 @@
             animation: initial-loading-spinner-element 1.6s ease-in-out infinite;
         }
 
+        /* Mirrors .logo-text in AppHeader. */
         .initial-loading-label {
             font-family: 'Satoshi', sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.18em;
+            font-size: 1.5rem;
+            line-height: 2rem;
+            font-weight: 700;
             color: var(--initial-loading-label);
-            text-transform: lowercase;
+        }
+
+        @supports (font: -apple-system-body) {
+            .initial-loading-label {
+                font-family: -apple-system, BlinkMacSystemFont, 'Satoshi', sans-serif;
+            }
         }
 
         @keyframes initial-loading-spinner-rotate {
