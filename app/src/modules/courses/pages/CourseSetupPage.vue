@@ -123,7 +123,7 @@ const description = computed(() => {
 const submitLabel = computed(() =>
   isAbitur.value && !isLessonStep.value && needsLessonChoice.value
     ? t('common.buttons.continue')
-    : t('common.buttons.save'),
+    : t('common.buttons.done'),
 );
 
 const openSubjectNames = computed(() =>
@@ -162,7 +162,13 @@ async function showLessonStep() {
 }
 
 async function submit() {
-  if (isLessonStep.value) return saveAndFinish(enrollments.value, true);
+  if (isLessonStep.value) {
+    if (openSubjects.value.length > 0) {
+      error.value = t('auth.courses.errors.lessons_missing');
+      return;
+    }
+    return saveAndFinish(enrollments.value, true);
+  }
 
   if (isAbitur.value ? !hasAllLevels.value : !hasRequiredSelections.value) {
     error.value = t('auth.courses.errors.required_courses_missing');
