@@ -95,12 +95,8 @@ export function useWindowVirtualList(options: WindowVirtualListOptions) {
   );
   const totalSize = computed(() => virtualizer.value.getTotalSize());
 
-  /**
-   * Bind as `:ref` on each row, which also carries `:data-index`. A component
-   * row is measured by its root element.
-   */
-  function measureRow(ref: Element | ComponentPublicInstance | null) {
-    const el: unknown = ref instanceof Element ? ref : ref?.$el;
+  /** Bind as `:ref` on each row, which also carries `:data-index`. */
+  function measureRow(el: Element | ComponentPublicInstance | null) {
     // A row moved out of the page by KeepAlive would measure as zero.
     if (el instanceof Element && el.isConnected) {
       virtualizer.value.measureElement(el);

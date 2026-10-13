@@ -226,6 +226,7 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
 
   watch([filters.filters, showPersonalized], () => {
     dismissals.clear();
+    listView.resetVisibleCount();
     void taskItems.reloadList();
   });
 
@@ -257,7 +258,11 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
     subjectOptions,
     goTab: filters.goTab,
     resetFilters: filters.resetFilters,
+    visibleCount: listView.visibleCount,
     filteredItems: listView.filteredItems,
+    limitedItems: listView.limitedItems,
+    hasMoreItems: listView.hasMoreItems,
+    showMore: listView.showMore,
     dismissedItems: dismissals.dismissedItems,
     useListTransitions: dismissals.useListTransitions,
     openMenuId,

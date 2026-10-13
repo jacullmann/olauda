@@ -8,7 +8,7 @@ import {
   USER_STATUS_FILTERS,
 } from '@/modules/admin/composables/useAdminUsers';
 import { useAdminFormat } from '@/modules/admin/composables/useAdminFormat';
-import { useWindowVirtualList } from '@/common/composables/useWindowVirtualList';
+import { useWindowVirtualList } from '@/modules/admin/composables/useWindowVirtualList';
 import { fixedTableLayout } from '@/modules/admin/utils/fixedTable';
 import AdminListToolbar from '@/modules/admin/components/AdminListToolbar.vue';
 import AdminSortHeader from '@/modules/admin/components/AdminSortHeader.vue';
