@@ -4,10 +4,7 @@ import type { Component } from 'vue';
 export type SearchMode =
   'default' | 'group' | 'theme' | 'language' | 'personalization';
 
-/**
- * Decides the hint at the end of an item: an arrow for where a link leads, a
- * chevron and shortcut for an action, a check on the option in effect.
- */
+/** Options show a check on the one in effect. */
 export type SearchItemKind = 'link' | 'action' | 'option';
 
 interface SearchItemDisplay {

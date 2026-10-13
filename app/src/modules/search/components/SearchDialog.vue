@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef, type InputHTMLAttributes } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { Search } from '@lucide/vue';
+import { useBottomFadeMask } from '@/modules/search/composables/useBottomFadeMask';
 
 /** The search on wider screens: a dialog centred over the shaded page. */
 defineProps<{
@@ -15,8 +15,8 @@ defineEmits<{ cancel: [] }>();
 
 const query = defineModel<string>({ required: true });
 
-const { t } = useI18n();
 const input = useTemplateRef('input');
+const { fadeMask } = useBottomFadeMask(useTemplateRef('scroller'));
 
 function focus() {
   input.value?.focus({ preventScroll: true });
@@ -48,25 +48,14 @@ defineExpose({ focus });
           spellcheck="false"
           class="flex-1 w-full p-0 rounded-none bg-transparent border-none outline-none shadow-none text-on-ghost text-base/4 placeholder:text-on-ghost-subtle"
         />
-        <BaseKbd>Esc</BaseKbd>
-      </div>
-
-      <div class="max-h-105 overflow-y-auto">
-        <slot></slot>
       </div>
 
       <div
-        class="flex px-4 py-2.5 border-t border-ghost-border items-center gap-4 text-xs text-on-ghost-muted"
+        ref="scroller"
+        class="max-h-105 overflow-y-auto"
+        :style="{ maskImage: fadeMask }"
       >
-        <BaseRow>
-          <BaseKbd>↑</BaseKbd>
-          <BaseKbd>↓</BaseKbd>
-          {{ t('search.modal.hint_navigate') }}
-        </BaseRow>
-        <BaseRow>
-          <BaseKbd>↵</BaseKbd>
-          {{ t('search.modal.hint_confirm') }}
-        </BaseRow>
+        <slot></slot>
       </div>
     </div>
   </BaseBackdrop>

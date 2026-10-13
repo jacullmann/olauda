@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ArrowUpRight, Check, ChevronRight } from '@lucide/vue';
+import { Check, ChevronRight } from '@lucide/vue';
 import type { SearchItem } from '@/modules/search/types';
 
 const props = defineProps<{
@@ -67,17 +67,10 @@ const stateClasses = computed(() => {
     <template v-if="item.kind === 'option'">
       <Check v-if="item.checked" :size="16" class="shrink-0 text-on-ghost" />
     </template>
-    <span
-      v-else-if="active && item.kind === 'action'"
-      class="flex items-center gap-2 shrink-0 text-on-ghost-subtle"
-    >
-      <BaseKbdGroup v-if="item.shortcut" :keys="item.shortcut" />
-      <ChevronRight :size="16" />
-    </span>
-    <ArrowUpRight
-      v-else-if="active"
-      :size="16"
-      class="shrink-0 text-on-ghost-subtle"
+    <BaseKbdGroup
+      v-else-if="active && item.shortcut"
+      :keys="item.shortcut"
+      class="shrink-0"
     />
   </div>
 </template>

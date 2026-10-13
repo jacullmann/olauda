@@ -157,7 +157,6 @@ onBeforeUnmount(() => {
             <BaseKbdGroup
               v-if="shortcut"
               :keys="shortcut"
-              flat
               on="action"
               class="ml-2"
             />

@@ -6,11 +6,9 @@ const props = withDefaults(
     keys: string[];
     separator?: string;
     on?: 'ghost' | 'action';
-    flat?: boolean;
   }>(),
   {
     separator: '+',
-    flat: false,
     on: 'ghost',
   },
 );
@@ -44,7 +42,7 @@ const getDisplayKey = (key: string): string => {
 <template>
   <span class="inline-flex items-center gap-1">
     <template v-for="(key, index) in keys" :key="index">
-      <BaseKbd :flat="flat" :on="on">{{ getDisplayKey(key) }}</BaseKbd>
+      <BaseKbd :on="on">{{ getDisplayKey(key) }}</BaseKbd>
       <span
         v-if="index < keys.length - 1"
         class="text-sm select-none font-sans"
