@@ -158,10 +158,29 @@ const routes: RouteRecordRaw[] = [
           },
           {
             path: 'schedule',
-            name: 'group-schedule',
             component: () =>
-              import('@/modules/schedule/pages/SchedulePage.vue'),
-            meta: { title: 'schedule.title', headerTitle: 'schedule.title' },
+              import('@/modules/schedule/pages/ScheduleLayout.vue'),
+            meta: {
+              title: 'schedule.title',
+              // An opened lesson keeps the schedule entry of the navigation active.
+              navItem: 'group-schedule',
+            },
+            children: [
+              {
+                path: '',
+                name: 'group-schedule',
+                component: () =>
+                  import('@/modules/schedule/pages/SchedulePage.vue'),
+                // Kept alive behind an opened lesson, it returns to where it was.
+                meta: { headerTitle: 'schedule.title', restoresScroll: true },
+              },
+              {
+                path: ':date/:lessonId',
+                name: 'group-schedule-lesson',
+                component: () =>
+                  import('@/modules/schedule/pages/ScheduleLessonPage.vue'),
+              },
+            ],
           },
           {
             path: 'settings/:tab?/:subTab?',

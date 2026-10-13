@@ -42,6 +42,7 @@ declare module 'vue' {
     BaseNotice: typeof import('./src/common/components/BaseNotice.vue')['default']
     BasePageActions: typeof import('./src/common/components/BasePageActions.vue')['default']
     BasePageHeader: typeof import('./src/common/components/BasePageHeader.vue')['default']
+    BasePageStack: typeof import('./src/common/components/BasePageStack.vue')['default']
     BasePaneTransition: typeof import('./src/common/components/BasePaneTransition.vue')['default']
     BaseRow: typeof import('./src/common/components/BaseRow.vue')['default']
     BaseScrollFade: typeof import('./src/common/components/BaseScrollFade.vue')['default']

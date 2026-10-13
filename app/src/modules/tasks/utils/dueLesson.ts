@@ -1,5 +1,9 @@
 import type { Lesson, Substitution } from '@/modules/schedule/types';
 import type { Task } from '@/modules/tasks/types';
+import {
+  lessonCourseId,
+  lessonSubjectId,
+} from '@/modules/schedule/utils/lesson';
 import { withSubstitutions } from '@/modules/schedule/utils/substitutions';
 import {
   daysSinceMonday,
@@ -61,12 +65,6 @@ export function dueWeekRange(
   return { from: weekStarts[0]!, to: weekStarts.at(-1)! };
 }
 
-const lessonSubjectId = (lesson: Lesson) =>
-  lesson.subjectId ?? lesson.subjects?.id ?? null;
-
-const lessonCourseId = (lesson: Lesson) =>
-  lesson.courseId ?? lesson.courses?.id ?? null;
-
 /*
  * A lesson for the whole subject belongs to each of its courses. A task for
  * the whole subject is due in the member's own course of it where they take
@@ -90,17 +88,23 @@ function isLessonOf(
 const takesPlace = (lesson: Lesson) =>
   !lesson.cancelled && !lesson.isSubstitutedSubject;
 
+const ownCourseIdsOf = (
+  task: DueTask,
+  courses: DueLessonSchedule['courses'],
+): ReadonlySet<string> =>
+  new Set(
+    courses
+      .filter(({ subjectId }) => subjectId === task.subjectId)
+      .map(({ courseId }) => courseId),
+  );
+
 function dueLessonAmong(
   dayLessons: readonly Lesson[],
   task: DueTask,
   courses: DueLessonSchedule['courses'],
 ): DueLesson {
   if (!task.subjectId) return { kind: 'none' };
-  const ownCourseIds = new Set(
-    courses
-      .filter(({ subjectId }) => subjectId === task.subjectId)
-      .map(({ courseId }) => courseId),
-  );
+  const ownCourseIds = ownCourseIdsOf(task, courses);
   const matching = dayLessons.filter((lesson) =>
     isLessonOf(lesson, task, ownCourseIds),
   );
@@ -170,4 +174,38 @@ export function inDueOrder<T extends DueTask & Pick<Task, 'takesCourse'>>(
         a.index - b.index,
     )
     .map(({ task }) => task);
+}
+
+export interface LessonOnDate {
+  lesson: Lesson;
+  /** The day the lesson takes place, as YYYY-MM-DD. */
+  date: string;
+  /** Every lesson of that day, with the week's changes applied. */
+  dayLessons: readonly Lesson[];
+}
+
+/**
+ * Whether a task is due in the lesson: it is due that day, and the lesson is
+ * the first of its subject's lessons that day to take place, or one of them
+ * if they are all cancelled.
+ */
+export function isDueInLesson(
+  task: DueTask,
+  { lesson, date, dayLessons }: LessonOnDate,
+  courses: DueLessonSchedule['courses'],
+): boolean {
+  if (
+    !task.subjectId ||
+    schoolDayOfTask(task).key !== date ||
+    !isLessonOf(lesson, task, ownCourseIdsOf(task, courses))
+  ) {
+    return false;
+  }
+  const dueLesson = dueLessonAmong(dayLessons, task, courses);
+  if (dueLesson.kind === 'cancelled') return true;
+  return (
+    dueLesson.kind === 'lesson' &&
+    takesPlace(lesson) &&
+    dueLesson.slot === Number(lesson.slot)
+  );
 }

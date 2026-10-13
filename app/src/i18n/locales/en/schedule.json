@@ -30,6 +30,17 @@
   "next_week": "Next week",
   "today": "Today",
   "day_end": "End of day",
+  "lesson": {
+    "change": "Change Lesson",
+    "tasks": "Tasks",
+    "dalton_tasks": "Dalton tasks",
+    "add_task": "Add Task",
+    "no_tasks": "Nothing is due in this lesson.",
+    "no_dalton_tasks": "No open Dalton tasks.",
+    "not_found": "Lesson not found",
+    "not_found_message": "It may have been removed from the schedule.",
+    "back_to_schedule": "Back to Schedule"
+  },
   "errors": {
     "load": "Couldn't load the schedule.",
     "load_changes": "Couldn't load the schedule changes.",

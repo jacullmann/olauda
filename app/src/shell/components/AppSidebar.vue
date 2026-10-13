@@ -236,7 +236,7 @@ onUnmounted(() => {
         <AppSidebarButton
           :label="t('common.sidebar.schedule')"
           :expanded="isExpanded"
-          :active="$route.name === 'group-schedule'"
+          :active="$route.meta.navItem === 'group-schedule'"
           :icon="CalendarDays"
           @click="openGroupPage('group-schedule')"
         />

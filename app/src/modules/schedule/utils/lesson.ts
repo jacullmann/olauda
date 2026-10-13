@@ -35,6 +35,14 @@ export function lessonDisplayName(
   return subjectName ? subjectLabel(subjectName, t, te) : '';
 }
 
+export const lessonSubjectId = (
+  lesson: Pick<Lesson, 'subjectId' | 'subjects'>,
+): string | null => lesson.subjectId ?? lesson.subjects?.id ?? null;
+
+export const lessonCourseId = (
+  lesson: Pick<Lesson, 'courseId' | 'courses'>,
+): string | null => lesson.courseId ?? lesson.courses?.id ?? null;
+
 /** How many slots a lesson fills; a missing or zero duration still fills its own. */
 export function lessonSpan(lesson: { duration?: number | null }): number {
   return Math.max(1, Number(lesson.duration || 1));

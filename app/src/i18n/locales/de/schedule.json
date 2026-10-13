@@ -30,6 +30,17 @@
   "next_week": "Nächste Woche",
   "today": "Heute",
   "day_end": "Schluss",
+  "lesson": {
+    "change": "Stunde ändern",
+    "tasks": "Aufgaben",
+    "dalton_tasks": "Dalton-Aufgaben",
+    "add_task": "Aufgabe hinzufügen",
+    "no_tasks": "In dieser Stunde ist nichts fällig.",
+    "no_dalton_tasks": "Keine offenen Dalton-Aufgaben.",
+    "not_found": "Stunde nicht gefunden",
+    "not_found_message": "Sie wurde vielleicht aus dem Stundenplan entfernt.",
+    "back_to_schedule": "Zum Stundenplan"
+  },
   "errors": {
     "load": "Der Stundenplan konnte nicht geladen werden.",
     "load_changes": "Die Planänderungen konnten nicht geladen werden.",

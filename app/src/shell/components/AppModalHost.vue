@@ -174,6 +174,7 @@ async function onAuthSuccess() {
     :local="taskForm.payload.local"
     :open="taskForm.isOpen"
     :initial-type="taskForm.payload.type"
+    :prefill="taskForm.payload.prefill"
     :initial="taskForm.payload.item"
     @cancel="taskForm.close()"
     @success="onTaskFormSuccess"

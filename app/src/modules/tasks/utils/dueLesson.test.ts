@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Lesson, Substitution } from '@/modules/schedule/types';
-import { dueWeekRange, inDueOrder, type DueLessonSchedule } from './dueLesson';
+import {
+  dueWeekRange,
+  inDueOrder,
+  isDueInLesson,
+  type DueLessonSchedule,
+} from './dueLesson';
 
 const TUESDAY = '2026-10-13T00:00:00.000Z';
 const WEDNESDAY = '2026-10-14T00:00:00.000Z';
@@ -301,5 +306,83 @@ describe('dueWeekRange', () => {
 
   it('is empty without tasks', () => {
     expect(dueWeekRange([])).toBeNull();
+  });
+});
+
+describe('isDueInLesson', () => {
+  const TUESDAY_DATE = '2026-10-13';
+
+  function dueIn(
+    dueTask: TestTask,
+    dueLesson: Lesson,
+    dayLessons: Lesson[],
+    courses: DueLessonSchedule['courses'] = [],
+  ) {
+    return isDueInLesson(
+      dueTask,
+      { lesson: dueLesson, date: TUESDAY_DATE, dayLessons },
+      courses,
+    );
+  }
+
+  it('matches the first lesson of the task’s subject that day', () => {
+    const first = lesson('math-1', 'math', 2, 1);
+    const second = lesson('math-2', 'math', 2, 5);
+    const dayLessons = [second, first];
+
+    expect(dueIn(task('t', 'math'), first, dayLessons)).toBe(true);
+    expect(dueIn(task('t', 'math'), second, dayLessons)).toBe(false);
+  });
+
+  it('skips a task due another day or in another subject', () => {
+    const math = lesson('math-1', 'math', 2, 1);
+
+    expect(dueIn(task('t', 'math', { dueDate: WEDNESDAY }), math, [math])).toBe(
+      false,
+    );
+    expect(dueIn(task('t', 'art'), math, [math])).toBe(false);
+    expect(dueIn(task('t', null), math, [math])).toBe(false);
+  });
+
+  it('moves on to the next lesson once the first is cancelled', () => {
+    const first = { ...lesson('math-1', 'math', 2, 1), cancelled: true };
+    const second = lesson('math-2', 'math', 2, 5);
+
+    expect(dueIn(task('t', 'math'), first, [first, second])).toBe(false);
+    expect(dueIn(task('t', 'math'), second, [first, second])).toBe(true);
+  });
+
+  it('keeps a task in each lesson when all of them are cancelled', () => {
+    const first = { ...lesson('math-1', 'math', 2, 1), cancelled: true };
+    const second = { ...lesson('math-2', 'math', 2, 5), cancelled: true };
+
+    expect(dueIn(task('t', 'math'), first, [first, second])).toBe(true);
+    expect(dueIn(task('t', 'math'), second, [first, second])).toBe(true);
+  });
+
+  it('matches a course’s task only in that course’s lesson', () => {
+    const courseA = lesson('math-a', 'math', 2, 1, 'a');
+    const courseB = lesson('math-b', 'math', 2, 3, 'b');
+    const dayLessons = [courseA, courseB];
+    const courseTask = task('t', 'math', { courseId: 'b' });
+
+    expect(dueIn(courseTask, courseA, dayLessons)).toBe(false);
+    expect(dueIn(courseTask, courseB, dayLessons)).toBe(true);
+  });
+
+  it('matches a subject’s task in the member’s own course', () => {
+    const courseA = lesson('math-a', 'math', 2, 1, 'a');
+    const courseB = lesson('math-b', 'math', 2, 3, 'b');
+    const dayLessons = [courseA, courseB];
+    const courses = [{ subjectId: 'math', courseId: 'b' }];
+
+    expect(dueIn(task('t', 'math'), courseA, dayLessons, courses)).toBe(false);
+    expect(dueIn(task('t', 'math'), courseB, dayLessons, courses)).toBe(true);
+  });
+
+  it('never matches a Dalton lesson', () => {
+    const dalton = { ...lesson('dalton', 'math', 2, 1), isDalton: true };
+
+    expect(dueIn(task('t', 'math'), dalton, [dalton])).toBe(false);
   });
 });

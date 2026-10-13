@@ -540,5 +540,6 @@ export function useSchedule(shownWeek?: Ref<number>) {
     substitutionsFailedFor,
     retrySubstitutions,
     loadSubstitutions,
+    refresh,
   };
 }

@@ -8,6 +8,7 @@ import type {
   ItemSubjectPayload,
   ItemType,
   TaskFile,
+  TaskPrefill,
 } from '@/modules/tasks/types';
 import { taskRoute } from '@/modules/tasks/utils/routes';
 import { useImageUpload } from './useImageUpload';
@@ -43,6 +44,7 @@ export function useTaskForm(
   initialGroupId: string,
   initial: Task | null | undefined,
   initialType: Exclude<ItemType, 'all'> | undefined,
+  prefill: TaskPrefill,
   emit: {
     (e: 'cancel'): void;
     (e: 'success'): void;
@@ -122,12 +124,14 @@ export function useTaskForm(
 
   const title = ref(initial?.title || '');
   /** A subject id, or {@link OTHER_SUBJECT} for a name typed in by hand. */
-  const subjectSel = ref(initial ? (initial.subjectId ?? OTHER_SUBJECT) : '');
+  const subjectSel = ref(
+    initial ? (initial.subjectId ?? OTHER_SUBJECT) : (prefill.subjectId ?? ''),
+  );
   const initialSubjectOther =
     initial && !initial.subjectId ? initial.subjectName : '';
   const subjectOther = ref(initialSubjectOther);
   const description = ref(initial?.description || '');
-  const courseSel = ref(initial?.courseId ?? '');
+  const courseSel = ref(initial?.courseId ?? prefill.courseId ?? '');
 
   const titleError = ref('');
   const subjectError = ref('');
@@ -180,6 +184,11 @@ export function useTaskForm(
     courseSel.value = enrolledCourseId(subjectId);
   });
 
+  // A prefilled subject starts out with the member's course, like a picked one.
+  if (prefill.subjectId && !courseSel.value) {
+    courseSel.value = enrolledCourseId(prefill.subjectId);
+  }
+
   // Subjects can still be loading while the form is open, so the preselection
   // is retried once they arrive - without overwriting an existing choice.
   watch(
@@ -213,7 +222,9 @@ export function useTaskForm(
   }
 
   const initialDueKey = initial ? isoDateOnlyFromIso(initial.dueDate) : null;
-  const dueLocal = ref(initialDueKey ?? isoDateOnlyFromIso(now.toISOString()));
+  const dueLocal = ref(
+    initialDueKey ?? prefill.dueDate ?? isoDateOnlyFromIso(now.toISOString()),
+  );
   const dueDateUnchanged = computed(() => dueLocal.value === initialDueKey);
   const minDateKey = isoDateOnlyFromIso(minDate.toISOString());
   const maxDateKey = isoDateOnlyFromIso(maxDate.toISOString());

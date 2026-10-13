@@ -30,6 +30,14 @@ export type ItemSubjectPayload =
 
 export type ItemType = 'homework' | 'dalton' | 'exam' | 'all';
 
+/** What a new task's form starts out with, such as the lesson it is due in. */
+export interface TaskPrefill {
+  subjectId?: string;
+  courseId?: string;
+  /** YYYY-MM-DD */
+  dueDate?: string;
+}
+
 export type ArchiveCheckedTasks = 'always' | 'afterDueDate' | 'never';
 
 export interface TaskPreferences {

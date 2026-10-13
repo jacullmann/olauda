@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, watch } from 'vue';
+import {
+  ref,
+  shallowRef,
+  computed,
+  watch,
+  onActivated,
+  onDeactivated,
+} from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import { useIsPhoneViewport } from '@/common/composables/useViewport';
 import { useDismissibleNotice } from '@/modules/account/composables/useDismissibleNotice';
 import { useSchedule } from '@/modules/schedule/composables/useSchedule';
-import { useGroups } from '@/modules/groups/composables/useGroups';
+import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { usePageSettings } from '@/modules/account/composables/usePageSettings';
 import { useSchedulePager } from '@/modules/schedule/composables/useSchedulePager';
 import { useWeekCache } from '@/modules/schedule/composables/useWeekCache';
@@ -22,6 +29,7 @@ import {
   vEntranceStart,
 } from '@/common/composables/useSkeletonHandoff';
 import { cellEntranceDelay } from '@/modules/schedule/utils/entrance';
+import { scheduleLessonRoute } from '@/modules/schedule/utils/routes';
 import { lessonRowsOf } from '@/modules/schedule/utils/layout';
 import {
   lessonGroupsByDay,
@@ -49,7 +57,6 @@ import ScheduleGrid from '@/modules/schedule/components/ScheduleGrid.vue';
 import ScheduleBreakDivider from '@/modules/schedule/components/ScheduleBreakDivider.vue';
 import ScheduleLessonGroup from '@/modules/schedule/components/ScheduleLessonGroup.vue';
 import ScheduleCellSkeleton from '@/modules/schedule/components/ScheduleCellSkeleton.vue';
-import ScheduleChangeModal from '@/modules/schedule/components/ScheduleChangeModal.vue';
 import ScheduleNowMarker from '@/modules/schedule/components/ScheduleNowMarker.vue';
 import ScheduleFreeBlock from '@/modules/schedule/components/ScheduleFreeBlock.vue';
 import ScheduleWeekNav from '@/modules/schedule/components/ScheduleWeekNav.vue';
@@ -83,12 +90,9 @@ const {
   formatDayHeading,
   formatWeekMonth,
   formatDayInitials,
-  lessons: scheduledLessons,
-  substitutionsOf,
-  substitutionsLoadedFor,
   substitutionsFailedFor,
   retrySubstitutions,
-  loadSubstitutions,
+  refresh,
 } = useSchedule(shownWeek);
 
 const { t } = useI18n();
@@ -99,6 +103,7 @@ const isPhone = useIsPhoneViewport();
 
 const route = useRoute();
 const router = useRouter();
+const groupId = useGroupPageId();
 
 const pageOfQueryDate = (date: unknown) => {
   if (typeof date !== 'string') return null;
@@ -147,7 +152,8 @@ const queryDate = computed(() => {
 watch(
   queryDate,
   (date) => {
-    if (route.query.date === date) return;
+    // Kept alive behind an opened lesson, whose URL is not the schedule's.
+    if (route.name !== 'group-schedule' || route.query.date === date) return;
     void router.replace({ query: { ...route.query, date } });
   },
   { immediate: true, flush: 'post' },
@@ -475,47 +481,33 @@ const isActiveGroup = (key: string, week: number) =>
   week === todayWeek.value &&
   key === activeOrNextGroupKey.value;
 
-const { checkPermission } = useGroups();
-const canManageScheduleChanges = computed(() =>
-  checkPermission('manage_schedule_changes'),
-);
+/** A lesson opens on the date it takes place in the week it is shown in. */
+function openLesson(lesson: Lesson, week: number) {
+  const date = dateOfPage(week * days.length + days.indexOf(lesson.day));
+  void router.push(scheduleLessonRoute(groupId, isoDate(date), lesson.id));
+}
 
 /*
- * A lesson opens with its existing change filled in, so it only becomes
- * clickable once its week's changes are known; otherwise saving would
- * silently replace a change the form never showed.
+ * Kept alive while a lesson is open, so the page is where it was left on
+ * return. Taken before leaving: once the lesson replaced the schedule, the
+ * page is too short to still be scrolled that far.
  */
-const canChangeLessonsIn = (week: number) =>
-  canManageScheduleChanges.value && substitutionsLoadedFor(week);
-
-const changedLesson = ref<Lesson | null>(null);
-const changedWeek = ref(0);
-
-const existingChange = computed(() => {
-  const lessonId = changedLesson.value?.id;
-  if (!lessonId) return null;
-  return (
-    substitutionsOf(changedWeek.value).find(
-      (sub) => sub.lessonId === lessonId,
-    ) ?? null
-  );
+let scrollTop = 0;
+onBeforeRouteLeave(() => {
+  scrollTop = window.scrollY;
 });
 
-/*
- * A change targets the lesson as the weekly schedule holds it, not the copy
- * split off for the member's own course or already showing earlier changes.
- */
-function openChangeModal(lesson: Lesson, week: number) {
-  const scheduledId = lesson._originalId ?? lesson.id;
-  changedWeek.value = week;
-  changedLesson.value =
-    scheduledLessons.value.find(({ id }) => id === scheduledId) ?? null;
-}
-
-function onChangeSaved() {
-  changedLesson.value = null;
-  void loadSubstitutions(changedWeek.value);
-}
+// Returning puts the page's nodes back into the document, which would restart
+// their entrance, so it only plays the first time the page is shown. The
+// lesson may have been changed meanwhile, so the schedule is fetched again.
+const hasEntered = ref(false);
+onDeactivated(() => {
+  hasEntered.value = true;
+});
+onActivated(() => {
+  window.scrollTo({ top: scrollTop, behavior: 'instant' });
+  if (hasEntered.value) void refresh();
+});
 
 const personalizedNotice = useDismissibleNotice('personalizedSchedule');
 
@@ -546,7 +538,7 @@ watch(
 <template>
   <div class="p-4">
     <ScheduleHeader
-      class="animate-enter"
+      :class="{ 'animate-enter': !hasEntered }"
       :loading="loadingSubs || loadingLessons"
       :is-personalized="!!isPersonalized"
     >
@@ -565,7 +557,8 @@ watch(
 
     <ScheduleWeekNav
       v-if="!isPhone"
-      class="mb-2 animate-enter"
+      class="mb-2"
+      :class="{ 'animate-enter': !hasEntered }"
       :label="formatWeekMonth(shownWeek)"
       @shift="shiftWeek"
       @today="skipToPage(defaultPage)"
@@ -592,6 +585,7 @@ watch(
       :column-date="formatDayDate"
       :panel-key="panelKey"
       :current-page="todayPage"
+      :animated="!hasEntered"
     >
       <template #default="{ day, week, column, layout, animated }">
         <ScheduleBreakDivider
@@ -638,27 +632,15 @@ watch(
           :is-active="isActiveGroup(key, week)"
           :animated="animated"
           :get-display-name="getDisplayName"
-          :is-clickable="canChangeLessonsIn(week)"
+          is-clickable
           :time="layout.differingTimeOf(lessons)"
           :style="[
             layout.groupStyle(lessons, column),
             lessonEntranceStyle(lessons, column, layout),
           ]"
-          @select-lesson="(lesson) => openChangeModal(lesson, week)"
+          @select-lesson="(lesson) => openLesson(lesson, week)"
         />
       </template>
     </ScheduleGrid>
-
-    <ScheduleChangeModal
-      v-if="canManageScheduleChanges"
-      :lesson="changedLesson"
-      :change="existingChange"
-      :week-start="weekKeyOf(changedWeek)"
-      :day-label="
-        changedLesson ? formatDayHeading(changedLesson.day, changedWeek) : ''
-      "
-      @close="changedLesson = null"
-      @saved="onChangeSaved"
-    />
   </div>
 </template>
