@@ -26,6 +26,7 @@ import { useTaskFilters, type TaskFilters } from './useTaskFilters';
 import { useTaskMarks } from './useTaskMarks';
 import { useTaskDismissals } from './useTaskDismissals';
 import { useTaskItems } from './useTaskItems';
+import { useTaskDueOrder } from './useTaskDueOrder';
 import { useTaskListView } from './useTaskListView';
 import { useOpenedTask } from './useOpenedTask';
 import { useTaskActions } from './useTaskActions';
@@ -67,8 +68,9 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
     isNaturallyOld: marks.isNaturallyOld,
   });
   const taskItems = useTaskItems(groupId, filters.filters, showPersonalized);
+  const dueOrder = useTaskDueOrder(groupId, taskItems.items, showPersonalized);
   const listView = useTaskListView({
-    items: taskItems.items,
+    items: dueOrder.orderedItems,
     hideChecked,
     isChecked: marks.isChecked,
     isPinned: marks.isPinned,

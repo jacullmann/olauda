@@ -75,7 +75,7 @@ const schoolDayFormat = new Intl.DateTimeFormat('en-CA', {
 });
 
 /** The school calendar day of an instant as YYYY-MM-DD, which sorts like the date it names. */
-const schoolDayOf = (date: Date) => schoolDayFormat.format(date);
+export const schoolDayOf = (date: Date) => schoolDayFormat.format(date);
 
 /** Due today or earlier, by the school calendar day rather than the due time. */
 export function isDueByEndOfToday(
