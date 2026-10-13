@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import { useSkeletonHandoff } from './useSkeletonHandoff';
 import { entranceDelay, hasSettledEntrance } from '@/common/utils/entrance';
 
@@ -52,10 +52,6 @@ export function useCardEntrance(
     { immediate: true },
   );
 
-  const hasSettled = computed(
-    () => !held.value && enteringOrder.value.size === 0,
-  );
-
   function isEntering(id: string) {
     return enteringOrder.value.has(id);
   }
@@ -78,12 +74,16 @@ export function useCardEntrance(
   }
 
   /**
-   * For cards that were already there and only come into view, like the next
-   * page of a list scrolled to its end: cascading them in would read as them
-   * arriving late.
+   * For cards a virtual list leaves out: by the time they are scrolled into
+   * view, cascading them in would read as them arriving late.
    */
-  function showWithoutEntrance(ids: Iterable<string>) {
-    for (const id of ids) shownIds.add(id);
+  function settleAllExcept(renderedIds: ReadonlySet<string>) {
+    const entering = new Map(
+      [...enteringOrder.value].filter(([id]) => renderedIds.has(id)),
+    );
+    if (entering.size < enteringOrder.value.size) {
+      enteringOrder.value = entering;
+    }
   }
 
   /** For a list put away before its cards settled, so they return in place. */
@@ -95,10 +95,9 @@ export function useCardEntrance(
     entranceStart,
     entranceStartOf,
     isEntering,
-    hasSettled,
     entranceStyle,
     handleEntranceEnd,
-    showWithoutEntrance,
+    settleAllExcept,
     settleAll,
   };
 }

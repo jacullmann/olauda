@@ -6,10 +6,10 @@ import {
   ref,
   useTemplateRef,
   watch,
+  watchEffect,
 } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useIntersectionObserver } from '@vueuse/core';
 import { useDismissibleNotice } from '@/modules/account/composables/useDismissibleNotice';
 import { Plus, ListFilter } from '@lucide/vue';
 
@@ -19,6 +19,7 @@ import {
   vEntranceStart,
 } from '@/common/composables/useSkeletonHandoff';
 import { useCardEntrance } from '@/common/composables/useCardEntrance';
+import { useWindowVirtualList } from '@/common/composables/useWindowVirtualList';
 import { useDueSections } from '@/modules/tasks/composables/useDueSections';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 
@@ -27,8 +28,16 @@ import TaskCard from '@/modules/tasks/components/TaskCard.vue';
 import CoursePersonalizedViewNotice from '@/modules/courses/components/CoursePersonalizedViewNotice.vue';
 
 import type { ItemType } from '@/modules/tasks/types';
+import type { TaskListRow } from '@/modules/tasks/utils/taskListRows';
 import { entranceDelay, hasSettledEntrance } from '@/common/utils/entrance';
 import { collapseHeight, collapseTransition } from '@/common/utils/collapse';
+
+/** Heights rows are laid out with until they are measured, in px. */
+const ESTIMATED_ROW_HEIGHT: Record<TaskListRow['kind'], number> = {
+  heading: 62,
+  separator: 1,
+  task: 68,
+};
 
 const showFilterModal = ref(false);
 
@@ -56,13 +65,9 @@ const {
   hiddenByCourses,
   showOldEntries,
   hideChecked,
-  visibleCount,
-  limitedItems,
-  hasMoreItems,
   filteredItems,
   tab,
   openMenuId,
-  showMore,
   onMenuAction,
   archiveItem,
   dismissedItems,
@@ -83,7 +88,7 @@ const {
 } = useTasks();
 
 const visibleItems = computed(() =>
-  limitedItems.value.filter((item) => !dismissedItems.has(item.id)),
+  filteredItems.value.filter((item) => !dismissedItems.has(item.id)),
 );
 
 const { rows } = useDueSections(visibleItems, isPinned);
@@ -129,10 +134,48 @@ const TABS_ENTRANCE_ORDER = 1;
 const FILTER_ENTRANCE_ORDER = 2;
 const LIST_ENTRANCE_ORDER = 3;
 
-// Stays in the flow while it folds away, so the rows below follow it up.
+const listEl = useTemplateRef<HTMLElement>('list');
+const {
+  rows: virtualRows,
+  offsetTop,
+  offsetBottom,
+  measureRow,
+} = useWindowVirtualList({
+  container: listEl,
+  count: () => rows.value.length,
+  estimateSize: (index) =>
+    ESTIMATED_ROW_HEIGHT[rows.value[index]?.kind ?? 'task'],
+  getItemKey: computed(() => {
+    const current = rows.value;
+    return (index: number) => current[index]?.key ?? index;
+  }),
+});
+
+const renderedRows = computed(() =>
+  virtualRows.value.flatMap((virtualRow) => {
+    const row = rows.value[virtualRow.index];
+    return row ? [{ index: virtualRow.index, row }] : [];
+  }),
+);
+
+const rowKeys = computed(() => new Set(rows.value.map((row) => row.key)));
+
+// Stays in the flow while it folds away, so the rows below follow it up. A row
+// that only scrolled out of the rendered range is still in the list and goes
+// at once, or the rows in view would move.
 function collapseLeavingRow(el: Element, done: () => void) {
-  if (!useListTransitions.value) done();
-  else collapseHeight(el as HTMLElement, done);
+  const row = el as HTMLElement;
+  if (
+    !useListTransitions.value ||
+    rowKeys.value.has(row.dataset.rowKey ?? '')
+  ) {
+    done();
+    return;
+  }
+  // Its index now belongs to the row that took its place, which its shrinking
+  // height would otherwise be measured for; no row has this one.
+  row.dataset.index = '-1';
+  collapseHeight(row, done);
 }
 
 // A heading that becomes the first sheds its spacing in step with the section
@@ -150,9 +193,8 @@ const {
   entranceStartOf: cardEntranceStartOf,
   isEntering: isCardEntering,
   entranceStyle: cardEntranceStyle,
-  hasSettled: hasCardEntranceSettled,
   handleEntranceEnd: handleCardAnimationEnd,
-  showWithoutEntrance: showCardsWithoutEntrance,
+  settleAllExcept: settleCardEntranceExcept,
   settleAll: settleCardEntrance,
 } = useCardEntrance(
   computed(() => visibleItems.value.map((item) => item.id)),
@@ -160,18 +202,21 @@ const {
   LIST_ENTRANCE_ORDER,
 );
 
-// Every task is loaded already, so the next page is only rendered once the
-// list's end comes within a screen's height, before it is reached. While the
-// first cards still cascade in, a page fills a tall screen and joins them.
-const pageEnd = useTemplateRef<HTMLElement>('pageEnd');
-useIntersectionObserver(
-  pageEnd,
-  ([entry]) => {
-    if (!entry?.isIntersecting) return;
-    const revealedIds = showMore().map((item) => item.id);
-    if (hasCardEntranceSettled.value) showCardsWithoutEntrance(revealedIds);
+// Only the cards rendered when the list appears cascade in; the rest are in
+// place by the time they are scrolled to. After rendering, as that decides
+// which rows are rendered.
+watchEffect(
+  () => {
+    if (showSkeleton.value) return;
+    settleCardEntranceExcept(
+      new Set(
+        renderedRows.value.flatMap(({ row }) =>
+          row.kind === 'task' ? [row.task.id] : [],
+        ),
+      ),
+    );
   },
-  { rootMargin: '0px 0px 100% 0px' },
+  { flush: 'post' },
 );
 
 const emptyStateEntered = ref(false);
@@ -309,63 +354,83 @@ onDeactivated(() => {
         />
       </Transition>
 
-      <TransitionGroup
+      <!-- Only the rows near the viewport are rendered, the space of the rest
+           is held by the padding. -->
+      <div
         v-if="!showSkeleton && !listLoadError"
-        :css="useListTransitions"
-        name="task-list"
-        tag="div"
-        class="flex flex-col relative max-md:-mx-4"
-        @leave="collapseLeavingRow"
+        ref="list"
+        class="max-md:-mx-4"
+        :style="{
+          paddingTop: `${offsetTop}px`,
+          paddingBottom: `${offsetBottom}px`,
+        }"
       >
-        <!-- A heading or separator is its own row with its own key, so it
-             folds away on its own when its task leaves or moves into another
-             section. One element per fragment: the fragment's key prefixes the
-             key Vue gives each branch, which stays unique that way. -->
-        <template v-for="row in rows" :key="row.key">
-          <h3
-            v-if="row.kind === 'heading'"
-            v-entrance-start="cardEntranceStartOf(row.taskId)"
-            class="px-4 md:px-3 pb-2"
-            :class="{
-              'pt-6': !row.isFirst,
-              'animate-enter': isCardEntering(row.taskId),
-            }"
-            :style="[cardEntranceStyle(row.taskId), headingSpacingStyle]"
-          >
-            {{ row.label }}
-          </h3>
-          <div
-            v-else-if="row.kind === 'separator'"
-            v-entrance-start="cardEntranceStartOf(row.taskId)"
-            class="separator ml-11.5 md:ml-10.5 mr-4"
-            :class="{ 'animate-enter': isCardEntering(row.taskId) }"
-            :style="cardEntranceStyle(row.taskId)"
-          ></div>
-          <TaskCard
-            v-else
-            v-entrance-start="cardEntranceStartOf(row.task.id)"
-            :class="{ 'animate-enter': isCardEntering(row.task.id) }"
-            :style="cardEntranceStyle(row.task.id)"
-            :item="row.task"
-            :show-type="tab === 'all'"
-            :is-archive-view="showOldEntries"
-            :is-checked="isChecked(row.task.id)"
-            :is-pinned="isPinned(row.task.id)"
-            :is-menu-open="openMenuId === row.task.id"
-            :can-check="!!user"
-            :can-upload-images="canUploadImages"
-            :can-add-note="canManageNotes && !row.task.editorNote"
-            :can-delete="canDelete(row.task)"
-            @toggle-check="toggleCheck(row.task)"
-            @swipe="archiveItem(row.task)"
-            @menu-action="(action) => onMenuAction(action, row.task)"
-            @open-menu="openMenuId = row.task.id"
-            @close-menu="openMenuId = null"
-            @image-drop="(files) => triggerImageDrop(row.task, files)"
-            @animationend="handleCardAnimationEnd($event, row.task.id)"
-          />
-        </template>
-      </TransitionGroup>
+        <TransitionGroup
+          :css="useListTransitions"
+          name="task-list"
+          tag="div"
+          class="flex flex-col relative"
+          @leave="collapseLeavingRow"
+        >
+          <!-- A heading or separator is its own row with its own key, so it
+               folds away on its own when its task leaves or moves into another
+               section. One element per fragment: the fragment's key prefixes
+               the key Vue gives each branch, which stays unique that way. -->
+          <template v-for="{ index, row } in renderedRows" :key="row.key">
+            <h3
+              v-if="row.kind === 'heading'"
+              :ref="measureRow"
+              v-entrance-start="cardEntranceStartOf(row.taskId)"
+              :data-index="index"
+              :data-row-key="row.key"
+              class="px-4 md:px-3 pb-2"
+              :class="{
+                'pt-6': !row.isFirst,
+                'animate-enter': isCardEntering(row.taskId),
+              }"
+              :style="[cardEntranceStyle(row.taskId), headingSpacingStyle]"
+            >
+              {{ row.label }}
+            </h3>
+            <div
+              v-else-if="row.kind === 'separator'"
+              :ref="measureRow"
+              v-entrance-start="cardEntranceStartOf(row.taskId)"
+              :data-index="index"
+              :data-row-key="row.key"
+              class="separator ml-11.5 md:ml-10.5 mr-4"
+              :class="{ 'animate-enter': isCardEntering(row.taskId) }"
+              :style="cardEntranceStyle(row.taskId)"
+            ></div>
+            <TaskCard
+              v-else
+              :ref="measureRow"
+              v-entrance-start="cardEntranceStartOf(row.task.id)"
+              :data-index="index"
+              :data-row-key="row.key"
+              :class="{ 'animate-enter': isCardEntering(row.task.id) }"
+              :style="cardEntranceStyle(row.task.id)"
+              :item="row.task"
+              :show-type="tab === 'all'"
+              :is-archive-view="showOldEntries"
+              :is-checked="isChecked(row.task.id)"
+              :is-pinned="isPinned(row.task.id)"
+              :is-menu-open="openMenuId === row.task.id"
+              :can-check="!!user"
+              :can-upload-images="canUploadImages"
+              :can-add-note="canManageNotes && !row.task.editorNote"
+              :can-delete="canDelete(row.task)"
+              @toggle-check="toggleCheck(row.task)"
+              @swipe="archiveItem(row.task)"
+              @menu-action="(action) => onMenuAction(action, row.task)"
+              @open-menu="openMenuId = row.task.id"
+              @close-menu="openMenuId = null"
+              @image-drop="(files) => triggerImageDrop(row.task, files)"
+              @animationend="handleCardAnimationEnd($event, row.task.id)"
+            />
+          </template>
+        </TransitionGroup>
+      </div>
 
       <BaseEmptyState
         v-if="!loading && listLoadError"
@@ -382,7 +447,7 @@ onDeactivated(() => {
       </BaseEmptyState>
 
       <BaseEmptyState
-        v-else-if="!loading && !limitedItems.length"
+        v-else-if="!loading && !filteredItems.length"
         class="flex-1"
         :class="{ 'animate-enter': !emptyStateEntered }"
         :primary-action="openCreateForm"
@@ -402,17 +467,6 @@ onDeactivated(() => {
           t('tasks.list.reset_filters')
         }}</template>
       </BaseEmptyState>
-
-      <!-- Replaced with every page: an observer only reports changes, and the
-           end may still be in range after a page too short to reach past it.
-           Out of the flow, so the list's gap does not open beneath it. -->
-      <div
-        v-if="hasMoreItems && !showSkeleton"
-        ref="pageEnd"
-        :key="visibleCount"
-        aria-hidden="true"
-        class="absolute inset-x-0 bottom-0"
-      ></div>
     </div>
 
     <BaseModal :open="showFilterModal" sheet @cancel="showFilterModal = false">

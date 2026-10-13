@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { RotateCw } from '@lucide/vue';
 import { useEventLog } from '@/modules/admin/composables/useEventLog';
 import { useLogFormat } from '@/modules/admin/composables/useLogFormat';
-import { useWindowVirtualList } from '@/modules/admin/composables/useWindowVirtualList';
+import { useWindowVirtualList } from '@/common/composables/useWindowVirtualList';
 import { eventLogRows } from '@/modules/admin/utils/eventLog';
 import AdminEventLogEntry, {
   type EventLogPivot,
