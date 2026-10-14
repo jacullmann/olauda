@@ -25,11 +25,15 @@ import { useSidebarStore } from '@/shell/stores/useSidebarStore';
 import { storeToRefs } from 'pinia';
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useLogout } from '@/modules/auth/composables/useLogout';
-import { useRouter, type RouteLocationRaw } from 'vue-router';
+import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
 import AppSidebarButton from './AppSidebarButton.vue';
+import AppSidebarSection, {
+  type SidebarSectionPage,
+} from './AppSidebarSection.vue';
 import { useI18n } from 'vue-i18n';
 import { useGroupAction } from '@/modules/groups/composables/useGroupAction';
 import { useOpenGroup } from '@/modules/groups/composables/useOpenGroup';
+import { useAdminNav } from '@/modules/admin/composables/useAdminNav';
 
 const { t } = useI18n();
 const performLogout = useLogout();
@@ -40,6 +44,7 @@ const { user, isSuperadmin } = storeToRefs(userStore);
 const { activeGroupId, contextGroupId, userGroups, checkPermission } =
   useGroups();
 const router = useRouter();
+const route = useRoute();
 
 const sidebarStore = useSidebarStore();
 const { expanded: isExpanded } = storeToRefs(sidebarStore);
@@ -50,6 +55,21 @@ const { announcements } = storeToRefs(useAnnouncementStore());
 const createGroupModal = useCreateGroupModal();
 const { withGroup } = useGroupAction();
 const { openGroup } = useOpenGroup();
+const {
+  navItems: adminNavItems,
+  activeTab: activeAdminTab,
+  selectTab: selectAdminTab,
+} = useAdminNav();
+
+const isInAdminArea = computed(() => route.meta.navItem === 'super-admin');
+const adminPages = computed<SidebarSectionPage[]>(() =>
+  adminNavItems.value.map(({ id, label, icon, name }) => ({
+    id,
+    label,
+    icon,
+    to: { name },
+  })),
+);
 
 const showAnnouncements = computed(
   () =>
@@ -175,7 +195,12 @@ onUnmounted(() => {
     :class="isExpanded ? 'w-64' : 'w-[61px]'"
     :data-expanded="isExpanded || undefined"
   >
-    <div class="flex flex-col gap-4 w-full flex-1 min-h-0">
+    <!-- Scrolls only once the group list below has shrunk to its minimum,
+         which an open section can force on short screens. Widened to the
+         sidebar's edges so the active markers aren't clipped. -->
+    <div
+      class="flex flex-col gap-4 flex-1 min-h-0 -mx-2.5 px-2.5 overflow-y-auto overflow-x-hidden scrollbar-hide"
+    >
       <AppSidebarButton
         :label="
           isExpanded ? t('common.sidebar.collapse') : t('common.sidebar.expand')
@@ -268,13 +293,16 @@ onUnmounted(() => {
           @click="handleNavigation({ name: 'private-todos' })"
         />
 
-        <AppSidebarButton
+        <AppSidebarSection
           v-if="isSuperadmin"
           :label="t('common.roles.superadmin')"
-          :expanded="isExpanded"
-          :active="$route.meta.navItem === 'super-admin'"
           :icon="Star"
-          @click="handleNavigation({ name: 'super-admin' })"
+          :pages="adminPages"
+          :active-page-id="activeAdminTab"
+          :open="isInAdminArea"
+          :expanded="isExpanded"
+          @open="handleNavigation({ name: 'super-admin' })"
+          @select="selectAdminTab"
         />
       </div>
 
@@ -286,7 +314,7 @@ onUnmounted(() => {
 
       <div
         ref="sidebarScrollEl"
-        class="flex flex-col gap-2 -mx-2.5 px-2.5 overflow-y-auto overflow-x-hidden flex-1 list-fade"
+        class="flex flex-col gap-2 -mx-2.5 px-2.5 overflow-y-auto overflow-x-hidden flex-1 min-h-24 list-fade"
         :style="{ '--menu-fade-mask': fadeMask }"
         @scroll="handleScroll"
       >

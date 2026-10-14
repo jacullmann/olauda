@@ -224,8 +224,6 @@ export interface AdminNavItem {
   id: AdminTab;
   name: string;
   label: string;
-  count: number;
-  danger?: boolean;
 }
 
 /** The platform-wide switches, as superadmins manage them. */
