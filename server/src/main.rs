@@ -207,5 +207,5 @@ async fn shutdown_signal() {
         () = terminate => {},
     }
 
-    info!("Shutting down after in-flight requests finish");
+    info!("Shutting down after requests in flight finish");
 }

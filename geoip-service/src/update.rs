@@ -20,7 +20,7 @@ pub async fn download_and_extract_db(
 
     let parent_dir = target_path_obj.parent().unwrap_or_else(|| Path::new("."));
 
-    info!("Using MaxMind license key for official download...");
+    info!("Using MaxMind license key for download...");
 
     let url = format!(
         "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key={}&suffix=tar.gz",
