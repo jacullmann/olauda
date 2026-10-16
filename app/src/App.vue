@@ -10,11 +10,11 @@ import { useAccessStatusStore } from '@/modules/auth/stores/useAccessStatusStore
 import { useSession } from '@/modules/auth/composables/useSession';
 import { useOAuth } from '@/modules/auth/composables/useOAuth';
 import { markGroupBanned } from '@/modules/groups/composables/useGroups';
-import { useLoadingBar } from '@/shell/composables/useLoadingBar';
 import {
   consumeLoginReturn,
   saveLoginReturn,
 } from '@/modules/auth/utils/loginReturn';
+import AppLoadingBar from '@/shell/components/AppLoadingBar.vue';
 import AppModalHost from '@/shell/components/AppModalHost.vue';
 import AppConnectionStatus from '@/shell/components/AppConnectionStatus.vue';
 import api from '@/api/client';
@@ -26,7 +26,6 @@ const accessStatus = useAccessStatusStore();
 const { user } = storeToRefs(userStore);
 const { isAuthReady, isApiUnreachable, checkAuthStatus } = useSession();
 const { handleOAuthReturn } = useOAuth();
-const { loading, progress, opacity } = useLoadingBar();
 
 let pageloadLogged = false;
 
@@ -110,16 +109,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col min-h-dvh">
-    <div
-      v-if="loading"
-      class="fixed top-0 left-0 right-0 h-[3px] w-full bg-transparent z-9999 pointer-events-none transition-all duration-200 ease-in-out"
-      :style="{ opacity: opacity }"
-    >
-      <div
-        class="h-full relative bg-accent transition-[width] duration-200 ease-out"
-        :style="{ width: progress + '%' }"
-      ></div>
-    </div>
+    <AppLoadingBar />
 
     <template v-if="!isAuthReady">
       <div

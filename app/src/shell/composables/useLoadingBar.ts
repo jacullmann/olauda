@@ -1,79 +1,151 @@
-import { ref, computed } from 'vue';
+import { shallowRef, watch } from 'vue';
+import { prefersReducedMotion, SETTLE_EASING } from '@/common/utils/motion';
+import {
+  TRICKLE_DURATION,
+  TRICKLE_LIMIT,
+  trickleKeyframes,
+} from '@/shell/utils/loadingBarProgress';
 
-const progress = ref(0);
-const isLoading = ref(false);
-const opacity = ref(1);
+// A navigation that settles within this time never shows the bar, so instant
+// ones don't flash it.
+const SHOW_DELAY = 150;
+const FADE_IN_DURATION = 150;
+const COMPLETE_DURATION = 400;
+// The settle curve covers nearly all of its distance in its first half, so
+// the bar fades once it reads as full.
+const FADE_OUT_DELAY = 200;
+const FADE_OUT_DURATION = 300;
 
-let timer: ReturnType<typeof setInterval> | null = null;
-let fadeTimer: ReturnType<typeof setTimeout> | null = null;
-let hideTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * `queued`: a navigation started once the last one had visibly completed; it
+ * gets a fresh bar as soon as the completed one has faded out.
+ */
+type Phase = 'idle' | 'loading' | 'finishing' | 'queued';
 
-const STEP_INTERVAL = 200;
-const FADE_DELAY = 300;
-const HIDE_DELAY = 400;
+const bar = shallowRef<HTMLElement | null>(null);
+let phase: Phase = 'idle';
+let animations: Animation[] = [];
+let startedAt = 0;
+let startScale = 0;
+let startOpacity = 0;
 
-// A navigation that starts while the last one fades out must not be hidden
-// by that fade.
-function clearFinishTimers() {
-  if (fadeTimer) clearTimeout(fadeTimer);
-  if (hideTimer) clearTimeout(hideTimer);
-  fadeTimer = null;
-  hideTimer = null;
+function cancelAnimations() {
+  animations.forEach((animation) => animation.cancel());
+  animations = [];
 }
 
+function reset() {
+  cancelAnimations();
+  phase = 'idle';
+}
+
+function drawnState(el: HTMLElement) {
+  const style = getComputedStyle(el);
+  const scale =
+    style.transform === 'none' ? 1 : new DOMMatrixReadOnly(style.transform).a;
+  return { scale, opacity: Number(style.opacity) };
+}
+
+// Navigation is when the main thread is busiest, loading chunks and rendering
+// the next page. Web Animations of transform and opacity run on the
+// compositor, so the bar keeps moving through that where a JS-driven width
+// would stutter, and never triggers layout.
+function play(el: HTMLElement) {
+  cancelAnimations();
+  animations.push(
+    el.animate([{ opacity: startOpacity }, { opacity: 1 }], {
+      delay: startOpacity > 0 ? 0 : SHOW_DELAY,
+      duration: FADE_IN_DURATION,
+      fill: 'both',
+    }),
+  );
+  // With reduced motion the bar stays full and only fades in and out.
+  if (!prefersReducedMotion()) {
+    animations.push(
+      el.animate(trickleKeyframes(startScale), {
+        duration: TRICKLE_DURATION,
+        fill: 'forwards',
+      }),
+    );
+  }
+  // The bar mounts after the first navigation has started; it picks up where
+  // that navigation would have drawn it by now.
+  const elapsed = performance.now() - startedAt;
+  animations.forEach((animation) => (animation.currentTime = elapsed));
+}
+
+function startFrom(scale: number, opacity: number) {
+  startScale = scale;
+  startOpacity = opacity;
+  startedAt = performance.now();
+  phase = 'loading';
+  if (bar.value) play(bar.value);
+}
+
+function start() {
+  if (phase === 'loading' || phase === 'queued') return;
+
+  const el = bar.value;
+  if (phase !== 'finishing' || !el) {
+    startFrom(0, 0);
+    return;
+  }
+
+  // A navigation that starts while the last one completes, such as a
+  // redirect, carries the bar on from where it is drawn. Once the bar reads
+  // as full, carrying on would leave it stuck there instead.
+  const { scale, opacity } = drawnState(el);
+  if (scale > TRICKLE_LIMIT) phase = 'queued';
+  else startFrom(scale, opacity);
+}
+
+function finish() {
+  if (phase === 'queued') phase = 'finishing';
+  if (phase !== 'loading') return;
+
+  const el = bar.value;
+  const visibleFrom = startedAt + (startOpacity > 0 ? 0 : SHOW_DELAY);
+  if (!el || performance.now() < visibleFrom) {
+    reset();
+    return;
+  }
+
+  const { scale, opacity } = drawnState(el);
+  cancelAnimations();
+  phase = 'finishing';
+
+  const fadeOut = el.animate([{ opacity }, { opacity: 0 }], {
+    delay: FADE_OUT_DELAY,
+    duration: FADE_OUT_DURATION,
+    fill: 'both',
+  });
+  fadeOut.onfinish = () => {
+    // A finish event already queued still fires after a new navigation has
+    // cancelled this fade, and must not hide that navigation's bar.
+    if (!animations.includes(fadeOut)) return;
+    if (phase === 'queued') startFrom(0, 0);
+    else reset();
+  };
+  animations.push(fadeOut);
+
+  if (scale < 1) {
+    animations.push(
+      el.animate(
+        [{ transform: `scaleX(${scale})` }, { transform: 'scaleX(1)' }],
+        {
+          duration: COMPLETE_DURATION,
+          easing: SETTLE_EASING,
+          fill: 'forwards',
+        },
+      ),
+    );
+  }
+}
+
+watch(bar, (el) => {
+  if (el && phase === 'loading') play(el);
+});
+
 export function useLoadingBar() {
-  const start = () => {
-    if (timer) clearInterval(timer);
-    clearFinishTimers();
-
-    progress.value = 0;
-    opacity.value = 1;
-    isLoading.value = true;
-
-    timer = setInterval(() => {
-      increment();
-    }, STEP_INTERVAL);
-  };
-
-  const increment = () => {
-    if (progress.value >= 95) return;
-
-    let amount = 0;
-    if (progress.value >= 0 && progress.value < 20) {
-      amount = 10;
-    } else if (progress.value >= 20 && progress.value < 50) {
-      amount = 4;
-    } else if (progress.value >= 50 && progress.value < 80) {
-      amount = 2;
-    } else {
-      amount = 0.5;
-    }
-
-    progress.value = Math.min(progress.value + amount, 99.4);
-  };
-
-  const finish = () => {
-    if (timer) clearInterval(timer);
-    timer = null;
-    clearFinishTimers();
-
-    progress.value = 100;
-
-    fadeTimer = setTimeout(() => {
-      opacity.value = 0;
-      hideTimer = setTimeout(() => {
-        isLoading.value = false;
-        progress.value = 0;
-        opacity.value = 1;
-      }, HIDE_DELAY);
-    }, FADE_DELAY);
-  };
-
-  return {
-    loading: computed(() => isLoading.value),
-    progress: computed(() => progress.value),
-    opacity: computed(() => opacity.value),
-    start,
-    finish,
-  };
+  return { bar, start, finish };
 }
