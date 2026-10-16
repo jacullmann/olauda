@@ -11,7 +11,7 @@ pub struct LoginDto {
     #[validate(email(message = "Invalid credentials."))]
     pub email: String,
 
-    #[validate(length(min = 8, max = 255, message = "Invalid credentials."))]
+    #[validate(length(min = 1, max = 255, message = "Invalid credentials."))]
     pub password: String,
 }
 
@@ -21,11 +21,7 @@ pub struct RegisterDto {
     #[validate(email(message = "Invalid email address."))]
     pub email: String,
 
-    #[validate(length(
-        min = 8,
-        max = 255,
-        message = "Password must be at least 8 characters long and contain letters and numbers."
-    ))]
+    #[validate(length(max = 255))]
     pub password: String,
 
     #[validate(custom(function = "must_be_accepted"))]
@@ -94,25 +90,17 @@ pub struct ResetPasswordDto {
     #[validate(length(max = 2048))]
     pub reset_token: String,
 
-    #[validate(length(
-        min = 8,
-        max = 255,
-        message = "Password must be at least 8 characters long and contain letters and numbers."
-    ))]
+    #[validate(length(max = 255))]
     pub password: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangePasswordDto {
-    #[validate(length(min = 8, max = 255))]
+    #[validate(length(min = 1, max = 255))]
     pub current_password: String,
 
-    #[validate(length(
-        min = 8,
-        max = 255,
-        message = "Password must be at least 8 characters long and contain letters and numbers."
-    ))]
+    #[validate(length(max = 255))]
     pub new_password: String,
 }
 
@@ -121,10 +109,6 @@ pub struct ChangePasswordDto {
 pub struct SetPasswordDto {
     pub code: EmailCode,
 
-    #[validate(length(
-        min = 8,
-        max = 255,
-        message = "Password must be at least 8 characters long and contain letters and numbers."
-    ))]
+    #[validate(length(max = 255))]
     pub new_password: String,
 }

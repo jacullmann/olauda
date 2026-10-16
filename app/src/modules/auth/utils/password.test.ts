@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { isStrongPassword } from './password';
 
 describe('isStrongPassword', () => {
-  it('needs at least 8 characters', () => {
-    expect(isStrongPassword('abcdef1')).toBe(false);
-    expect(isStrongPassword('abcdefg1')).toBe(true);
+  it('needs at least 12 characters of any kind', () => {
+    expect(isStrongPassword('abcdefghijk')).toBe(false);
+    expect(isStrongPassword('abcdefghijkl')).toBe(true);
+    expect(isStrongPassword('123456789012')).toBe(true);
   });
 
-  it('needs letters and digits', () => {
-    expect(isStrongPassword('abcdefgh')).toBe(false);
-    expect(isStrongPassword('12345678')).toBe(false);
-    expect(isStrongPassword('äöüßäöü1')).toBe(true);
+  it('counts characters, not UTF-16 units', () => {
+    expect(isStrongPassword('😀😀😀😀😀😀')).toBe(false);
   });
 });

@@ -8,7 +8,6 @@ import {
   AuthErrorCode,
   authErrorMessage,
 } from '@/modules/auth/utils/authErrors';
-import { MIN_PASSWORD_LENGTH } from '@/modules/auth/utils/password';
 
 /** Subset of `BaseInput`'s exposed API that these forms rely on. */
 interface FocusableInput {
@@ -64,9 +63,6 @@ export function useLogin(
 
     if (!password.value) {
       errors.password = t('auth.errors.password_missing');
-      ok = false;
-    } else if (password.value.length < MIN_PASSWORD_LENGTH) {
-      errors.password = t('auth.errors.password_too_short');
       ok = false;
     }
 

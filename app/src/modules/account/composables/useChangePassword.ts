@@ -4,10 +4,7 @@ import api from '@/api/client';
 import type { ChangePasswordErrors } from '@/modules/auth/types';
 import { apiErrorCode, apiErrorMessage, retryAfterMinutes } from '@/api/errors';
 import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
-import {
-  isStrongPassword,
-  MIN_PASSWORD_LENGTH,
-} from '@/modules/auth/utils/password';
+import { isStrongPassword } from '@/modules/auth/utils/password';
 
 export function useChangePassword(onSuccess: () => void) {
   const { t } = useI18n();
@@ -38,9 +35,6 @@ export function useChangePassword(onSuccess: () => void) {
 
     if (!currentPassword.value) {
       errors.current = t('auth.change_password.errors.current_missing');
-      ok = false;
-    } else if (currentPassword.value.length < MIN_PASSWORD_LENGTH) {
-      errors.current = t('auth.errors.password_too_short');
       ok = false;
     }
 

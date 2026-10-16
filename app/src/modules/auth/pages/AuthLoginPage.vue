@@ -98,7 +98,6 @@ function navigateToRegister() {
             <BaseInput
               id="login-password"
               v-model="password"
-              :placeholder="t('auth.login.password_placeholder')"
               type="password"
               autocomplete="current-password"
               required
