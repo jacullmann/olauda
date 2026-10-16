@@ -9,8 +9,10 @@ withDefaults(
     icon: Component;
     /** Off for a page shown again, which should not replay its entrance. */
     entrance?: boolean;
+    /** Off for a notice that must stay as long as its condition holds. */
+    dismissible?: boolean;
   }>(),
-  { entrance: true },
+  { entrance: true, dismissible: true },
 );
 
 const emit = defineEmits<{ dismiss: [] }>();
@@ -36,6 +38,7 @@ const { t } = useI18n();
             <slot />
           </span>
           <button
+            v-if="dismissible"
             type="button"
             class="relative shrink-0 rounded-full cursor-pointer text-on-ghost-muted hover:text-on-ghost transition-hover outline-none focus-visible:ring-2 focus-visible:ring-focus touch-target after:min-w-12 after:min-h-12"
             :aria-label="t('common.buttons.hide_notice')"
