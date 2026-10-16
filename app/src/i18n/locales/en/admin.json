@@ -253,7 +253,8 @@
       },
       "groups": "Groups & roles",
       "no_groups": "No group memberships.",
-      "joined": "Joined {date}"
+      "joined": "Joined {date}",
+      "muted": "Muted"
     },
     "ban_modal": {
       "title": "Ban user?",
@@ -262,6 +263,11 @@
     "unban_modal": {
       "title": "Unban user?",
       "content": "{email} will be able to sign in again."
+    },
+    "promote_muted_modal": {
+      "title": "Promote muted member?",
+      "message": "This user is muted in {group}. The new role lifts the mute.",
+      "submit": "Change Role"
     },
     "delete_modal": {
       "title": "Delete user?",
@@ -541,7 +547,9 @@
         "wrong_password": "Wrong password",
         "unknown_account": "Unknown account",
         "banned": "Banned",
-        "no_password": "No password set"
+        "no_password": "No password set",
+        "unmuted": "Lifted manually",
+        "promoted": "Promoted"
       },
       "method": {
         "password": "Password",
@@ -690,6 +698,8 @@
         "member_role_changed": "Role changed",
         "member_removed": "Member removed",
         "member_unbanned": "Member unbanned",
+        "member_muted": "Member muted",
+        "member_unmuted": "Member unmuted",
         "ownership_transferred": "Ownership transferred",
         "permissions_changed": "Permissions changed"
       },

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS \"avatar_public_id?\",\n                      g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,\n                      ur.done_course_setup, g.banned_at IS NOT NULL AS \"banned!\",\n                      EXISTS (SELECT 1 FROM courses c\n                              JOIN subjects s ON s.id = c.subject_id\n                              WHERE s.tenant_id = g.id AND s.category <> 'core')\n                          AS \"offers_course_choice!\"\n               FROM user_roles ur\n               JOIN groups g ON g.id = ur.tenant_id\n               JOIN roles r ON r.id = ur.role_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE ur.user_id = $1\n               ORDER BY ur.assigned_at",
+  "query": "SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS \"avatar_public_id?\",\n                      g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,\n                      ur.done_course_setup, g.banned_at IS NOT NULL AS \"banned!\",\n                      EXISTS (SELECT 1 FROM group_mutes m\n                              WHERE m.tenant_id = g.id AND m.user_id = ur.user_id) AS \"muted!\",\n                      EXISTS (SELECT 1 FROM courses c\n                              JOIN subjects s ON s.id = c.subject_id\n                              WHERE s.tenant_id = g.id AND s.category <> 'core')\n                          AS \"offers_course_choice!\"\n               FROM user_roles ur\n               JOIN groups g ON g.id = ur.tenant_id\n               JOIN roles r ON r.id = ur.role_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE ur.user_id = $1\n               ORDER BY ur.assigned_at",
   "describe": {
     "columns": [
       {
@@ -121,6 +121,12 @@
       },
       {
         "ordinal": 11,
+        "name": "muted!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 12,
         "name": "offers_course_choice!",
         "type_info": "Bool",
         "origin": "Expression"
@@ -143,8 +149,9 @@
       false,
       false,
       null,
+      null,
       null
     ]
   },
-  "hash": "91742fde349422d8965a9b870d1de1ea75b879078fbd85f32ebd348e1beffa60"
+  "hash": "027745d883c9ab26087b0aab9f69e347cee1c6ac748a751f3fd5ef250dc425f2"
 }

@@ -253,7 +253,8 @@
       },
       "groups": "Gruppen & Rollen",
       "no_groups": "Keine Gruppenmitgliedschaften.",
-      "joined": "Beigetreten am {date}"
+      "joined": "Beigetreten am {date}",
+      "muted": "Stummgeschaltet"
     },
     "ban_modal": {
       "title": "Benutzer bannen?",
@@ -262,6 +263,11 @@
     "unban_modal": {
       "title": "Benutzer entbannen?",
       "content": "{email} kann sich danach wieder anmelden."
+    },
+    "promote_muted_modal": {
+      "title": "Stummgeschaltetes Mitglied befördern?",
+      "message": "Dieser Benutzer ist in {group} stummgeschaltet. Mit der neuen Rolle wird die Stummschaltung aufgehoben.",
+      "submit": "Rolle ändern"
     },
     "delete_modal": {
       "title": "Benutzer löschen?",
@@ -541,7 +547,9 @@
         "wrong_password": "Falsches Passwort",
         "unknown_account": "Unbekanntes Konto",
         "banned": "Gebannt",
-        "no_password": "Kein Passwort festgelegt"
+        "no_password": "Kein Passwort festgelegt",
+        "unmuted": "Manuell aufgehoben",
+        "promoted": "Befördert"
       },
       "method": {
         "password": "Passwort",
@@ -690,6 +698,8 @@
         "member_role_changed": "Rolle geändert",
         "member_removed": "Mitglied entfernt",
         "member_unbanned": "Mitglied entbannt",
+        "member_muted": "Mitglied stummgeschaltet",
+        "member_unmuted": "Stummschaltung aufgehoben",
         "ownership_transferred": "Besitz übertragen",
         "permissions_changed": "Berechtigungen geändert"
       },

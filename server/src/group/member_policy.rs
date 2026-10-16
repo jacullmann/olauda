@@ -1,4 +1,4 @@
-//! Who may change whose role or remove whom inside a group.
+//! Who may change whose role, mute or remove whom inside a group.
 //!
 //! Members only ever act on people strictly below them and only hand out
 //! roles strictly below their own, so nobody can create or remove a peer.
@@ -151,6 +151,30 @@ pub fn assignable_roles(actor: Actor, target: Target) -> Vec<MemberRole> {
         .chain(assignable)
         .filter(|&role| role != target.role)
         .collect()
+}
+
+/// Muting and unmuting follow the same rules. Only members with the user role
+/// can be muted, so a muted member never holds moderation rights.
+pub fn ensure_can_mute(actor: Actor, target: Target) -> AppResult<()> {
+    if actor.user_id == target.user_id {
+        return Err(AppError::bad_request("You cannot mute yourself."));
+    }
+
+    if target.role != MemberRole::User {
+        return Err(AppError::bad_request(
+            "Only members with the user role can be muted.",
+        ));
+    }
+
+    if actor.has_owner_rights {
+        return Ok(());
+    }
+
+    if !actor.can_moderate_members || !ranks_below(target.role, actor.role) {
+        return Err(AppError::forbidden("Insufficient permissions."));
+    }
+
+    Ok(())
 }
 
 pub fn ensure_can_remove(actor: Actor, target: Target) -> AppResult<()> {
@@ -336,6 +360,42 @@ mod tests {
             ..admin
         };
         assert!(ensure_can_remove(without_permission, other(MemberRole::User)).is_err());
+    }
+
+    #[test]
+    fn moderators_mute_only_users() {
+        let moderator = member(MemberRole::Moderator);
+        assert!(ensure_can_mute(moderator, other(MemberRole::User)).is_ok());
+        assert!(ensure_can_mute(moderator, other(MemberRole::Moderator)).is_err());
+
+        let admin = member(MemberRole::Admin);
+        assert!(ensure_can_mute(admin, other(MemberRole::User)).is_ok());
+        assert!(ensure_can_mute(admin, other(MemberRole::Moderator)).is_err());
+
+        let owner = owner_rights(MemberRole::Owner);
+        assert!(ensure_can_mute(owner, other(MemberRole::User)).is_ok());
+        assert!(ensure_can_mute(owner, other(MemberRole::Admin)).is_err());
+        assert!(ensure_can_mute(owner, other(MemberRole::Owner)).is_err());
+    }
+
+    #[test]
+    fn muting_needs_the_moderation_permission() {
+        let without_permission = Actor {
+            can_moderate_members: false,
+            ..member(MemberRole::Admin)
+        };
+        assert!(ensure_can_mute(without_permission, other(MemberRole::User)).is_err());
+
+        let user = Actor {
+            can_moderate_members: true,
+            ..member(MemberRole::User)
+        };
+        assert!(ensure_can_mute(user, other(MemberRole::User)).is_err());
+    }
+
+    #[test]
+    fn nobody_mutes_themselves() {
+        assert!(ensure_can_mute(owner_rights(MemberRole::User), me(MemberRole::User)).is_err());
     }
 
     #[test]

@@ -215,6 +215,32 @@ pub async fn transfer_ownership(
     ))
 }
 
+pub async fn mute_member(
+    State(s): State<AppState>,
+    tc: TenantContext,
+    client: ClientInfo,
+    Path(MemberPath { user_id: target }): Path<MemberPath>,
+) -> AppResult<StatusCode> {
+    GroupAdminService::from_state(&s)
+        .mute_member(tc.tenant_id, Caller::from_tenant(&tc), target, &client)
+        .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn unmute_member(
+    State(s): State<AppState>,
+    tc: TenantContext,
+    client: ClientInfo,
+    Path(MemberPath { user_id: target }): Path<MemberPath>,
+) -> AppResult<StatusCode> {
+    GroupAdminService::from_state(&s)
+        .unmute_member(tc.tenant_id, Caller::from_tenant(&tc), target, &client)
+        .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 #[derive(Deserialize)]
 pub struct BanQuery {
     pub ban: Option<String>,

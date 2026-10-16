@@ -299,6 +299,8 @@ pub struct UserMembershipDto {
     pub group_name: String,
     pub role: MemberRole,
     pub joined_at: DateTime<Utc>,
+    /// Promoting a muted member lifts the mute.
+    pub muted: bool,
     pub assignable_roles: Vec<MemberRole>,
 }
 

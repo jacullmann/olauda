@@ -72,7 +72,7 @@ pub async fn create_item(
 
     Ok(Json(
         ItemsService::from_state(&s)
-            .create_item(tc.tenant_id, ItemActor::from_context(&tc), &dto)
+            .create_item(tc.tenant_id, ItemActor::from_context(&tc)?, &dto)
             .await?,
     ))
 }
@@ -85,7 +85,7 @@ pub async fn update_item(
 ) -> AppResult<Json<Value>> {
     Ok(Json(
         ItemsService::from_state(&s)
-            .update_item(tc.tenant_id, id, ItemActor::from_context(&tc), &dto)
+            .update_item(tc.tenant_id, id, ItemActor::from_context(&tc)?, &dto)
             .await?,
     ))
 }
@@ -97,7 +97,7 @@ pub async fn delete_item(
 ) -> AppResult<Json<Value>> {
     Ok(Json(
         ItemsService::from_state(&s)
-            .delete_item(tc.tenant_id, id, ItemActor::from_context(&tc))
+            .delete_item(tc.tenant_id, id, ItemActor::from_context(&tc)?)
             .await?,
     ))
 }
@@ -142,7 +142,7 @@ pub async fn remove_attachment(
         .remove_attachment(
             tc.tenant_id,
             id,
-            ItemActor::from_context(&tc),
+            ItemActor::from_context(&tc)?,
             attachment_id,
         )
         .await?;

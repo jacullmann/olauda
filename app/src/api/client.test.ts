@@ -139,6 +139,30 @@ describe('api', () => {
     expect(signOuts()).toBe(0);
   });
 
+  it('reports a mute with the group it applies to', async () => {
+    const calls = serve(() => ({
+      status: 403,
+      data: {
+        error: 'You are muted in this group.',
+        code: 'MUTED_IN_GROUP',
+        groupId: 'group-1',
+      },
+    }));
+    const signOuts = countSignOuts();
+    const mutedGroups: unknown[] = [];
+    window.addEventListener('group-muted', (event) => {
+      if (event instanceof CustomEvent) mutedGroups.push(event.detail);
+    });
+
+    await expect(api.post('/groups/group-1/items')).rejects.toBeInstanceOf(
+      AxiosError,
+    );
+
+    expect(calls).toEqual(['/groups/group-1/items']);
+    expect(mutedGroups).toEqual(['group-1']);
+    expect(signOuts()).toBe(0);
+  });
+
   it('keeps the session when shutdown turns the refresh away', async () => {
     serve((url) => (url === '/auth/refresh' ? SHUTDOWN : ACCESS_TOKEN_EXPIRED));
     const signOuts = countSignOuts();

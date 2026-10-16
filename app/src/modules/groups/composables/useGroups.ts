@@ -29,17 +29,20 @@ export type UserGroup = {
   courseSetup: CourseSetup;
   /** A superadmin banned the group: members cannot open it until it is lifted. */
   banned: boolean;
+  /** A moderator muted the user: they can read the group but change nothing. */
+  muted: boolean;
 };
 
 /** A group as the API sends it, before unknown values are normalized. */
 export type RawGroup = Omit<
   UserGroup,
-  'groupType' | 'effectivePermissions' | 'courseSetup' | 'banned'
+  'groupType' | 'effectivePermissions' | 'courseSetup' | 'banned' | 'muted'
 > & {
   groupType?: string;
   effectivePermissions?: string[];
   courseSetup?: string;
   banned?: boolean;
+  muted?: boolean;
 };
 
 const userGroups = ref<UserGroup[]>([]);
@@ -87,6 +90,7 @@ function toUserGroup(raw: RawGroup): UserGroup {
     ),
     courseSetup: toCourseSetup(raw.courseSetup),
     banned: raw.banned === true,
+    muted: raw.muted === true,
   };
 }
 
@@ -120,6 +124,14 @@ function findGroup(groupId: string | null): UserGroup | null {
 export function markGroupBanned(groupId: string): void {
   const group = findGroup(groupId);
   if (group) group.banned = true;
+}
+
+/** Mirrors a mute the server reported on a request, which takes every permission. */
+export function markGroupMuted(groupId: string): void {
+  const group = findGroup(groupId);
+  if (!group) return;
+  group.muted = true;
+  group.effectivePermissions = [];
 }
 
 const activeGroup = computed(() => findGroup(activeGroupId.value));

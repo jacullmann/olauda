@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT user_id, assigned_at, role_id FROM user_roles WHERE tenant_id = $1",
+  "query": "SELECT ur.user_id, ur.assigned_at, ur.role_id,\n                      m.user_id IS NOT NULL AS \"muted!\"\n               FROM user_roles ur\n               LEFT JOIN group_mutes m ON m.tenant_id = ur.tenant_id AND m.user_id = ur.user_id\n               WHERE ur.tenant_id = $1",
   "describe": {
     "columns": [
       {
@@ -35,6 +35,12 @@
             "name": "role_id"
           }
         }
+      },
+      {
+        "ordinal": 3,
+        "name": "muted!",
+        "type_info": "Bool",
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -45,8 +51,9 @@
     "nullable": [
       false,
       false,
-      false
+      false,
+      null
     ]
   },
-  "hash": "d205b74359cb66127c9fd9ab3e2720519d08b9ecd0d944c32021229494f077b2"
+  "hash": "46caaf98ae5d9362ad198b195e2907db1aac488795b713f94bc0ac5c3c576ec7"
 }

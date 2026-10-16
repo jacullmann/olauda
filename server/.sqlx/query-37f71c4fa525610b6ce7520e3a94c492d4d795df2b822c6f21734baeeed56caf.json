@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO group_mutes (tenant_id, user_id, muted_by) VALUES ($1, $2, $3)\n               ON CONFLICT (tenant_id, user_id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "37f71c4fa525610b6ce7520e3a94c492d4d795df2b822c6f21734baeeed56caf"
+}

@@ -20,6 +20,13 @@ export function useGroupAction() {
     return userGroups.value.find((group) => grants(group.id))?.id ?? null;
   }
 
+  /**
+   * Whether `withGroup` would reach a group that grants `permission`. Without
+   * any group it leads to the group list instead, which is worth offering too.
+   */
+  const canStartAction = (permission: PermissionKey) =>
+    userGroups.value.length === 0 || targetGroupId(permission) !== null;
+
   const withGroup = (
     action: (groupId: string) => void,
     permission?: PermissionKey,
@@ -32,5 +39,5 @@ export function useGroupAction() {
     }
   };
 
-  return { withGroup };
+  return { withGroup, canStartAction };
 }

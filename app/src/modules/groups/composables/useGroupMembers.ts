@@ -40,6 +40,20 @@ export function useGroupMembers() {
 
   async function changeRole(userId: string, role: AssignableMemberRole) {
     const isSelf = userId === userStore.user?.id;
+    const target = members.value.find((m) => m.userId === userId);
+
+    // Only members with the user role can be muted, so the server lifts the
+    // mute along with any promotion.
+    if (target?.muted && role !== 'user') {
+      const isConfirmed = await confirmModal.ask({
+        title: t('groups.settings.members.promote_muted_modal.title'),
+        content: t('groups.settings.members.promote_muted_modal.message', {
+          name: target.generatedName,
+        }),
+        submitText: t('groups.settings.members.promote_muted_modal.submit'),
+      });
+      if (!isConfirmed) return;
+    }
 
     // Without owner rights, nobody can hand a lowered role back to themselves.
     if (isSelf && !hasOwnerRights.value) {
@@ -79,6 +93,22 @@ export function useGroupMembers() {
     }
   }
 
+  async function setMuted(userId: string, muted: boolean) {
+    try {
+      const path = groupPath(groupId, `/admin/members/${userId}/mute`);
+      await (muted ? api.put(path) : api.delete(path));
+      members.value = members.value.map((m) =>
+        m.userId === userId ? { ...m, muted } : m,
+      );
+    } catch (e) {
+      const errorKey = muted ? 'mute' : 'unmute';
+      toast.error(
+        apiErrorMessage(e, t(`groups.settings.members.errors.${errorKey}`)),
+      );
+      await loadMembers();
+    }
+  }
+
   async function transferOwnership(targetUserId: string) {
     const target = members.value.find((m) => m.userId === targetUserId);
     const owner = members.value.find((m) => m.role === 'owner');
@@ -93,12 +123,15 @@ export function useGroupMembers() {
           ? 'message_take_over'
           : 'message_on_behalf';
 
+    const message = t(`groups.settings.members.transfer_modal.${messageKey}`, {
+      name: target?.generatedName ?? '',
+      owner: owner?.generatedName ?? '',
+    });
     const isConfirmed = await confirmModal.ask({
       title: t('groups.settings.members.transfer_modal.title'),
-      content: t(`groups.settings.members.transfer_modal.${messageKey}`, {
-        name: target?.generatedName ?? '',
-        owner: owner?.generatedName ?? '',
-      }),
+      content: target?.muted
+        ? `${message} ${t('groups.settings.members.transfer_modal.lifts_mute')}`
+        : message,
       submitText: t('groups.settings.members.transfer_modal.submit'),
       danger: true,
     });
@@ -127,6 +160,7 @@ export function useGroupMembers() {
     loadMembers,
     changeRole,
     removeMember,
+    setMuted,
     transferOwnership,
   };
 }

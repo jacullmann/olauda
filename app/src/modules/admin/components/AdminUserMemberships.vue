@@ -51,6 +51,9 @@ function roleOptions(current: MemberRole, assignable: MemberRole[]) {
         >
         <div class="text-sm text-on-ghost-muted">
           {{ t('admin.users.details.joined', { date: fmtDate(m.joinedAt) }) }}
+          <template v-if="m.muted">
+            · {{ t('admin.users.details.muted') }}
+          </template>
         </div>
       </div>
       <div class="w-40 shrink-0">

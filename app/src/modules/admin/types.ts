@@ -156,6 +156,8 @@ export interface AdminMembership {
   groupName: string;
   role: MemberRole;
   joinedAt: string;
+  /** Promoting a muted member lifts the mute. */
+  muted: boolean;
   assignableRoles: MemberRole[];
 }
 

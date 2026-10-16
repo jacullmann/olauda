@@ -127,6 +127,18 @@ impl DataExportService {
         .fetch_all(&mut *tx)
         .await?;
 
+        let mutes = sqlx::query_as!(
+            GroupMute,
+            r#"SELECT m.tenant_id AS group_id, g.name AS group_name, m.muted_at
+               FROM group_mutes m
+               JOIN groups g ON g.id = m.tenant_id
+               WHERE m.user_id = $1
+               ORDER BY m.muted_at"#,
+            user_id
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
         let invites = sqlx::query_as!(
             GroupInvite,
             r#"SELECT i.tenant_id AS group_id, g.name AS group_name,
@@ -401,6 +413,7 @@ impl DataExportService {
                 memberships,
                 courses,
                 bans,
+                mutes,
                 invites,
             },
             content: ContentExport {

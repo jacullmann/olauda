@@ -53,7 +53,7 @@ const taskFormModal = useTaskFormModal();
 const announcementsModal = useAnnouncementListModal();
 const { announcements } = storeToRefs(useAnnouncementStore());
 const createGroupModal = useCreateGroupModal();
-const { withGroup } = useGroupAction();
+const { withGroup, canStartAction } = useGroupAction();
 const { openGroup } = useOpenGroup();
 const {
   navItems: adminNavItems,
@@ -89,7 +89,7 @@ function handleNavigation(to: RouteLocationRaw) {
 }
 
 function handleTask() {
-  withGroup((groupId) => taskFormModal.openNew(groupId));
+  withGroup((groupId) => taskFormModal.openNew(groupId), 'create_items');
 }
 
 const sidebarScrollEl = ref<HTMLElement | null>(null);
@@ -214,6 +214,7 @@ onUnmounted(() => {
 
       <div class="flex flex-col gap-0 w-full">
         <AppSidebarButton
+          v-if="canStartAction('create_items')"
           :label="t('common.sidebar.task')"
           :shortcut="['alt', 'n']"
           :expanded="isExpanded"

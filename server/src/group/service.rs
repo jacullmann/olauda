@@ -8,7 +8,7 @@ use crate::{
         group_type::GroupType,
         name_generator::generate_user_name,
         names::DisplayName,
-        permission::GroupPermissions,
+        permission::{GroupPermissions, Standing},
         role::{MemberRole, Role},
     },
     error::{AppError, AppResult},
@@ -68,6 +68,7 @@ struct Membership {
     done_course_setup: bool,
     offers_course_choice: bool,
     banned: bool,
+    muted: bool,
 }
 
 pub struct AcceptInviteParams<'a> {
@@ -165,8 +166,9 @@ impl GroupService {
             .map(|g| {
                 let role = Role::from_str_or_user(&g.role_name);
                 let has_owner_rights = is_superadmin || g.owner_id == user_id;
+                let standing = Standing::resolve(role, has_owner_rights, g.muted);
                 let permissions = GroupPermissions::from_json_with_defaults(&g.permissions);
-                let effective_permissions = permissions.effective_keys(role, has_owner_rights);
+                let effective_permissions = permissions.effective_keys(standing);
 
                 GroupSummaryDto {
                     id: g.id,
@@ -181,6 +183,7 @@ impl GroupService {
                     effective_permissions,
                     course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
                     banned: g.banned,
+                    muted: standing == Standing::Muted,
                 }
             })
             .collect();
@@ -198,6 +201,8 @@ impl GroupService {
             r#"SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS "avatar_public_id?",
                       g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,
                       ur.done_course_setup, g.banned_at IS NOT NULL AS "banned!",
+                      EXISTS (SELECT 1 FROM group_mutes m
+                              WHERE m.tenant_id = g.id AND m.user_id = ur.user_id) AS "muted!",
                       EXISTS (SELECT 1 FROM courses c
                               JOIN subjects s ON s.id = c.subject_id
                               WHERE s.tenant_id = g.id AND s.category <> 'core')
@@ -252,6 +257,7 @@ impl GroupService {
             effective_permissions: tc.effective_permission_keys(),
             course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
             banned: g.banned,
+            muted: tc.standing() == Standing::Muted,
         })
     }
 
@@ -352,7 +358,11 @@ impl GroupService {
                 .ok_or_else(|| AppError::not_found("Group not found."))?;
 
         let rows = sqlx::query!(
-            r#"SELECT user_id, assigned_at, role_id FROM user_roles WHERE tenant_id = $1"#,
+            r#"SELECT ur.user_id, ur.assigned_at, ur.role_id,
+                      m.user_id IS NOT NULL AS "muted!"
+               FROM user_roles ur
+               LEFT JOIN group_mutes m ON m.tenant_id = ur.tenant_id AND m.user_id = ur.user_id
+               WHERE ur.tenant_id = $1"#,
             tenant_id
         )
         .fetch_all(&self.db)
@@ -362,23 +372,24 @@ impl GroupService {
             .into_iter()
             .map(|r| {
                 let role = role_from_db(r.role_id)?;
-                Ok((r.user_id, r.assigned_at, role))
+                Ok((r.user_id, r.assigned_at, role, r.muted))
             })
             .collect::<AppResult<Vec<_>>>()?;
 
         let caller_role = targets
             .iter()
             .find(|(user_id, ..)| *user_id == caller.user_id)
-            .map(|(.., role)| *role);
+            .map(|&(_, _, role, _)| role);
         let actor = caller.resolve(owner_id, caller_role);
 
         let mut members: Vec<GroupMemberDto> = targets
             .into_iter()
-            .map(|(user_id, joined_at, role)| {
+            .map(|(user_id, joined_at, role, muted)| {
                 let target = Target {
                     user_id,
                     role: MemberRole::resolve(role, user_id == owner_id),
                 };
+                let can_mute = member_policy::ensure_can_mute(actor, target).is_ok();
                 GroupMemberDto {
                     generated_name: generate_user_name(&user_id.to_string()),
                     role: target.role,
@@ -386,6 +397,8 @@ impl GroupService {
                     joined_at,
                     assignable_roles: member_policy::assignable_roles(actor, target),
                     can_remove: member_policy::ensure_can_remove(actor, target).is_ok(),
+                    muted: can_mute.then_some(muted),
+                    can_mute,
                 }
             })
             .collect();

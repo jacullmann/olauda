@@ -1,8 +1,12 @@
-use crate::common::{extractors::TenantContext, permission::Permission};
+use crate::{
+    common::{extractors::TenantContext, permission::Permission},
+    error::AppResult,
+};
 use uuid::Uuid;
 
 /// What the caller may do to the tasks of a group. Own tasks stay editable and
 /// deletable whatever the group's matrix says; everyone else's depend on it.
+/// A muted member gets no actor at all, so their own tasks are read-only too.
 #[derive(Debug, Clone, Copy)]
 pub struct ItemActor {
     pub user_id: Uuid,
@@ -12,13 +16,14 @@ pub struct ItemActor {
 }
 
 impl ItemActor {
-    pub fn from_context(tc: &TenantContext) -> Self {
-        Self {
+    pub fn from_context(tc: &TenantContext) -> AppResult<Self> {
+        tc.ensure_not_muted()?;
+        Ok(Self {
             user_id: tc.user.user_id,
             can_edit_others: tc.can(Permission::EditOtherContent),
             can_delete_others: tc.can(Permission::DeleteOtherContent),
             can_attach_files: tc.can(Permission::UploadImages),
-        }
+        })
     }
 
     fn is(&self, user_id: Option<Uuid>) -> bool {

@@ -75,6 +75,11 @@ pub enum AppError {
     #[error("This group has been banned.")]
     GroupBanned { group_id: Uuid },
 
+    /// A moderator muted the caller, who can still read the group but not
+    /// change anything in it.
+    #[error("You are muted in this group.")]
+    MutedInGroup { group_id: Uuid },
+
     #[error("{0}")]
     Forbidden(String),
 
@@ -201,6 +206,12 @@ impl IntoResponse for AppError {
             AppError::GroupBanned { group_id } => (
                 StatusCode::FORBIDDEN,
                 json!({ "error": self.to_string(), "code": "GROUP_BANNED", "groupId": group_id }),
+            ),
+            // Named like a banned group, so a mute placed mid-session takes
+            // effect in the right group at once.
+            AppError::MutedInGroup { group_id } => (
+                StatusCode::FORBIDDEN,
+                json!({ "error": self.to_string(), "code": "MUTED_IN_GROUP", "groupId": group_id }),
             ),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, json!({ "error": msg })),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, json!({ "error": msg })),

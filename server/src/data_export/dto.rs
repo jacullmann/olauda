@@ -73,6 +73,7 @@ pub struct GroupsExport {
     pub memberships: Vec<Membership>,
     pub courses: Vec<CourseChoice>,
     pub bans: Vec<GroupBan>,
+    pub mutes: Vec<GroupMute>,
     pub invites: Vec<GroupInvite>,
 }
 
@@ -103,6 +104,15 @@ pub struct GroupBan {
     pub group_id: Uuid,
     pub group_name: String,
     pub banned_at: DateTime<Utc>,
+}
+
+/// Who muted the user is another member's data and stays out.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupMute {
+    pub group_id: Uuid,
+    pub group_name: String,
+    pub muted_at: DateTime<Utc>,
 }
 
 /// Invites the user created, used or revoked. Who else used an invite is

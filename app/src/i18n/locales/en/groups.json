@@ -85,6 +85,7 @@
       "count_one": "1 member in this group",
       "count_other": "{count} members in this group",
       "you": "You",
+      "muted": "Muted",
       "search_placeholder": "Search members",
       "info": {
         "tooltip": "Overview of the member menu",
@@ -93,6 +94,8 @@
         "list_text": "Here you can see all members of your group along with their role (Owner, Admin, Moderator, Member). To protect user data, an automatically generated alias is displayed. Your own entry is marked with “You”.",
         "role_title": "Change Roles",
         "role_text": "The dropdown next to each member shows their current role. You can only manage members below you and only assign roles below your own; everything else is grayed out. You can lower your own role at any time. The owner and superadmins can do everything. If they choose “Owner” for someone, ownership is transferred and the previous owner becomes an admin.",
+        "mute_title": "Mute Members",
+        "mute_text": "Use the microphone icon to mute a member with the Member role. A muted member can still read everything in the group, but can't create, edit or delete anything, upload files or invite others. Leaving and rejoining the group doesn't lift the mute; giving the member a higher role does. Only those who can mute a member see whether they are muted.",
         "remove_title": "Remove Members",
         "remove_text": "To remove a member from the group, click on the corresponding icon next to the dropdown menu. Here too, you can only remove members below you. The owner cannot be removed."
       },
@@ -100,7 +103,9 @@
         "empty": "No members found."
       },
       "actions": {
-        "remove": "Remove from group"
+        "remove": "Remove from group",
+        "mute": "Mute",
+        "unmute": "Unmute"
       },
       "ban_list": {
         "title": "Banned Users",
@@ -144,6 +149,7 @@
         "message_as_owner": "Do you really want to transfer ownership of this group to {name}? You will become an admin and lose your owner rights.",
         "message_take_over": "Do you want to take over ownership of this group? {owner} will lose their owner rights and become an admin.",
         "message_on_behalf": "Do you want to transfer ownership of this group to {name}? {owner} will lose their owner rights and become an admin.",
+        "lifts_mute": "This also lifts their mute.",
         "submit": "Transfer"
       },
       "step_down_modal": {
@@ -151,10 +157,17 @@
         "message": "You cannot give this role back to yourself afterwards. Someone with a higher role will have to do that.",
         "submit": "Lower Role"
       },
+      "promote_muted_modal": {
+        "title": "Promote muted member?",
+        "message": "{name} is muted. The new role lifts the mute, so {name} can create and change content again.",
+        "submit": "Change Role"
+      },
       "errors": {
         "load": "Couldn't load the members.",
         "change_role": "Couldn't change the role.",
         "remove": "Couldn't remove the member.",
+        "mute": "Couldn't mute the member.",
+        "unmute": "Couldn't lift the mute.",
         "transfer_ownership": "Couldn't transfer ownership.",
         "load_banned": "Couldn't load the banned members.",
         "unban": "Couldn't lift the ban.",
@@ -429,6 +442,7 @@
     "create": "Couldn't create the group.",
     "join": "Couldn't join the group.",
     "banned": "You've been banned from this group.",
+    "muted": "You're muted in this group.",
     "leave": "Couldn't leave the group.",
     "owner_cannot_leave": "As the owner, you can't leave the group. Transfer ownership or delete the group.",
     "create_invite": "Couldn't create an invite link.",
@@ -445,5 +459,8 @@
   "banned": {
     "title": "Your group is currently banned.",
     "message": "Try again later."
+  },
+  "muted": {
+    "notice": "You've been muted in this group. You can still read everything, but you can't create or change anything."
   }
 }

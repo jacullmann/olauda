@@ -67,6 +67,7 @@ const {
   archiveItem,
   dismissedItems,
   useListTransitions,
+  canCreate,
   canDelete,
   canManageNotes,
   canUploadImages,
@@ -238,7 +239,11 @@ onDeactivated(() => {
               />
             </BaseTooltip>
 
-            <BaseTooltip :content="t('common.sidebar.task')" placement="bottom">
+            <BaseTooltip
+              v-if="canCreate"
+              :content="t('common.sidebar.task')"
+              placement="bottom"
+            >
               <BaseButton
                 variant="action"
                 :aria-label="t('tasks.list.task_form.new_task')"
@@ -385,7 +390,7 @@ onDeactivated(() => {
         v-else-if="!loading && !limitedItems.length"
         class="flex-1"
         :class="{ 'animate-enter': !emptyStateEntered }"
-        :primary-action="openCreateForm"
+        :primary-action="canCreate ? openCreateForm : undefined"
         :secondary-action="resetFilters"
         @animationend="handleEmptyStateAnimationEnd"
       >

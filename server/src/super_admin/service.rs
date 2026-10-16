@@ -574,9 +574,11 @@ impl SuperAdminService {
         admin_id: Uuid,
     ) -> AppResult<Vec<UserMembershipDto>> {
         let rows = sqlx::query!(
-            r#"SELECT g.id, g.name, g.owner_id, ur.role_id, ur.assigned_at
+            r#"SELECT g.id, g.name, g.owner_id, ur.role_id, ur.assigned_at,
+                      m.user_id IS NOT NULL AS "muted!"
                FROM user_roles ur
                JOIN groups g ON g.id = ur.tenant_id
+               LEFT JOIN group_mutes m ON m.tenant_id = ur.tenant_id AND m.user_id = ur.user_id
                WHERE ur.user_id = $1
                ORDER BY g.name, g.id"#,
             user_id
@@ -597,6 +599,7 @@ impl SuperAdminService {
                     group_name: r.name,
                     role: target.role,
                     joined_at: r.assigned_at,
+                    muted: r.muted,
                     assignable_roles: member_policy::assignable_roles(
                         caller.resolve(r.owner_id, None),
                         target,

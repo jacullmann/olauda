@@ -67,7 +67,7 @@ export function useRootSearchView(): ComputedRef<SearchView> {
   const { t } = useI18n();
   const router = useRouter();
   const { activeGroupId, checkPermission, canInAnyGroup } = useGroups();
-  const { withGroup } = useGroupAction();
+  const { withGroup, canStartAction } = useGroupAction();
   const { inviteMember } = useGroupMenuActions();
   const performLogout = useLogout();
   const hasSidebar = useIsSidebarViewport();
@@ -259,7 +259,8 @@ export function useRootSearchView(): ComputedRef<SearchView> {
         kind: 'action',
         icon: SquarePen,
         shortcut: ['alt', 'n'],
-        run: () => withGroup((id) => taskFormModal.openNew(id)),
+        run: () => withGroup((id) => taskFormModal.openNew(id), 'create_items'),
+        available: canStartAction('create_items'),
       },
       {
         id: 'create-private-entry',

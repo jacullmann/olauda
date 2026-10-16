@@ -42,6 +42,8 @@ pub struct GroupSummaryDto {
     pub course_setup: CourseSetup,
     /// A superadmin banned the group: only superadmins can still open it.
     pub banned: bool,
+    /// The caller may read the group but not change anything in it.
+    pub muted: bool,
 }
 
 /// Where the caller stands with picking their courses in a group.
@@ -86,6 +88,12 @@ pub struct GroupMemberDto {
     pub assignable_roles: Vec<MemberRole>,
     /// Whether the requesting user may remove this member.
     pub can_remove: bool,
+    /// Left out unless the requesting user may mute this member: a mute is
+    /// between the member and the group's moderators.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub muted: Option<bool>,
+    /// Whether the requesting user may mute or unmute this member.
+    pub can_mute: bool,
 }
 
 #[derive(Debug, Deserialize)]

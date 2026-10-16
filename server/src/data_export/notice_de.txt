@@ -29,8 +29,8 @@ account            Dein Konto: E-Mail-Adresse, ob ein Passwort und die
 linkedAccounts     Mit deinem Konto verknüpfte Anmeldedienste (z. B. Google)
                    mit der Konto-ID und E-Mail-Adresse bei diesem Dienst.
 groups             Deine Gruppenmitgliedschaften und Rollen, deine Kurswahl,
-                   Sperren in Gruppen und Einladungslinks, die du erstellt,
-                   genutzt oder widerrufen hast.
+                   Sperren und Stummschaltungen in Gruppen und Einladungs-
+                   links, die du erstellt, genutzt oder widerrufen hast.
 content            Was du selbst angelegt hast: Aufgaben und Klausuren, hoch-
                    geladene Dateien und Gruppenbilder, Ankündigungen und deine
                    privaten Aufgaben (entschlüsselt).
@@ -120,8 +120,9 @@ zugeordnet.
 
 Die Daten stammen von dir selbst und aus deiner Nutzung des Dienstes. Bei der
 Anmeldung mit Google haben wir deine Google-Konto-ID und E-Mail-Adresse von
-Google erhalten. Rollen, Sperren in Gruppen und Hinweise an deinen Aufgaben
-können von den Admins oder Moderatoren deiner Gruppen stammen.
+Google erhalten. Rollen, Sperren und Stummschaltungen in Gruppen und Hinweise
+an deinen Aufgaben können von den Admins oder Moderatoren deiner Gruppen
+stammen.
 
 
 7. Automatisierte Entscheidungen
@@ -140,10 +141,11 @@ Eine automatisierte Entscheidungsfindung einschließlich Profiling
   gefährden, wenn die Datei in falsche Hände gerät. Ob sie vorhanden sind,
   steht in data.json (z. B. hasPassword, mfaEnabled).
 - Angaben über andere Personen: wer einen Inhalt von dir gemeldet hat und mit
-  welcher Begründung, wer deine Einladungen genutzt, dich gesperrt oder deine
-  Rolle geändert hat, samt IP-Adresse und Browserkennung dieser Person, und
-  wer andere Inhalte erstellt hat. Das schützt die Rechte dieser Personen
-  (Art. 15 Abs. 4 DSGVO, § 29 Abs. 1 Satz 2 BDSG).
+  welcher Begründung, wer deine Einladungen genutzt, dich gesperrt oder
+  stummgeschaltet oder deine Rolle geändert hat, samt IP-Adresse und
+  Browserkennung dieser Person, und wer andere Inhalte erstellt hat. Das
+  schützt die Rechte dieser Personen (Art. 15 Abs. 4 DSGVO, § 29 Abs. 1
+  Satz 2 BDSG).
 - Daten, die nicht deinem Konto zugeordnet sind: technische Zugriffsdaten
   beim Aufruf von Website und App sowie die zusammengefassten Statistiken
   der Reichweitenmessung (Umami).

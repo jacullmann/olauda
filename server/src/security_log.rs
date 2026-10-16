@@ -73,6 +73,8 @@ pub enum SecurityEventKind {
     MemberRoleChanged,
     MemberRemoved,
     MemberUnbanned,
+    MemberMuted,
+    MemberUnmuted,
     OwnershipTransferred,
     PermissionsChanged,
 
@@ -131,6 +133,8 @@ impl SecurityEventKind {
             Self::MemberRoleChanged => ("group:member_role_changed", Success),
             Self::MemberRemoved => ("group:member_removed", Success),
             Self::MemberUnbanned => ("group:member_unbanned", Success),
+            Self::MemberMuted => ("group:member_muted", Success),
+            Self::MemberUnmuted => ("group:member_unmuted", Success),
             Self::OwnershipTransferred => ("group:ownership_transferred", Success),
             Self::PermissionsChanged => ("group:permissions_changed", Success),
             Self::AdminUserBanned => ("admin:user_banned", Success),

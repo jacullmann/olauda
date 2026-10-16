@@ -27,8 +27,8 @@ account            Your account: email address, whether a password and
 linkedAccounts     Sign-in services linked to your account (e.g. Google) with
                    your account ID and email address at that service.
 groups             Your group memberships and roles, your course selection,
-                   bans in groups and invite links you created, used or
-                   revoked.
+                   bans and mutes in groups and invite links you created,
+                   used or revoked.
 content            What you created yourself: tasks and exams, uploaded files
                    and group pictures, announcements and your private tasks
                    (decrypted).
@@ -113,8 +113,8 @@ available to the group but are no longer linked to your account.
 
 The data comes from you and from your use of the service. If you sign in with
 Google, we received your Google account ID and email address from Google.
-Roles, bans in groups and notes on your tasks may come from the admins or
-moderators of your groups.
+Roles, bans and mutes in groups and notes on your tasks may come from the
+admins or moderators of your groups.
 
 
 7. Automated decision-making
@@ -132,8 +132,8 @@ place.
   if the file fell into the wrong hands. Whether they exist is stated in
   data.json (e.g. hasPassword, mfaEnabled).
 - Information about other people: who reported your content and why, who used
-  your invites, banned you or changed your role, including that person's IP
-  address and browser identifier, and who created other content. This protects
+  your invites, banned or muted you or changed your role, including that
+  person's IP address and browser identifier, and who created other content. This protects
   their rights (Art. 15(4) GDPR, Section 29(1) sentence 2 BDSG).
 - Data not linked to your account: technical access data recorded when the
   website and app are loaded, and the aggregated analytics statistics (Umami).

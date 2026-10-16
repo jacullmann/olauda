@@ -17,6 +17,7 @@ use crate::{
     state::AppState,
 };
 use chrono::NaiveTime;
+use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::{PgConnection, PgPool};
 use std::collections::{BTreeMap, HashSet};
@@ -76,6 +77,22 @@ struct LockedMembership {
     owner_id: Uuid,
     actor: Actor,
     target: Target,
+}
+
+struct MuteLift {
+    tenant_id: Uuid,
+    target: Uuid,
+    actor: Uuid,
+    reason: UnmuteReason,
+}
+
+/// Recorded with the lifted mute, so the log tells a moderator's decision
+/// apart from a promotion.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum UnmuteReason {
+    Unmuted,
+    Promoted,
 }
 
 pub struct GroupAdminService {
@@ -417,9 +434,122 @@ impl GroupAdminService {
             .record(&mut *tx)
             .await?;
 
+        // Only members with the user role can be muted, so a promotion lifts
+        // the mute instead of leaving a moderator who cannot moderate.
+        if new_role != Role::User {
+            Self::lift_mute(
+                &mut tx,
+                MuteLift {
+                    tenant_id,
+                    target,
+                    actor: caller.user_id,
+                    reason: UnmuteReason::Promoted,
+                },
+                client,
+            )
+            .await?;
+        }
+
         tx.commit().await?;
 
         Ok(json!({ "ok": true }))
+    }
+
+    /// A no-op for a member who is already muted.
+    pub async fn mute_member(
+        &self,
+        tenant_id: Uuid,
+        caller: Caller,
+        target: Uuid,
+        client: &ClientInfo,
+    ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+        let locked = Self::lock_membership(&mut tx, tenant_id, caller, target).await?;
+        member_policy::ensure_can_mute(locked.actor, locked.target)?;
+
+        let muted = sqlx::query!(
+            r#"INSERT INTO group_mutes (tenant_id, user_id, muted_by) VALUES ($1, $2, $3)
+               ON CONFLICT (tenant_id, user_id) DO NOTHING"#,
+            tenant_id,
+            target,
+            caller.user_id
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected()
+            > 0;
+
+        if muted {
+            SecurityEvent::new(SecurityEventKind::MemberMuted)
+                .user(target)
+                .actor(caller.user_id)
+                .tenant(tenant_id)
+                .client(client)
+                .record(&mut *tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+
+        Ok(())
+    }
+
+    /// A no-op for a member who is not muted.
+    pub async fn unmute_member(
+        &self,
+        tenant_id: Uuid,
+        caller: Caller,
+        target: Uuid,
+        client: &ClientInfo,
+    ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+        let locked = Self::lock_membership(&mut tx, tenant_id, caller, target).await?;
+        member_policy::ensure_can_mute(locked.actor, locked.target)?;
+
+        Self::lift_mute(
+            &mut tx,
+            MuteLift {
+                tenant_id,
+                target,
+                actor: caller.user_id,
+                reason: UnmuteReason::Unmuted,
+            },
+            client,
+        )
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
+    }
+
+    async fn lift_mute(
+        tx: &mut PgConnection,
+        lift: MuteLift,
+        client: &ClientInfo,
+    ) -> AppResult<()> {
+        let lifted = sqlx::query!(
+            r#"DELETE FROM group_mutes WHERE tenant_id = $1 AND user_id = $2"#,
+            lift.tenant_id,
+            lift.target
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected()
+            > 0;
+
+        if lifted {
+            SecurityEvent::new(SecurityEventKind::MemberUnmuted)
+                .user(lift.target)
+                .actor(lift.actor)
+                .tenant(lift.tenant_id)
+                .client(client)
+                .metadata(json!({ "reason": lift.reason }))
+                .record(&mut *tx)
+                .await?;
+        }
+
+        Ok(())
     }
 
     pub async fn remove_member(
@@ -509,6 +639,18 @@ impl GroupAdminService {
             .metadata(json!({ "previousOwnerId": previous_owner }))
             .record(&mut *tx)
             .await?;
+
+        Self::lift_mute(
+            &mut tx,
+            MuteLift {
+                tenant_id,
+                target,
+                actor: caller.user_id,
+                reason: UnmuteReason::Promoted,
+            },
+            client,
+        )
+        .await?;
 
         tx.commit().await?;
 

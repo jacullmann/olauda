@@ -9,7 +9,10 @@ import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useAccessStatusStore } from '@/modules/auth/stores/useAccessStatusStore';
 import { useSession } from '@/modules/auth/composables/useSession';
 import { useOAuth } from '@/modules/auth/composables/useOAuth';
-import { markGroupBanned } from '@/modules/groups/composables/useGroups';
+import {
+  markGroupBanned,
+  markGroupMuted,
+} from '@/modules/groups/composables/useGroups';
 import {
   consumeLoginReturn,
   saveLoginReturn,
@@ -102,6 +105,11 @@ onMounted(() => {
   useEventListener(window, 'group-banned', (event) => {
     if (event instanceof CustomEvent && typeof event.detail === 'string') {
       markGroupBanned(event.detail);
+    }
+  });
+  useEventListener(window, 'group-muted', (event) => {
+    if (event instanceof CustomEvent && typeof event.detail === 'string') {
+      markGroupMuted(event.detail);
     }
   });
 });

@@ -10,17 +10,17 @@ type OwnedBy = { createdBy?: string | null };
 /**
  * Mirrors the server's rules for the tasks of one group, so the UI only offers
  * what the server accepts. Own tasks stay editable and deletable whatever the
- * group's matrix says; owners and superadmins arrive with every permission.
+ * group's matrix says, unless the user is muted; owners and superadmins arrive
+ * with every permission.
  */
 export function useTaskPermissions(groupId: MaybeRefOrGetter<string>) {
   const { findGroup } = useGroups();
   const { user } = storeToRefs(useUserStore());
 
+  const group = computed(() => findGroup(toValue(groupId)));
+
   const permissions = computed(
-    () =>
-      new Set<PermissionKey>(
-        findGroup(toValue(groupId))?.effectivePermissions ?? [],
-      ),
+    () => new Set<PermissionKey>(group.value?.effectivePermissions ?? []),
   );
 
   const can = (permission: PermissionKey) => permissions.value.has(permission);
@@ -28,21 +28,26 @@ export function useTaskPermissions(groupId: MaybeRefOrGetter<string>) {
   const isOwn = ({ createdBy }: OwnedBy) =>
     !!user.value && !!createdBy && createdBy === user.value.id;
 
+  const mayChangeOwn = (owned: OwnedBy) =>
+    group.value?.muted !== true && isOwn(owned);
+
+  const canCreate = computed(() => can('create_items'));
   const canUploadImages = computed(() => can('upload_images'));
   const canManageNotes = computed(() => can('manage_notes'));
 
   const canEdit = (item: Pick<Task, 'createdBy'>) =>
-    isOwn(item) || can('edit_other_content');
+    mayChangeOwn(item) || can('edit_other_content');
 
   const canDelete = (item: Pick<Task, 'createdBy'>) =>
-    isOwn(item) || can('delete_other_content');
+    mayChangeOwn(item) || can('delete_other_content');
 
   const canDeleteImage = (
     item: Pick<Task, 'createdBy'>,
     image: Pick<Attachment, 'createdBy'>,
-  ) => isOwn(item) || isOwn(image) || can('delete_other_content');
+  ) => mayChangeOwn(item) || mayChangeOwn(image) || can('delete_other_content');
 
   return {
+    canCreate,
     canUploadImages,
     canManageNotes,
     canEdit,

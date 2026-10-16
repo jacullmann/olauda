@@ -4,7 +4,7 @@ use axum::{
     Router,
     extract::DefaultBodyLimit,
     handler::Handler,
-    routing::{delete, get, patch, post},
+    routing::{delete, get, patch, post, put},
 };
 
 /// A whole timetable is replaced at once. Its 250 lessons at most, each with
@@ -32,6 +32,10 @@ pub fn group_router() -> Router<AppState> {
         .route("/admin/invites", get(get_invites))
         .route("/admin/invites/{id}", delete(revoke_invite))
         .route("/admin/members/{user_id}/role", patch(change_member_role))
+        .route(
+            "/admin/members/{user_id}/mute",
+            put(mute_member).delete(unmute_member),
+        )
         .route("/admin/members/{user_id}", delete(remove_member))
         .route("/admin/transfer-ownership", post(transfer_ownership))
         .route("/admin/settings", patch(rename_group))

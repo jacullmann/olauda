@@ -55,6 +55,7 @@ const FIRST_SERVER_ERROR = 500;
 const SERVICE_UNAVAILABLE = 503;
 const SHUTDOWN = 'SHUTDOWN';
 const GROUP_BANNED = 'GROUP_BANNED';
+const MUTED_IN_GROUP = 'MUTED_IN_GROUP';
 
 /** Whether the API refused the request for being one too many. */
 export function isRateLimited(err: unknown): boolean {
@@ -118,9 +119,18 @@ export function isShutdown(err: unknown): boolean {
  * The group is named because requests to several groups can be in flight.
  */
 export function bannedGroupId(err: unknown): string | undefined {
+  return refusingGroupId(err, GROUP_BANNED);
+}
+
+/** The group the user was muted in, when that is why the request was refused. */
+export function mutedGroupId(err: unknown): string | undefined {
+  return refusingGroupId(err, MUTED_IN_GROUP);
+}
+
+function refusingGroupId(err: unknown, code: string): string | undefined {
   if (
     apiErrorStatus(err) !== FORBIDDEN ||
-    apiErrorCode(err) !== GROUP_BANNED ||
+    apiErrorCode(err) !== code ||
     !isAxiosError<{ groupId?: unknown }>(err)
   ) {
     return undefined;
@@ -147,12 +157,13 @@ export function isTransientFailure(err: unknown): boolean {
 
 /**
  * The message for a failed request in the user's language: the shared one
- * for a rate limit, else the fallback naming what failed. The API's own
- * `error` text is English and meant for developers, so it is never shown;
- * a reason worth telling apart comes as a `code` its caller maps.
+ * for a rate limit or a mute, which any action can meet, else the fallback
+ * naming what failed. The API's own `error` text is English and meant for
+ * developers, so it is never shown; a reason worth telling apart comes as a
+ * `code` its caller maps.
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
-  return isRateLimited(err)
-    ? i18n.global.t('common.errors.rate_limited')
-    : fallback;
+  if (isRateLimited(err)) return i18n.global.t('common.errors.rate_limited');
+  if (mutedGroupId(err)) return i18n.global.t('groups.errors.muted');
+  return fallback;
 }

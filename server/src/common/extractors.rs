@@ -3,7 +3,7 @@ use crate::{
     common::{
         jwt::JwtService,
         path_params::GroupPath,
-        permission::{GroupPermissions, Permission},
+        permission::{GroupPermissions, Permission, Standing},
         role::Role,
     },
     config::{ACCESS_COOKIE, REAUTH_WINDOW, chrono_ttl},
@@ -191,6 +191,9 @@ pub struct TenantContext {
     /// Read from the database, not the access token, so a revoked superadmin
     /// loses group access immediately instead of when the token expires.
     pub is_superadmin: bool,
+    /// Private so no check can skip [`Self::standing`], which keeps callers
+    /// with owner rights unmuted.
+    is_muted: bool,
     pub user: AuthUser,
 }
 
@@ -209,6 +212,9 @@ impl TenantContext {
                        SELECT 1 FROM user_roles
                        WHERE user_id = $1 AND tenant_id IS NULL AND role_id = $3
                    ) AS "is_superadmin!",
+                   EXISTS (
+                       SELECT 1 FROM group_mutes WHERE tenant_id = g.id AND user_id = $1
+                   ) AS "is_muted!",
                    EXISTS (
                        SELECT 1 FROM users u
                        WHERE u.id = $1
@@ -255,6 +261,7 @@ impl TenantContext {
             group_owner_id: row.owner_id,
             group_permissions: GroupPermissions::from_json_with_defaults(&row.permissions),
             is_superadmin: row.is_superadmin,
+            is_muted: row.is_muted,
             user,
         })
     }
@@ -263,12 +270,32 @@ impl TenantContext {
         self.group_owner_id == self.user.user_id
     }
 
+    pub fn standing(&self) -> Standing {
+        Standing::resolve(self.tenant_role, self.has_owner_rights(), self.is_muted)
+    }
+
     pub fn can(&self, permission: Permission) -> bool {
-        if self.has_owner_rights() {
-            return true;
+        self.group_permissions.allows(self.standing(), permission)
+    }
+
+    /// Tells a muted caller why, so the client can explain it.
+    pub fn require(&self, permission: Permission) -> AppResult<()> {
+        self.ensure_not_muted()?;
+        if self.can(permission) {
+            Ok(())
+        } else {
+            Err(AppError::forbidden("Insufficient permissions."))
         }
-        let required = self.group_permissions.required_role(permission);
-        self.tenant_role.dominates(required)
+    }
+
+    /// For changes that need no permission, such as editing one's own task.
+    pub fn ensure_not_muted(&self) -> AppResult<()> {
+        match self.standing() {
+            Standing::Muted => Err(AppError::MutedInGroup {
+                group_id: self.tenant_id,
+            }),
+            Standing::OwnerRights | Standing::Member(_) => Ok(()),
+        }
     }
 
     /// Superadmins act with the owner's rights in every group, whether or not
@@ -278,8 +305,7 @@ impl TenantContext {
     }
 
     pub fn effective_permission_keys(&self) -> Vec<&'static str> {
-        self.group_permissions
-            .effective_keys(self.tenant_role, self.has_owner_rights())
+        self.group_permissions.effective_keys(self.standing())
     }
 }
 

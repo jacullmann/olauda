@@ -14,6 +14,10 @@ export interface GroupMember {
   assignableRoles: MemberRole[];
   /** Whether the current user may remove this member, decided by the server. */
   canRemove: boolean;
+  /** Sent only to those who may mute this member. */
+  muted?: boolean;
+  /** Whether the current user may mute or unmute this member, decided by the server. */
+  canMute: boolean;
 }
 
 export interface ScheduleSubstitution {

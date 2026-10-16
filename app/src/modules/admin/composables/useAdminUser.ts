@@ -4,6 +4,7 @@ import axios from 'axios';
 import api from '@/api/client';
 import { apiErrorStatus } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import type {
   MemberRole,
   AdminMembership,
@@ -17,6 +18,7 @@ export type UserDetailsState = 'loading' | 'ready' | 'not-found' | 'failed';
 /** An account with its groups, as its admin page shows it. */
 export function useAdminUser(userId: MaybeRefOrGetter<string>) {
   const toast = useToast();
+  const confirmModal = useConfirmModal();
   const { t } = useI18n();
 
   const user = ref<AdminUser | null>(null);
@@ -52,6 +54,19 @@ export function useAdminUser(userId: MaybeRefOrGetter<string>) {
   async function changeRole(membership: AdminMembership, role: MemberRole) {
     const id = toValue(userId);
     if (role === membership.role) return;
+
+    // Only members with the user role can be muted, so the server lifts the
+    // mute along with any promotion.
+    if (membership.muted && role !== 'user') {
+      const isConfirmed = await confirmModal.ask({
+        title: t('admin.users.promote_muted_modal.title'),
+        content: t('admin.users.promote_muted_modal.message', {
+          group: membership.groupName,
+        }),
+        submitText: t('admin.users.promote_muted_modal.submit'),
+      });
+      if (!isConfirmed) return;
+    }
 
     changingGroupId.value = membership.groupId;
     try {

@@ -52,6 +52,7 @@ const {
   archiveItem,
   dismissedItems,
   useListTransitions,
+  canCreate,
   canEdit,
   canDelete,
   canManageNotes,
@@ -138,7 +139,12 @@ const {
             : t('schedule.lesson.tasks')
         }}
       </h3>
-      <BaseButton variant="ghost" :icon="Plus" @click="addTask">
+      <BaseButton
+        v-if="canCreate"
+        variant="ghost"
+        :icon="Plus"
+        @click="addTask"
+      >
         {{ t('schedule.lesson.add_task') }}
       </BaseButton>
     </div>

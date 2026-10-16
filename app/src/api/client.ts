@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import {
   bannedGroupId,
+  mutedGroupId,
   isAccessTokenRejected,
   isShutdown,
   isReauthRequired,
@@ -96,6 +97,10 @@ function notifyGroupBanned(groupId: string): void {
   window.dispatchEvent(new CustomEvent('group-banned', { detail: groupId }));
 }
 
+function notifyGroupMuted(groupId: string): void {
+  window.dispatchEvent(new CustomEvent('group-muted', { detail: groupId }));
+}
+
 /**
  * Rotates the session's tokens. A failure has no side effects, so callers
  * that resolve the session themselves (e.g. at startup) decide what it means.
@@ -137,6 +142,14 @@ api.interceptors.response.use(
     const groupId = bannedGroupId(error);
     if (groupId) {
       notifyGroupBanned(groupId);
+      return Promise.reject(error);
+    }
+
+    // A mute placed while the group is open hides what can no longer be done
+    // at once; the caller still reports the failed action.
+    const mutedInGroupId = mutedGroupId(error);
+    if (mutedInGroupId) {
+      notifyGroupMuted(mutedInGroupId);
       return Promise.reject(error);
     }
 

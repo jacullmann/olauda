@@ -6,6 +6,8 @@ import {
   Ban,
   Search,
   UsersRound,
+  Mic,
+  MicOff,
 } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { computed, ref } from 'vue';
@@ -75,6 +77,7 @@ const {
   loadMembers,
   changeRole,
   removeMember,
+  setMuted,
   transferOwnership,
 } = useGroupMembers();
 
@@ -117,6 +120,12 @@ const filteredMembers = computed(() =>
 
 function isSelf(member: GroupMember): boolean {
   return member.userId === userStore.user?.id;
+}
+
+function muteActionLabel(member: GroupMember): string {
+  return member.muted
+    ? t('groups.settings.members.actions.unmute')
+    : t('groups.settings.members.actions.mute');
 }
 
 function isMemberRole(value: string): value is MemberRole {
@@ -223,6 +232,9 @@ function confirmRemove() {
           <h3>{{ t('groups.settings.members.info.role_title') }}</h3>
           <p>{{ t('groups.settings.members.info.role_text') }}</p>
 
+          <h3>{{ t('groups.settings.members.info.mute_title') }}</h3>
+          <p>{{ t('groups.settings.members.info.mute_text') }}</p>
+
           <h3>{{ t('groups.settings.members.info.remove_title') }}</h3>
           <p>{{ t('groups.settings.members.info.remove_text') }}</p>
         </BaseInfoButton>
@@ -286,19 +298,30 @@ function confirmRemove() {
               :name="member.generatedName"
               :size="10"
             />
-            <div class="flex flex-col gap-1">
-              <div class="flex items-center gap-2">
+            <div class="flex min-w-0 flex-col gap-1">
+              <div class="flex min-w-0 items-center gap-2">
                 <span
                   class="font-semibold text-base/tight whitespace-nowrap overflow-hidden text-ellipsis"
                   >{{ member.generatedName }}</span
                 >
                 <span
                   v-if="isSelf(member)"
-                  class="rounded-full bg-action px-2 text-xs/5 font-semibold text-on-action"
+                  class="shrink-0 rounded-full bg-action px-2 text-xs/5 font-semibold text-on-action"
                   >{{ t('groups.settings.members.you') }}</span
                 >
+                <!-- Narrow rows keep only the icon; the label stays for screen readers. -->
+                <span
+                  v-if="member.muted"
+                  class="flex shrink-0 items-center rounded-full bg-ghost-hover px-2 text-xs/5 font-semibold text-on-ghost-muted max-md:py-1"
+                  :title="t('groups.settings.members.muted')"
+                >
+                  <MicOff :size="12" class="md:hidden" aria-hidden="true" />
+                  <span class="max-md:sr-only">{{
+                    t('groups.settings.members.muted')
+                  }}</span>
+                </span>
               </div>
-              <span class="md:hidden text-on-ghost-muted text-sm/4">{{
+              <span class="md:hidden truncate text-on-ghost-muted text-sm/4">{{
                 t('groups.settings.members.joined', {
                   time: formatRelativeTime(member.joinedAt),
                 })
@@ -324,6 +347,20 @@ function confirmRemove() {
             <span v-else class="text-sm text-on-ghost-muted">{{
               roleLabels[member.role]
             }}</span>
+
+            <BaseTooltip
+              v-if="canModerateMembers"
+              :content="muteActionLabel(member)"
+              placement="bottom"
+            >
+              <BaseButton
+                variant="ghost"
+                :disabled="!member.canMute"
+                :icon="member.muted ? Mic : MicOff"
+                :aria-label="muteActionLabel(member)"
+                @click="setMuted(member.userId, !member.muted)"
+              />
+            </BaseTooltip>
 
             <BaseTooltip
               v-if="canModerateMembers"

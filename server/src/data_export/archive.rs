@@ -138,6 +138,7 @@ mod tests {
                 memberships: vec![],
                 courses: vec![],
                 bans: vec![],
+                mutes: vec![],
                 invites: vec![],
             },
             content: ContentExport {

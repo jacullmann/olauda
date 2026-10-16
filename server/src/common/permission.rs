@@ -194,31 +194,50 @@ impl GroupPermissions {
         }
     }
 
-    pub fn allowed_keys_for_role(&self, role: Role) -> Vec<&'static str> {
+    pub fn allows(&self, standing: Standing, permission: Permission) -> bool {
+        match standing {
+            Standing::OwnerRights => true,
+            Standing::Muted => false,
+            Standing::Member(role) => role.dominates(self.required_role(permission)),
+        }
+    }
+
+    pub fn effective_keys(&self, standing: Standing) -> Vec<&'static str> {
         Permission::ALL
             .iter()
-            .filter(|&&p| role.dominates(self.required_role(p)))
+            .filter(|&&p| self.allows(standing, p))
             .map(Permission::as_str)
             .collect()
     }
+}
 
-    /// Owners and superadmins hold every permission regardless of the matrix.
-    pub fn effective_keys(&self, role: Role, has_owner_rights: bool) -> Vec<&'static str> {
-        if has_owner_rights {
-            return Permission::ALL.iter().map(Permission::as_str).collect();
+/// What bounds a caller in a group before the matrix is consulted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Standing {
+    /// The owner or a superadmin: every permission, whatever the matrix says.
+    OwnerRights,
+    /// Reads the group but holds no permission, even one the matrix grants
+    /// every member.
+    Muted,
+    Member(Role),
+}
+
+impl Standing {
+    /// Owner rights outrank a mute, so a muted superadmin or owner keeps
+    /// every right.
+    pub fn resolve(role: Role, has_owner_rights: bool, is_muted: bool) -> Self {
+        match (has_owner_rights, is_muted) {
+            (true, _) => Self::OwnerRights,
+            (false, true) => Self::Muted,
+            (false, false) => Self::Member(role),
         }
-        self.allowed_keys_for_role(role)
     }
 }
 
 #[macro_export]
 macro_rules! require_permission {
     ($tc:expr, $perm:expr) => {
-        if !$tc.can($perm) {
-            return Err($crate::error::AppError::Forbidden(
-                "Insufficient permissions.".into(),
-            ));
-        }
+        $tc.require($perm)?
     };
 }
 
@@ -311,19 +330,19 @@ mod tests {
                 .is_some_and(|matrix| matrix.contains_key("edit_group_configuration"))
         );
         assert!(
-            !p.allowed_keys_for_role(Role::Moderator)
+            !p.effective_keys(Standing::Member(Role::Moderator))
                 .contains(&"edit_group_configuration")
         );
         assert!(
-            p.allowed_keys_for_role(Role::Admin)
+            p.effective_keys(Standing::Member(Role::Admin))
                 .contains(&"edit_group_configuration")
         );
     }
 
     #[test]
-    fn allowed_keys_user_role() {
+    fn effective_keys_user_role() {
         let p = GroupPermissions::default();
-        let keys = p.allowed_keys_for_role(Role::User);
+        let keys = p.effective_keys(Standing::Member(Role::User));
         assert!(keys.contains(&"create_items"));
         assert!(!keys.contains(&"edit_other_content"));
         assert!(!keys.contains(&"delete_other_content"));
@@ -331,9 +350,9 @@ mod tests {
     }
 
     #[test]
-    fn allowed_keys_admin_gets_everything_except_superadmin_level() {
+    fn effective_keys_admin_gets_everything_except_superadmin_level() {
         let p = GroupPermissions::default();
-        let keys = p.allowed_keys_for_role(Role::Admin);
+        let keys = p.effective_keys(Standing::Member(Role::Admin));
         assert_eq!(keys.len(), Permission::ALL.len());
     }
 
@@ -341,12 +360,34 @@ mod tests {
     fn effective_keys_owner_rights_override_matrix() {
         let p = GroupPermissions::default();
         assert_eq!(
-            p.effective_keys(Role::User, true).len(),
+            p.effective_keys(Standing::OwnerRights).len(),
             Permission::ALL.len()
         );
+    }
+
+    #[test]
+    fn muted_members_hold_no_permission() {
+        let everyone = GroupPermissions::from_json_with_defaults(&serde_json::json!({
+            "edit_group_profile": "user",
+        }));
+        assert!(everyone.effective_keys(Standing::Muted).is_empty());
+        assert!(
+            Permission::ALL
+                .into_iter()
+                .all(|p| !everyone.allows(Standing::Muted, p))
+        );
+    }
+
+    #[test]
+    fn owner_rights_outrank_a_mute() {
         assert_eq!(
-            p.effective_keys(Role::User, false),
-            p.allowed_keys_for_role(Role::User)
+            Standing::resolve(Role::User, true, true),
+            Standing::OwnerRights
+        );
+        assert_eq!(Standing::resolve(Role::User, false, true), Standing::Muted);
+        assert_eq!(
+            Standing::resolve(Role::Moderator, false, false),
+            Standing::Member(Role::Moderator)
         );
     }
 

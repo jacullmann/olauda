@@ -5,6 +5,7 @@ import { Ban } from '@lucide/vue';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
+import GroupMutedNotice from '@/modules/groups/components/GroupMutedNotice.vue';
 
 const { t } = useI18n();
 const { findGroup } = useGroups();
@@ -22,5 +23,8 @@ const isLockedOut = computed(
     {{ t('groups.banned.title') }}
     <template #message>{{ t('groups.banned.message') }}</template>
   </BaseEmptyState>
-  <router-view v-else />
+  <template v-else>
+    <GroupMutedNotice class="mx-4 mt-4" />
+    <router-view />
+  </template>
 </template>

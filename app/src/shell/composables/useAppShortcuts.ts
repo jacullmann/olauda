@@ -15,7 +15,7 @@ export function useAppShortcuts() {
   const announcementFormModal = useAnnouncementFormModal();
   const sidebarStore = useSidebarStore();
   const userStore = useUserStore();
-  const { withGroup } = useGroupAction();
+  const { withGroup, canStartAction } = useGroupAction();
   const { canInAnyGroup } = useGroups();
 
   onKeyStroke(['k', 'K'], (e: KeyboardEvent) => {
@@ -29,10 +29,11 @@ export function useAppShortcuts() {
 
   onKeyStroke(['n', 'N'], (e: KeyboardEvent) => {
     if (!userStore.user) return;
+    if (!canStartAction('create_items')) return;
 
     if (e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
-      withGroup((groupId) => taskFormModal.openNew(groupId));
+      withGroup((groupId) => taskFormModal.openNew(groupId), 'create_items');
     }
   });
 

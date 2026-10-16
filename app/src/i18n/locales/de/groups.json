@@ -85,6 +85,7 @@
       "count_one": "1 Mitglied in dieser Gruppe",
       "count_other": "{count} Mitglieder in dieser Gruppe",
       "you": "Du",
+      "muted": "Stummgeschaltet",
       "search_placeholder": "Mitglieder suchen",
       "info": {
         "tooltip": "Übersicht des Mitgliedermenüs",
@@ -93,6 +94,8 @@
         "list_text": "Hier siehst du alle Mitglieder deiner Gruppe mit ihrer Rolle (Besitzer, Admin, Moderator, Mitglied). Um die Daten der Nutzer zu schützen, wird ein automatisch generierter Alias angezeigt. Dein eigener Eintrag ist mit „Du“ markiert.",
         "role_title": "Rollen ändern",
         "role_text": "Das Dropdown neben jedem Mitglied zeigt dessen aktuelle Rolle. Du kannst nur Mitglieder verwalten, die unter dir stehen, und nur Rollen vergeben, die unter deiner eigenen liegen – alles andere ist ausgegraut. Deine eigene Rolle kannst du jederzeit herabsetzen. Der Besitzer und Superadmins dürfen alles. Wählen sie bei jemandem „Besitzer“, wird der Besitz übertragen und der bisherige Besitzer wird Admin.",
+        "mute_title": "Mitglieder stummschalten",
+        "mute_text": "Mit dem Mikrofon-Symbol schaltest du ein Mitglied mit der Rolle Mitglied stumm. Ein stummgeschaltetes Mitglied kann weiterhin alles in der Gruppe lesen, aber nichts erstellen, bearbeiten oder löschen, keine Dateien hochladen und niemanden einladen. Verlassen und erneutes Beitreten hebt die Stummschaltung nicht auf, eine höhere Rolle schon. Ob ein Mitglied stummgeschaltet ist, sehen nur diejenigen, die es stummschalten dürfen.",
         "remove_title": "Mitglieder entfernen",
         "remove_text": "Um ein Mitglied aus der Gruppe zu entfernen, klicke auf das entsprechende Symbol neben dem Dropdown-Menü. Auch hier kannst du nur Mitglieder entfernen, die unter dir stehen. Der Besitzer kann nicht entfernt werden."
       },
@@ -100,7 +103,9 @@
         "empty": "Keine Mitglieder gefunden."
       },
       "actions": {
-        "remove": "Aus Gruppe entfernen"
+        "remove": "Aus Gruppe entfernen",
+        "mute": "Stummschalten",
+        "unmute": "Stummschaltung aufheben"
       },
       "ban_list": {
         "title": "Gesperrte Nutzer",
@@ -144,6 +149,7 @@
         "message_as_owner": "Möchtest du den Besitz der Gruppe wirklich an {name} übertragen? Du wirst danach Admin und verlierst deine Besitzerrechte.",
         "message_take_over": "Möchtest du den Besitz der Gruppe übernehmen? {owner} verliert die Besitzerrechte und wird danach Admin.",
         "message_on_behalf": "Möchtest du den Besitz der Gruppe an {name} übertragen? {owner} verliert die Besitzerrechte und wird danach Admin.",
+        "lifts_mute": "Dabei wird auch die Stummschaltung aufgehoben.",
         "submit": "Übertragen"
       },
       "step_down_modal": {
@@ -151,10 +157,17 @@
         "message": "Du kannst dir diese Rolle danach nicht selbst zurückgeben. Dafür brauchst du jemanden mit einer höheren Rolle.",
         "submit": "Herabsetzen"
       },
+      "promote_muted_modal": {
+        "title": "Stummgeschaltetes Mitglied befördern?",
+        "message": "{name} ist stummgeschaltet. Mit der neuen Rolle wird die Stummschaltung aufgehoben und {name} kann wieder Inhalte erstellen und ändern.",
+        "submit": "Rolle ändern"
+      },
       "errors": {
         "load": "Die Mitglieder konnten nicht geladen werden.",
         "change_role": "Die Rolle konnte nicht geändert werden.",
         "remove": "Das Mitglied konnte nicht entfernt werden.",
+        "mute": "Das Mitglied konnte nicht stummgeschaltet werden.",
+        "unmute": "Die Stummschaltung konnte nicht aufgehoben werden.",
         "transfer_ownership": "Der Besitz konnte nicht übertragen werden.",
         "load_banned": "Die gesperrten Mitglieder konnten nicht geladen werden.",
         "unban": "Die Sperre konnte nicht aufgehoben werden.",
@@ -429,6 +442,7 @@
     "create": "Die Gruppe konnte nicht erstellt werden.",
     "join": "Du konntest der Gruppe nicht beitreten.",
     "banned": "Du wurdest aus dieser Gruppe gesperrt.",
+    "muted": "Du bist in dieser Gruppe stummgeschaltet.",
     "leave": "Du konntest die Gruppe nicht verlassen.",
     "owner_cannot_leave": "Als Besitzer kannst du die Gruppe nicht verlassen. Übertrage den Besitz oder lösche die Gruppe.",
     "create_invite": "Der Einladungslink konnte nicht erstellt werden.",
@@ -445,5 +459,8 @@
   "banned": {
     "title": "Deine Gruppe ist leider gerade gesperrt.",
     "message": "Versuche es später erneut."
+  },
+  "muted": {
+    "notice": "Du wurdest in dieser Gruppe stummgeschaltet. Du kannst weiterhin alles lesen, aber nichts erstellen oder ändern."
   }
 }
