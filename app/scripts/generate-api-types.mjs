@@ -23,7 +23,11 @@ const ast = await openapiTS(SPEC, {
 const generated = HEADER + astToString(ast);
 
 if (process.argv.includes('--check')) {
-  const committed = await readFile(OUTPUT, 'utf8').catch(() => '');
+  // Git may check the file out with CRLF line endings on Windows.
+  const committed = (await readFile(OUTPUT, 'utf8').catch(() => '')).replace(
+    /\r\n/g,
+    '\n',
+  );
   if (committed !== generated) {
     console.error('src/api/schema.d.ts is outdated; run `pnpm api:types`.');
     process.exit(1);
