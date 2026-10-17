@@ -15,6 +15,11 @@ export interface DragReorderOptions {
   onMove: (from: number, to: number) => void;
   /** Presses on these keep their own behaviour and never pick a card up. */
   ignore?: string;
+  /**
+   * Only presses on this pick an item up, and at once, even under a finger:
+   * the handle never scrolls the page, so nothing has to be told apart.
+   */
+  handle?: string;
   /** How long a finger has to rest on a card before it lifts. */
   holdDelay?: number;
 }
@@ -128,7 +133,7 @@ export function useDragReorder(
   container: Ref<HTMLElement | null>,
   options: DragReorderOptions,
 ) {
-  const { onMove, ignore, holdDelay = 320 } = options;
+  const { onMove, ignore, handle, holdDelay = 320 } = options;
 
   const entries = new Map<HTMLElement, Entry>();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -458,6 +463,7 @@ export function useDragReorder(
   function pressedItem(event: Event): HTMLElement | null {
     const target = event.target as Element | null;
     if (!target || (ignore && target.closest(ignore))) return null;
+    if (handle && !target.closest(handle)) return null;
     const item = target.closest<HTMLElement>(`[${REORDER_ITEM_ATTR}]`);
     return item && item.parentElement === container.value ? item : null;
   }
@@ -549,11 +555,12 @@ export function useDragReorder(
       id: touch.identifier,
       startX: touch.clientX,
       startY: touch.clientY,
-      growth: growWhilePressed(el, holdDelay),
+      growth: handle ? undefined : growWhilePressed(el, holdDelay),
     };
     pointerX = touch.clientX;
     pointerY = touch.clientY;
-    pending.timer = setTimeout(() => pending && lift(pending), holdDelay);
+    if (handle) lift(pending);
+    else pending.timer = setTimeout(() => pending && lift(pending), holdDelay);
 
     // Registered as non-passive so a lifted card can stop the page scrolling;
     // until the hold completes, nothing is cancelled and the list scrolls.

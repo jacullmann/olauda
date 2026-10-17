@@ -516,20 +516,13 @@ function draftSubjectLesson(id: string): Lesson | null {
           <div class="swap-stack justify-items-end">
             <Transition name="swap-icon">
               <div v-if="!isEditMode" class="flex items-center gap-2">
-                <BaseTooltip
+                <BaseButton
                   v-if="canEditScheduleConfig"
-                  :content="
-                    t('groups.settings.schedule.editor.edit_schedule_button')
-                  "
-                  placement="bottom"
+                  variant="ghost"
+                  :disabled="isEditingConfig"
+                  @click="enterEditMode"
+                  >{{ t('common.buttons.edit') }}</BaseButton
                 >
-                  <BaseButton
-                    variant="ghost"
-                    :icon="Pencil"
-                    :disabled="isEditingConfig"
-                    @click="enterEditMode"
-                  />
-                </BaseTooltip>
               </div>
 
               <div v-else class="flex items-center gap-2">

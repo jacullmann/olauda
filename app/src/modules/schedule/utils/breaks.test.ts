@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ScheduleConfig } from '@/modules/schedule/types';
-import { breaksOn, withBreaksOn, withTidyBreaks } from './breaks';
+import {
+  breaksOn,
+  nextBreakSlot,
+  withBreaksOn,
+  withTidyBreaks,
+} from './breaks';
 
 const config: ScheduleConfig = {
   startTime: '08:00',
@@ -59,5 +64,23 @@ describe('tidy breaks', () => {
     });
     expect(tidy.breaks).toEqual({ 2: 20 });
     expect(tidy.dayBreaks).toEqual({ 4: { 1: 5 } });
+  });
+});
+
+describe('slot for a new break', () => {
+  it('is the latest free one right after a break', () => {
+    expect(nextBreakSlot({ 2: 20, 4: 15 }, 8)).toBe(5);
+    expect(nextBreakSlot({ 2: 20, 3: 10, 6: 15 }, 8)).toBe(7);
+  });
+
+  it('is the first free one when no break has a free slot after it', () => {
+    expect(nextBreakSlot({}, 8)).toBe(1);
+    expect(nextBreakSlot({ 7: 15 }, 8)).toBe(1);
+    expect(nextBreakSlot({ 1: 5, 2: 5, 6: 5, 7: 5 }, 8)).toBe(3);
+  });
+
+  it('is none once every lesson but the last is followed by a break', () => {
+    expect(nextBreakSlot({ 1: 5, 2: 5 }, 3)).toBeNull();
+    expect(nextBreakSlot({}, 1)).toBeNull();
   });
 });

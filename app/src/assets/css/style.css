@@ -355,7 +355,7 @@
     }
   }
 }
-/* Reordering private tasks. The held card rises off the page: a tight contact
+/* Reordering a list by dragging. The held card rises off the page: a tight contact
    shadow under a wide soft one. The rest of the list steps back and quiets
    down, so the difference is depth, not decoration. --lift and --recede run 0
    to 1 and are driven by the springs in useDragReorder. */

@@ -18,6 +18,22 @@ export function breaksWithin(
   );
 }
 
+/**
+ * Where a new break goes: the latest free slot right after another break, or
+ * the first free slot when no break has one after it. `null` once every lesson
+ * but the last is followed by a break.
+ */
+export function nextBreakSlot(
+  breaks: ScheduleBreaks,
+  totalSlots: number,
+): number | null {
+  const free: number[] = [];
+  for (let slot = 1; slot < totalSlots; slot++) {
+    if (!breaks[slot]) free.push(slot);
+  }
+  return free.findLast((slot) => breaks[slot - 1]) ?? free[0] ?? null;
+}
+
 export function sameBreaks(a: ScheduleBreaks, b: ScheduleBreaks): boolean {
   const aSlots = Object.keys(a);
   return (

@@ -258,8 +258,6 @@
       },
       "config": {
         "title": "Configuration",
-        "edit_button": "Edit configuration",
-        "lesson_duration_label": "Lesson Duration (minutes)",
         "instruction_text": "Set the start time, lesson length and breaks.",
         "add_break_button": "Add Break",
         "start_time_label": "Start time",
@@ -277,12 +275,15 @@
         "day_has_own_breaks": "{day} has its own breaks.",
         "use_everyones_breaks": "Use Standard Breaks",
         "break_label": "Break",
-        "break_minutes_label": "Length of the break after period {slot}, in minutes",
-        "shorter_break": "5 minutes shorter",
-        "longer_break": "5 minutes longer",
-        "move_break": "Move after period {slot}",
-        "remove_break": "Remove break",
-        "add_break_after": "Add a break after period {slot}"
+        "break_length_label": "Length of the break after period {slot}",
+        "shorter": "5 minutes shorter",
+        "longer": "5 minutes longer",
+        "earlier": "5 minutes earlier",
+        "later": "5 minutes later",
+        "fewer_slots": "One period fewer",
+        "more_slots": "One period more",
+        "move_break": "Move the break after period {slot}",
+        "remove_break": "Remove break"
       },
       "lessons": {
         "title": "Lessons"
@@ -317,7 +318,6 @@
         }
       },
       "editor": {
-        "edit_schedule_button": "Edit lessons",
         "title": "Editor",
         "add_lesson_title": "Add New Lesson",
         "edit_lesson_title": "Edit Lesson",

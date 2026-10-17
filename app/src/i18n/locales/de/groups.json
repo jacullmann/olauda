@@ -258,8 +258,6 @@
       },
       "config": {
         "title": "Konfiguration",
-        "edit_button": "Konfiguration bearbeiten",
-        "lesson_duration_label": "Stundenlänge (Minuten)",
         "instruction_text": "Lege Unterrichtsbeginn, Stundenlänge und Pausen fest.",
         "add_break_button": "Pause hinzufügen",
         "start_time_label": "Startzeit",
@@ -277,12 +275,15 @@
         "day_has_own_breaks": "{day} hat eigene Pausen.",
         "use_everyones_breaks": "Standardpausen verwenden",
         "break_label": "Pause",
-        "break_minutes_label": "Länge der Pause nach Stunde {slot} in Minuten",
-        "shorter_break": "5 Minuten kürzer",
-        "longer_break": "5 Minuten länger",
-        "move_break": "Nach Stunde {slot} verschieben",
-        "remove_break": "Pause entfernen",
-        "add_break_after": "Pause nach Stunde {slot} hinzufügen"
+        "break_length_label": "Länge der Pause nach Stunde {slot}",
+        "shorter": "5 Minuten kürzer",
+        "longer": "5 Minuten länger",
+        "earlier": "5 Minuten früher",
+        "later": "5 Minuten später",
+        "fewer_slots": "Eine Stunde weniger",
+        "more_slots": "Eine Stunde mehr",
+        "move_break": "Pause nach Stunde {slot} verschieben",
+        "remove_break": "Pause entfernen"
       },
       "lessons": {
         "title": "Stunden"
@@ -317,7 +318,6 @@
         }
       },
       "editor": {
-        "edit_schedule_button": "Stunden bearbeiten",
         "title": "Editor",
         "add_lesson_title": "Neue Stunde hinzufügen",
         "edit_lesson_title": "Stunde bearbeiten",

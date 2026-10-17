@@ -2,25 +2,16 @@ import { computed, ref, type Ref } from 'vue';
 import type { ScheduleBreaks, ScheduleConfig } from '@/modules/schedule/types';
 import {
   breaksOn,
+  nextBreakSlot,
   withBreaksOn,
   withTidyBreaks,
 } from '@/modules/schedule/utils/breaks';
-import { DEFAULT_SCHEDULE_CONFIG } from '@/modules/schedule/utils/slotTimes';
 import { SCHOOL_DAYS } from '@/modules/schedule/utils/weekday';
 
 export const MAX_SLOTS = 15;
 export const DEFAULT_BREAK_MINS = 15;
 
-interface ScheduleConfigForm {
-  startTime: string;
-  /** Blank while being retyped. */
-  totalSlots: number | '';
-  lessonDurationMins: number | '';
-  breaks: ScheduleBreaks;
-  dayBreaks: ScheduleConfig['dayBreaks'];
-}
-
-const formOf = (config: ScheduleConfig): ScheduleConfigForm => ({
+const formOf = (config: ScheduleConfig): ScheduleConfig => ({
   ...config,
   dayBreaks: { ...config.dayBreaks },
 });
@@ -39,7 +30,7 @@ function withoutBreakAfter(
  * everyone's breaks on show. Changing the breaks shown changes only theirs.
  */
 export function useScheduleConfigForm(saved: Ref<ScheduleConfig>) {
-  const form = ref<ScheduleConfigForm>(formOf(saved.value));
+  const form = ref<ScheduleConfig>(formOf(saved.value));
   const shownDay = ref<number | null>(null);
 
   function reset() {
@@ -47,21 +38,8 @@ export function useScheduleConfigForm(saved: Ref<ScheduleConfig>) {
     shownDay.value = null;
   }
 
-  /** The form as the server stores it, a blank field read as its default. */
-  const draftConfig = computed<ScheduleConfig>(() =>
-    withTidyBreaks({
-      startTime: form.value.startTime,
-      totalSlots: Math.min(
-        Math.max(Number(form.value.totalSlots) || 1, 1),
-        MAX_SLOTS,
-      ),
-      lessonDurationMins:
-        Number(form.value.lessonDurationMins) ||
-        DEFAULT_SCHEDULE_CONFIG.lessonDurationMins,
-      breaks: form.value.breaks,
-      dayBreaks: form.value.dayBreaks,
-    }),
-  );
+  /** The form as the server stores it. */
+  const draftConfig = computed(() => withTidyBreaks(form.value));
 
   const daysWithOwnBreaks = computed(() =>
     SCHOOL_DAYS.filter((day) => draftConfig.value.dayBreaks[day]),
@@ -85,8 +63,15 @@ export function useScheduleConfigForm(saved: Ref<ScheduleConfig>) {
   const setShownBreaks = (breaks: ScheduleBreaks) =>
     setBreaksOn(shownDay.value, breaks);
 
-  const addBreak = (afterSlot: number) =>
-    setShownBreaks({ ...shownBreaks.value, [afterSlot]: DEFAULT_BREAK_MINS });
+  const newBreakSlot = computed(() =>
+    nextBreakSlot(shownBreaks.value, draftConfig.value.totalSlots),
+  );
+
+  function addBreak() {
+    const slot = newBreakSlot.value;
+    if (slot === null) return;
+    setShownBreaks({ ...shownBreaks.value, [slot]: DEFAULT_BREAK_MINS });
+  }
 
   const setBreakMinutes = (afterSlot: number, minutes: number) =>
     setShownBreaks({ ...shownBreaks.value, [afterSlot]: minutes });
@@ -112,6 +97,7 @@ export function useScheduleConfigForm(saved: Ref<ScheduleConfig>) {
     draftConfig,
     daysWithOwnBreaks,
     shownBreaks,
+    newBreakSlot,
     reset,
     addBreak,
     setBreakMinutes,

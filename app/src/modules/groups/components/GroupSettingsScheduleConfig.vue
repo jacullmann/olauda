@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed, h, ref, type FunctionalComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Pencil, RotateCcw } from '@lucide/vue';
+import { Plus, RotateCcw } from '@lucide/vue';
 import type { NavItem } from '@/common/components/BaseTabs.vue';
+import {
+  formatTimeOfDay,
+  minutesSinceMidnight,
+} from '@/common/utils/timeOfDay';
 import type { ScheduleConfig } from '@/modules/schedule/types';
 import { useScheduleDisplay } from '@/modules/schedule/composables/useScheduleDisplay';
 import { breaksOn } from '@/modules/schedule/utils/breaks';
@@ -29,6 +33,7 @@ const {
   draftConfig,
   daysWithOwnBreaks,
   shownBreaks,
+  newBreakSlot,
   reset,
   addBreak,
   setBreakMinutes,
@@ -36,6 +41,64 @@ const {
   moveBreak,
   resetBreaksOn,
 } = useScheduleConfigForm(scheduleConfig);
+
+const TIME_STEP_MINS = 5;
+const LATEST_START_MINS = 24 * 60 - TIME_STEP_MINS;
+const MIN_LESSON_MINS = 10;
+const MAX_LESSON_MINS = 120;
+
+/** The day's settings, each with a stepper while they are being edited. */
+const fields = computed(() => {
+  const key = 'groups.settings.schedule.config';
+  const config = isEditing.value ? form.value : scheduleConfig.value;
+  return [
+    {
+      label: t(`${key}.start_time_label`),
+      value: config.startTime,
+      stepper: {
+        modelValue: minutesSinceMidnight(config.startTime),
+        min: 0,
+        max: LATEST_START_MINS,
+        step: TIME_STEP_MINS,
+        decrementLabel: t(`${key}.earlier`),
+        incrementLabel: t(`${key}.later`),
+      },
+      set: (minutes: number) => {
+        form.value.startTime = formatTimeOfDay(minutes);
+      },
+    },
+    {
+      label: t(`${key}.slots_per_day_label`),
+      value: String(config.totalSlots),
+      stepper: {
+        modelValue: config.totalSlots,
+        min: 1,
+        max: MAX_SLOTS,
+        step: 1,
+        decrementLabel: t(`${key}.fewer_slots`),
+        incrementLabel: t(`${key}.more_slots`),
+      },
+      set: (slots: number) => {
+        form.value.totalSlots = slots;
+      },
+    },
+    {
+      label: t(`${key}.lesson_length_label`),
+      value: t(`${key}.minutes`, { minutes: config.lessonDurationMins }),
+      stepper: {
+        modelValue: config.lessonDurationMins,
+        min: MIN_LESSON_MINS,
+        max: MAX_LESSON_MINS,
+        step: TIME_STEP_MINS,
+        decrementLabel: t(`${key}.shorter`),
+        incrementLabel: t(`${key}.longer`),
+      },
+      set: (minutes: number) => {
+        form.value.lessonDurationMins = minutes;
+      },
+    },
+  ];
+});
 
 const EVERYONE_TAB = 'everyone';
 
@@ -88,6 +151,16 @@ function breaksHint(config: ScheduleConfig, day: number | null) {
 const editTabs = computed(() =>
   dayTabsOf(days, daysWithOwnBreaks.value, 'short'),
 );
+const planTitle = computed(() =>
+  t(
+    isEditing.value
+      ? 'groups.settings.schedule.config.breaks_title'
+      : 'groups.settings.schedule.config.day_plan_title',
+  ),
+);
+const shownTimes = computed(() =>
+  isEditing.value ? draftConfig.value : scheduleConfig.value,
+);
 const editHint = computed(() => breaksHint(draftConfig.value, shownDay.value));
 
 const savedDaysWithOwnBreaks = computed(() =>
@@ -127,144 +200,78 @@ async function submit() {
 </script>
 
 <template>
-  <div>
+  <div class="@container">
     <BasePageHeader>
       {{ t('groups.settings.schedule.config.title') }}
 
       <template #action>
-        <BaseTooltip
+        <BaseButton
           v-if="canEdit && !isEditing"
-          :content="t('groups.settings.schedule.config.edit_button')"
-          placement="bottom"
+          variant="ghost"
+          @click="startEditing"
+          >{{ t('common.buttons.edit') }}</BaseButton
         >
-          <BaseButton variant="ghost" :icon="Pencil" @click="startEditing" />
-        </BaseTooltip>
       </template>
     </BasePageHeader>
 
-    <BaseFormContent v-if="isEditing" class="max-w-120">
-      <BaseFormGroup id="config-start">
-        <BaseLabel for="config-start-input">{{
-          t('groups.settings.schedule.config.start_time_label')
-        }}</BaseLabel>
-        <BaseInput
-          id="config-start-input"
-          v-model="form.startTime"
-          type="time"
-        />
-      </BaseFormGroup>
-      <BaseFormGroup id="config-slots">
-        <BaseLabel for="config-slots-input">{{
-          t('groups.settings.schedule.config.slots_per_day_label')
-        }}</BaseLabel>
-        <BaseInput
-          id="config-slots-input"
-          v-model.number="form.totalSlots"
-          type="number"
-          min="1"
-          :max="MAX_SLOTS"
-        />
-      </BaseFormGroup>
-      <BaseFormGroup id="config-duration">
-        <BaseLabel for="config-duration-input">{{
-          t('groups.settings.schedule.config.lesson_duration_label')
-        }}</BaseLabel>
-        <BaseInput
-          id="config-duration-input"
-          v-model.number="form.lessonDurationMins"
-          type="number"
-          min="10"
-          max="120"
-        />
-      </BaseFormGroup>
-
-      <section
-        class="flex flex-col gap-3 pt-4 border-t border-ghost-border"
-        :aria-label="t('groups.settings.schedule.config.breaks_title')"
+    <dl
+      class="flex flex-col @lg:flex-row @lg:justify-between gap-x-8 gap-y-4 max-w-120 mt-4 mb-8"
+    >
+      <div
+        v-for="{ label, value, stepper, set } in fields"
+        :key="label"
+        class="flex flex-col"
       >
-        <span class="text-sm font-medium text-on-ghost">
-          {{ t('groups.settings.schedule.config.breaks_title') }}
-        </span>
-
-        <BaseTabs
-          :items="editTabs"
-          :active-id="tabIdOf(shownDay)"
-          @change="(id) => (shownDay = dayOfTab(id))"
-        />
-
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-h-8">
-          <p class="m-0 flex-1 min-w-48 text-sm text-on-ghost-muted">
-            {{ editHint }}
-          </p>
-          <BaseButton
-            v-if="shownDay !== null && draftConfig.dayBreaks[shownDay]"
-            :icon="RotateCcw"
-            @click="resetBreaksOn(shownDay)"
-          >
-            {{ t('groups.settings.schedule.config.use_everyones_breaks') }}
-          </BaseButton>
-        </div>
-
-        <GroupSettingsScheduleDayPlan
-          editable
-          :times="draftConfig"
-          :total-slots="draftConfig.totalSlots"
-          :breaks="shownBreaks"
-          @add="addBreak"
-          @set-minutes="setBreakMinutes"
-          @remove="removeBreak"
-          @move="moveBreak"
-        />
-      </section>
-
-      <BaseRow stack-on-mobile justify="end" class="w-full mt-2 gap-2">
-        <BaseButton form variant="ghost" @click="stopEditing">
-          {{ t('common.buttons.cancel') }}
-        </BaseButton>
-        <BaseButton form variant="action" :disabled="saving" @click="submit">
-          {{ saving ? t('common.buttons.saving') : t('common.buttons.save') }}
-        </BaseButton>
-      </BaseRow>
-    </BaseFormContent>
-
-    <div v-else class="flex flex-col max-w-120">
-      <dl class="flex max-[400px]:flex-col gap-4 mt-4 mb-8">
-        <div
-          v-for="{ label, value } in [
-            {
-              label: t('groups.settings.schedule.config.start_time_label'),
-              value: scheduleConfig.startTime,
-            },
-            {
-              label: t('groups.settings.schedule.config.slots_per_day_label'),
-              value: scheduleConfig.totalSlots,
-            },
-            {
-              label: t('groups.settings.schedule.config.lesson_length_label'),
-              value: t('groups.settings.schedule.config.minutes', {
-                minutes: scheduleConfig.lessonDurationMins,
-              }),
-            },
-          ]"
-          :key="label"
-          class="flex flex-col flex-1 min-w-0"
+        <dt class="text-sm text-on-ghost-muted">{{ label }}</dt>
+        <dd
+          class="m-0 flex items-center justify-between h-8.5 gap-2 whitespace-nowrap text-lg font-semibold tabular-nums text-on-ghost"
         >
-          <dt class="text-sm text-on-ghost-muted">{{ label }}</dt>
-          <dd class="m-0 text-lg font-semibold tabular-nums text-on-ghost">
-            {{ value }}
-          </dd>
-        </div>
-      </dl>
+          <span :aria-live="isEditing ? 'polite' : undefined">{{ value }}</span>
+          <BaseInlineReveal :show="isEditing">
+            <BaseStepper
+              v-bind="stepper"
+              :aria-label="label"
+              @update:model-value="set"
+            />
+          </BaseInlineReveal>
+        </dd>
+      </div>
+    </dl>
 
-      <section
-        class="flex flex-col gap-3"
-        :aria-label="t('groups.settings.schedule.config.day_plan_title')"
-      >
-        <span class="text-sm font-medium text-on-ghost">
-          {{ t('groups.settings.schedule.config.day_plan_title') }}
-        </span>
+    <!-- One plan for both modes, so its controls come and go with editing. -->
+    <div class="flex flex-col gap-6 max-w-120">
+      <section class="flex flex-col gap-3" :aria-label="planTitle">
+        <span class="text-sm font-medium text-on-ghost">{{ planTitle }}</span>
 
-        <template v-if="savedDaysWithOwnBreaks.length">
+        <template v-if="isEditing">
+          <BaseTabs
+            :items="editTabs"
+            :active-id="tabIdOf(shownDay)"
+            @change="(id) => (shownDay = dayOfTab(id))"
+          />
+
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 min-h-8">
+            <p class="m-0 flex-1 min-w-48 text-sm text-on-ghost-muted">
+              {{ editHint }}
+            </p>
+            <BaseButton
+              v-if="shownDay !== null && draftConfig.dayBreaks[shownDay]"
+              :icon="RotateCcw"
+              @click="resetBreaksOn(shownDay)"
+            >
+              {{ t('groups.settings.schedule.config.use_everyones_breaks') }}
+            </BaseButton>
+            <BaseButton
+              :icon="Plus"
+              :disabled="newBreakSlot === null"
+              @click="addBreak"
+            >
+              {{ t('groups.settings.schedule.config.add_break_button') }}
+            </BaseButton>
+          </div>
+        </template>
+
+        <template v-else-if="savedDaysWithOwnBreaks.length">
           <BaseTabs
             :items="savedTabs"
             :active-id="tabIdOf(savedShownDay)"
@@ -276,11 +283,29 @@ async function submit() {
         </template>
 
         <GroupSettingsScheduleDayPlan
-          :times="scheduleConfig"
-          :total-slots="scheduleConfig.totalSlots"
-          :breaks="savedBreaks"
+          :editable="isEditing"
+          :times="shownTimes"
+          :total-slots="shownTimes.totalSlots"
+          :breaks="isEditing ? shownBreaks : savedBreaks"
+          @set-minutes="setBreakMinutes"
+          @remove="removeBreak"
+          @move="moveBreak"
         />
       </section>
+
+      <BaseRow
+        v-if="isEditing"
+        stack-on-mobile
+        justify="end"
+        class="w-full gap-2"
+      >
+        <BaseButton form variant="ghost" @click="stopEditing">
+          {{ t('common.buttons.cancel') }}
+        </BaseButton>
+        <BaseButton form variant="action" :disabled="saving" @click="submit">
+          {{ saving ? t('common.buttons.saving') : t('common.buttons.save') }}
+        </BaseButton>
+      </BaseRow>
     </div>
   </div>
 </template>

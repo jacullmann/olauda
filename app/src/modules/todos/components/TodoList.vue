@@ -13,7 +13,7 @@ import { useTodos } from '@/modules/todos/composables/useTodos';
 import {
   useDragReorder,
   REORDER_ITEM_ATTR,
-} from '@/modules/todos/composables/useDragReorder';
+} from '@/common/composables/useDragReorder';
 import TodoCard from './TodoCard.vue';
 import { useTodoFormModal } from '@/modules/todos/stores/useTodoFormModal';
 import { computed, ref, watch } from 'vue';
