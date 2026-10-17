@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT FROM pg_advisory_xact_lock(hashtextextended('todos:' || $1::uuid, 0))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "596f73bf7afa23f17e47a078fca15c78474461d0ea32490490aae3ad6c5e9786"
+}

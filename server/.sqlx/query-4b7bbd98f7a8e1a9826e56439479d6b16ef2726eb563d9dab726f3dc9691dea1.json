@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO mfa_pending_secrets (user_id, encrypted_secret, expires_at) VALUES ($1, $2, $3)\n               ON CONFLICT (user_id) DO UPDATE\n               SET encrypted_secret = $2, expires_at = $3, created_at = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4b7bbd98f7a8e1a9826e56439479d6b16ef2726eb563d9dab726f3dc9691dea1"
+}

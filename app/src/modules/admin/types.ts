@@ -12,7 +12,6 @@ import type {
   Outcome,
   ReportDto,
   SaveSystemAnnouncementDto,
-  ServerMetricsDto,
   StatsDto,
   UserMembershipDto,
   WeeklyRhythmDto,
@@ -77,10 +76,6 @@ export type EmailQuota = EmailQuotaDto;
 
 export type MetricsRange =
   operations['get_server_metrics']['parameters']['query']['range'];
-
-/** The server's load as Hetzner measures it. CPU is in percent of one vCPU,
- * so it reaches `cpuCores * 100`; bandwidths are in bytes per second. */
-export type ServerMetrics = ServerMetricsDto;
 
 export type AdminUserListQuery = NonNullable<
   operations['list_admin_users']['parameters']['query']

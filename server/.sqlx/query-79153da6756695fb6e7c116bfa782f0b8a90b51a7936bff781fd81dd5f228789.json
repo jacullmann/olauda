@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE refresh_tokens\n           SET revoked_at = now(), revoked_reason = $1\n           WHERE user_id = $2\n             AND revoked_at IS NULL\n             AND family_id IN (\n                 SELECT family_id FROM refresh_tokens\n                 WHERE user_id = $2\n                   AND revoked_at IS NULL\n                   AND used_at IS NULL\n                   AND expires_at > now()\n                 GROUP BY family_id\n                 ORDER BY max(last_used_at) DESC\n                 OFFSET $3\n             )",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "79153da6756695fb6e7c116bfa782f0b8a90b51a7936bff781fd81dd5f228789"
+}

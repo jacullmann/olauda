@@ -48,8 +48,8 @@ const scaleMax = computed(() => {
   if (props.max) return props.max;
   let highest = 0;
   for (const { points } of props.series) {
-    for (const [, value] of points) {
-      if (value !== null && value > highest) highest = value;
+    for (const { value } of points) {
+      if (value != null && value > highest) highest = value;
     }
   }
   return highest > 0 ? highest * AUTO_SCALE_HEADROOM : 1;
@@ -64,8 +64,8 @@ const toY = (value: number) =>
 function segmentsOf(points: readonly MetricPoint[]) {
   const segments: [number, number][][] = [];
   let current: [number, number][] = [];
-  for (const [timestamp, value] of points) {
-    if (value === null) {
+  for (const { timestamp, value } of points) {
+    if (value == null) {
       if (current.length) segments.push(current);
       current = [];
     } else {
@@ -109,7 +109,7 @@ const timeline = computed(() =>
         points.length > longest.length ? points : longest,
       [],
     )
-    .map(([timestamp]) => timestamp),
+    .map(({ timestamp }) => timestamp),
 );
 
 function nearestIndex(timestamp: number) {
@@ -213,9 +213,11 @@ const legend = computed(() =>
       label,
       color: SERIES_COLORS[i % SERIES_COLORS.length],
       value: formatOrDash(
-        hovered ? hovered[1] : averageOf(points.map(([, value]) => value)),
+        hovered
+          ? (hovered.value ?? null)
+          : averageOf(points.map(({ value }) => value ?? null)),
       ),
-      hoveredValue: hovered?.[1] ?? null,
+      hoveredValue: hovered?.value ?? null,
     };
   }),
 );

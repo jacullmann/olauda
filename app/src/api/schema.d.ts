@@ -1469,7 +1469,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/todos/{id}/toggle": {
+    "/todos/{id}/completed": {
         parameters: {
             query?: never;
             header?: never;
@@ -1477,15 +1477,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Marks a private task as done or open again. */
+        put: operations["set_todo_completed"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["toggle_todo"];
+        patch?: never;
         trace?: never;
     };
-    "/todos/{id}/reorder": {
+    "/todos/{id}/position": {
         parameters: {
             query?: never;
             header?: never;
@@ -1493,12 +1494,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        put: operations["move_todo"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["reorder_todo"];
+        patch?: never;
         trace?: never;
     };
     "/mfa/activate": {
@@ -3029,10 +3030,16 @@ export interface components {
          * @enum {string}
          */
         MemberRole: "owner" | "admin" | "moderator" | "user";
-        MetricPoint: [
-            number,
-            number | null
-        ];
+        /**
+         * @description One sample of a time series: when it was taken, in Unix seconds, and its
+         *     value, which is `null` where Hetzner has no number and charts show a gap.
+         */
+        MetricPoint: {
+            /** Format: int64 */
+            timestamp: number;
+            /** Format: double */
+            value?: number | null;
+        };
         /** @description What the second-factor step of a sign-in may offer. */
         MfaChallengeDto: {
             /**
@@ -3061,6 +3068,11 @@ export interface components {
             mfaEnabled: boolean;
             /** @description Only while two-factor authentication is on. */
             recoveryCodesLeft?: number | null;
+        };
+        /** @description Moves a private task right below another, or to the top without one. */
+        MoveTodoDto: {
+            /** Format: uuid */
+            afterId?: string | null;
         };
         /** @enum {string} */
         NowMarkerTime: "remaining" | "duration";
@@ -3156,11 +3168,6 @@ export interface components {
         };
         RenamePasskeyDto: {
             name: string;
-        };
-        /** @description Moves a private task between the two neighbours it is dropped between. */
-        ReorderTodoDto: {
-            prevPosition?: string | null;
-            nextPosition?: string | null;
         };
         ReplaceScheduleDto: {
             lessons: components["schemas"]["ScheduleLessonDto"][];
@@ -3373,6 +3380,9 @@ export interface components {
             code: components["schemas"]["EmailCode"];
             newPassword: string;
         };
+        SetTodoCompletedDto: {
+            completed: boolean;
+        };
         SignInDto: {
             /** Format: uuid */
             challengeId: string;
@@ -3478,6 +3488,13 @@ export interface components {
          * @enum {string}
          */
         TimeColor: "expired" | "danger" | "warn" | "normal" | "ok";
+        TodoCompletionDto: {
+            /** Format: uuid */
+            id: string;
+            completed: boolean;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         /** @description Creates a private task or replaces the text of an existing one. */
         TodoContentDto: {
             title: string;
@@ -3501,13 +3518,6 @@ export interface components {
             /** Format: uuid */
             id: string;
             position: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        TodoToggledDto: {
-            /** Format: uuid */
-            id: string;
-            completed: boolean;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -3773,6 +3783,7 @@ export type MfaCodeDto = components['schemas']['MfaCodeDto'];
 export type MfaSetupDto = components['schemas']['MfaSetupDto'];
 export type MfaSignInDto = components['schemas']['MfaSignInDto'];
 export type MfaStatusDto = components['schemas']['MfaStatusDto'];
+export type MoveTodoDto = components['schemas']['MoveTodoDto'];
 export type NowMarkerTime = components['schemas']['NowMarkerTime'];
 export type Outcome = components['schemas']['Outcome'];
 export type PasskeyChallengeDto = components['schemas']['PasskeyChallengeDto'];
@@ -3789,7 +3800,6 @@ export type RecoveryCodesDto = components['schemas']['RecoveryCodesDto'];
 export type RegisterDto = components['schemas']['RegisterDto'];
 export type RegisterPreferencesDto = components['schemas']['RegisterPreferencesDto'];
 export type RenamePasskeyDto = components['schemas']['RenamePasskeyDto'];
-export type ReorderTodoDto = components['schemas']['ReorderTodoDto'];
 export type ReplaceScheduleDto = components['schemas']['ReplaceScheduleDto'];
 export type ReportDto = components['schemas']['ReportDto'];
 export type ReportItemDto = components['schemas']['ReportItemDto'];
@@ -3812,6 +3822,7 @@ export type ServerMetricsDto = components['schemas']['ServerMetricsDto'];
 export type SessionInfo = components['schemas']['SessionInfo'];
 export type SessionListDto = components['schemas']['SessionListDto'];
 export type SetPasswordDto = components['schemas']['SetPasswordDto'];
+export type SetTodoCompletedDto = components['schemas']['SetTodoCompletedDto'];
 export type SignInDto = components['schemas']['SignInDto'];
 export type SignInMethods = components['schemas']['SignInMethods'];
 export type SignInResultDto = components['schemas']['SignInResultDto'];
@@ -3824,10 +3835,10 @@ export type SystemAnnouncementStatus = components['schemas']['SystemAnnouncement
 export type TaskPreferencesDto = components['schemas']['TaskPreferencesDto'];
 export type Theme = components['schemas']['Theme'];
 export type TimeColor = components['schemas']['TimeColor'];
+export type TodoCompletionDto = components['schemas']['TodoCompletionDto'];
 export type TodoContentDto = components['schemas']['TodoContentDto'];
 export type TodoDto = components['schemas']['TodoDto'];
 export type TodoMovedDto = components['schemas']['TodoMovedDto'];
-export type TodoToggledDto = components['schemas']['TodoToggledDto'];
 export type TransferOwnershipDto = components['schemas']['TransferOwnershipDto'];
 export type UpdateAccessControlsDto = components['schemas']['UpdateAccessControlsDto'];
 export type UpdateCourseDto = components['schemas']['UpdateCourseDto'];
@@ -6953,7 +6964,7 @@ export interface operations {
             };
         };
     };
-    toggle_todo: {
+    set_todo_completed: {
         parameters: {
             query?: never;
             header?: never;
@@ -6962,7 +6973,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTodoCompletedDto"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -6970,7 +6985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoToggledDto"];
+                    "application/json": components["schemas"]["TodoCompletionDto"];
                 };
             };
             /** @description The request failed */
@@ -6984,7 +6999,7 @@ export interface operations {
             };
         };
     };
-    reorder_todo: {
+    move_todo: {
         parameters: {
             query?: never;
             header?: never;
@@ -6995,7 +7010,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReorderTodoDto"];
+                "application/json": components["schemas"]["MoveTodoDto"];
             };
         };
         responses: {

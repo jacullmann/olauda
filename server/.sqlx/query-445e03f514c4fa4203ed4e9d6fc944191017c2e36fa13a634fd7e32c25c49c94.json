@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE courses SET course_type = NULL\n               WHERE subject_id = $1 AND course_type IS NOT NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "445e03f514c4fa4203ed4e9d6fc944191017c2e36fa13a634fd7e32c25c49c94"
+}

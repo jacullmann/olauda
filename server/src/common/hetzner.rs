@@ -12,31 +12,12 @@ use tokio::sync::OnceCell;
 const API_BASE: &str = "https://api.hetzner.cloud/v1";
 
 /// One sample of a time series: when it was taken, in Unix seconds, and its
-/// value. Serialized as a `[timestamp, value]` pair to keep long series small;
-/// the value is `null` where Hetzner has no number, which charts show as a gap.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
-pub struct MetricPoint(pub i64, pub Option<f64>);
-
-impl utoipa::PartialSchema for MetricPoint {
-    /// A two-item tuple, which the derive cannot describe.
-    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
-        use utoipa::openapi::schema::{ArrayBuilder, ObjectBuilder, SchemaType, Type};
-
-        let timestamp = ObjectBuilder::new().schema_type(Type::Integer);
-        let value =
-            ObjectBuilder::new().schema_type(SchemaType::from_iter([Type::Number, Type::Null]));
-
-        ArrayBuilder::new()
-            .prefix_items([timestamp, value])
-            .items(utoipa::openapi::schema::ArrayItems::False)
-            .min_items(Some(2))
-            .max_items(Some(2))
-            .build()
-            .into()
-    }
+/// value, which is `null` where Hetzner has no number and charts show a gap.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, utoipa::ToSchema)]
+pub struct MetricPoint {
+    pub timestamp: i64,
+    pub value: Option<f64>,
 }
-
-impl utoipa::ToSchema for MetricPoint {}
 
 /// The server's CPU and network series over one time window. CPU is in
 /// percent of one vCPU (so up to 100 per core), bandwidths in bytes per second.
@@ -112,10 +93,10 @@ impl From<MetricsResponse> for ServerMetrics {
 }
 
 fn to_point((timestamp, value): (f64, String)) -> MetricPoint {
-    MetricPoint(
-        timestamp as i64,
-        value.parse::<f64>().ok().filter(|v| v.is_finite()),
-    )
+    MetricPoint {
+        timestamp: timestamp as i64,
+        value: value.parse::<f64>().ok().filter(|v| v.is_finite()),
+    }
 }
 
 #[derive(Clone)]
@@ -201,6 +182,10 @@ impl HetznerCloud {
 mod tests {
     use super::*;
 
+    const fn point(timestamp: i64, value: Option<f64>) -> MetricPoint {
+        MetricPoint { timestamp, value }
+    }
+
     #[test]
     fn maps_hetzner_series_and_turns_non_numbers_into_gaps() {
         let response: MetricsResponse = serde_json::from_str(
@@ -223,24 +208,10 @@ mod tests {
         assert_eq!(
             ServerMetrics::from(response),
             ServerMetrics {
-                cpu: vec![
-                    MetricPoint(1_791_280_800, Some(37.5)),
-                    MetricPoint(1_791_280_830, None),
-                ],
-                network_in: vec![MetricPoint(1_791_280_800, Some(12.0))],
-                network_out: vec![MetricPoint(1_791_280_800, Some(2048.25))],
+                cpu: vec![point(1_791_280_800, Some(37.5)), point(1_791_280_830, None),],
+                network_in: vec![point(1_791_280_800, Some(12.0))],
+                network_out: vec![point(1_791_280_800, Some(2048.25))],
             }
         );
-    }
-
-    #[test]
-    fn serializes_points_as_pairs() {
-        let json = serde_json::to_string(&[
-            MetricPoint(1_791_280_800, Some(1.5)),
-            MetricPoint(1_791_280_830, None),
-        ])
-        .unwrap();
-
-        assert_eq!(json, "[[1791280800,1.5],[1791280830,null]]");
     }
 }

@@ -667,12 +667,14 @@ impl ItemsService {
             return Err(AppError::forbidden("Not allowed to delete this item."));
         }
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"DELETE FROM items WHERE id = $1 AND tenant_id = $2"#,
             id,
             tenant_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
@@ -680,10 +682,11 @@ impl ItemsService {
             actor.user_id,
             json!({ "id": id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -695,35 +698,33 @@ impl ItemsService {
         user_id: Uuid,
         note: Option<&DisplayText>,
     ) -> AppResult<String> {
-        sqlx::query!(
-            r#"SELECT id FROM items WHERE id = $1 AND tenant_id = $2"#,
-            id,
-            tenant_id
-        )
-        .fetch_optional(&self.db)
-        .await?
-        .ok_or_else(|| AppError::not_found("Not found."))?;
-
         // The column keeps '' rather than NULL for "no note", as clients expect.
         let note = note.map_or("", DisplayText::as_str);
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
-            r#"UPDATE items SET editor_note = $1, updated_at = now() WHERE id = $2"#,
+            r#"UPDATE items SET editor_note = $1, updated_at = now()
+               WHERE id = $2 AND tenant_id = $3
+               RETURNING id"#,
             note,
-            id
+            id,
+            tenant_id
         )
-        .execute(&self.db)
-        .await?;
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(|| AppError::not_found("Not found."))?;
 
         sqlx::query!(
             r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, 'item:note:update', $2)"#,
             user_id,
             json!({ "itemId": id })
         )
-            .execute(&self.db)
-            .await?;
+        .execute(&mut *tx)
+        .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+        tx.commit().await?;
 
         Ok(note.to_owned())
     }

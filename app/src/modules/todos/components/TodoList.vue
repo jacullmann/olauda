@@ -112,28 +112,13 @@ watch(openMenuId, (newVal) => {
   }
 });
 
-function moveTask(from: number, to: number) {
-  const order = [...displayPrivateTasks.value];
-  const [moved] = order.splice(from, 1);
-  if (!moved) return;
-  order.splice(to, 0, moved);
-
-  const position = (item: Todo | undefined) => item?.position || null;
-
-  reorderPrivateTask(
-    moved.id,
-    position(order[to - 1]),
-    position(order[to + 1]),
-  );
-}
-
 const IGNORED_REGIONS =
   ".item-menu-trigger, input, textarea, button, a, .checkbox, [role='button'], [role='menu']";
 
 const listRef = ref<HTMLElement | null>(null);
 
 const reorder = useDragReorder(listRef, {
-  onMove: moveTask,
+  onMove: reorderPrivateTask,
   ignore: IGNORED_REGIONS,
 });
 const { isDragging: isReordering } = reorder;

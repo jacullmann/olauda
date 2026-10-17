@@ -65,47 +65,45 @@ pub async fn update_todo(
     ))
 }
 
+/// Marks a private task as done or open again.
 #[utoipa::path(
-    patch,
-    path = "/todos/{id}/toggle",
+    put,
+    path = "/todos/{id}/completed",
     tag = "todos",
     params(("id" = Uuid, Path)),
-    responses((status = 200, body = TodoToggledDto)),
+    request_body = SetTodoCompletedDto,
+    responses((status = 200, body = TodoCompletionDto)),
 )]
-pub async fn toggle_todo(
+pub async fn set_todo_completed(
     State(s): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
-) -> AppResult<Json<TodoToggledDto>> {
+    Json(dto): Json<SetTodoCompletedDto>,
+) -> AppResult<Json<TodoCompletionDto>> {
     Ok(Json(
         TodoService::from_state(&s)
-            .toggle_todo(user.user_id, id)
+            .set_completed(user.user_id, id, dto.completed)
             .await?,
     ))
 }
 
 #[utoipa::path(
-    patch,
-    path = "/todos/{id}/reorder",
+    put,
+    path = "/todos/{id}/position",
     tag = "todos",
     params(("id" = Uuid, Path)),
-    request_body = ReorderTodoDto,
+    request_body = MoveTodoDto,
     responses((status = 200, body = TodoMovedDto)),
 )]
-pub async fn reorder_todo(
+pub async fn move_todo(
     State(s): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
-    Json(dto): Json<ReorderTodoDto>,
+    Json(dto): Json<MoveTodoDto>,
 ) -> AppResult<Json<TodoMovedDto>> {
     Ok(Json(
         TodoService::from_state(&s)
-            .reorder_todo(
-                user.user_id,
-                id,
-                dto.prev_position.as_deref(),
-                dto.next_position.as_deref(),
-            )
+            .move_todo(user.user_id, id, dto.after_id)
             .await?,
     ))
 }

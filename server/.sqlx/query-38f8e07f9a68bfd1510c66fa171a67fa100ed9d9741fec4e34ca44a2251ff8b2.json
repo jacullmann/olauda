@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE subjects\n               SET name = COALESCE($3, name),\n                   category = COALESCE($4, category),\n                   is_dalton = COALESCE($5, is_dalton)\n               WHERE id = $1 AND tenant_id = $2\n               RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "subjects",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "38f8e07f9a68bfd1510c66fa171a67fa100ed9d9741fec4e34ca44a2251ff8b2"
+}

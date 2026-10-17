@@ -1,19 +1,11 @@
-import {
-  computed,
-  effectScope,
-  onScopeDispose,
-  shallowReactive,
-  shallowRef,
-  watch,
-  type EffectScope,
-} from 'vue';
+import { computed, shallowRef } from 'vue';
 import {
   keepPreviousData,
+  useQueries,
   useQuery,
   useQueryClient,
+  type QueryFunctionContext,
   type QueryKey,
-  type QueryOptions,
-  type UseQueryReturnType,
 } from '@tanstack/vue-query';
 import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import type { ListWindow, SortOrder } from '@/modules/admin/types';
@@ -40,21 +32,17 @@ export type ListBlock<TParams extends ListParams> = TParams & {
 export interface ServerPagedListOptions<
   TParams extends ListParams,
   TItem,
-  TKey extends QueryKey,
 > extends RouteQueryStateOptions<TParams> {
-  /** The query for one block, such as `adminUsersQuery`. */
-  query: (
+  // A key and a fetcher rather than ready query options: Vue Query's option
+  // types cannot be resolved for a generic row type, so the list puts them
+  // together itself.
+  /** The key of one block, such as `adminKeys.userList`. */
+  keyOf: (block: ListBlock<TParams>) => QueryKey;
+  /** Loads one block, such as `fetchAdminUsers`. */
+  fetchBlock: (
     block: ListBlock<TParams>,
-  ) => Pick<
-    QueryOptions<
-      ListWindow<TItem>,
-      Error,
-      ListWindow<TItem>,
-      ListWindow<TItem>,
-      TKey
-    >,
-    'queryKey' | 'queryFn'
-  >;
+    signal: AbortSignal,
+  ) => Promise<ListWindow<TItem>>;
   /** The prefix of every block's key, which a refresh invalidates. */
   listKey: QueryKey;
   /** Sorts that start ascending when first picked, such as names. */
@@ -72,11 +60,9 @@ export type WindowedListState = 'loading' | 'ready' | 'failed';
  * only the blocks in view are then fetched. Filters and sorting live in the
  * URL query.
  */
-export function useServerPagedList<
-  TParams extends ListParams,
-  TItem,
-  TKey extends QueryKey,
->(options: ServerPagedListOptions<TParams, TItem, TKey>) {
+export function useServerPagedList<TParams extends ListParams, TItem>(
+  options: ServerPagedListOptions<TParams, TItem>,
+) {
   const queryClient = useQueryClient();
   const { params, setParams } = useRouteQueryState(options);
   const searchInput = useSearchInput(
@@ -84,12 +70,18 @@ export function useServerPagedList<
     (search) => setParams({ search } as Partial<TParams>, true),
   );
 
-  const blockOptions = (block: number) =>
-    options.query({
+  const blockOptions = (index: number) => {
+    const block: ListBlock<TParams> = {
       ...params.value,
-      offset: block * BLOCK_SIZE,
+      offset: index * BLOCK_SIZE,
       limit: BLOCK_SIZE,
-    });
+    };
+    return {
+      queryKey: options.keyOf(block),
+      queryFn: ({ signal }: QueryFunctionContext) =>
+        options.fetchBlock(block, signal),
+    };
+  };
 
   // The first block stands for the list as a whole: while another search,
   // filter or sort loads, the rows and total shown so far stay on screen.
@@ -103,56 +95,38 @@ export function useServerPagedList<
   /** The blocks after the first that are in view, in order. */
   const laterBlocks = shallowRef<number[]>([]);
 
-  // A query per block in view, each in a scope of its own that is stopped
-  // once the block leaves the view; its rows stay cached for a return.
-  const later = shallowReactive(
-    new Map<
-      number,
-      {
-        query: UseQueryReturnType<ListWindow<TItem>, Error>;
-        scope: EffectScope;
-      }
-    >(),
+  // A block that leaves the view drops its query; its rows stay cached for a
+  // return. The results follow the blocks a moment later, so each carries
+  // its block number instead of relying on its place in the list.
+  const later = useQueries({
+    queries: computed(() =>
+      laterBlocks.value.map((block) => ({
+        ...blockOptions(block),
+        select: ({ items }: ListWindow<TItem>) => ({ block, items }),
+        // Rows for new params wait until the first block has them, so the
+        // old rows above are never followed by new ones below.
+        enabled: !first.isPlaceholderData.value,
+      })),
+    ),
+  });
+
+  useLoadErrorToast(
+    {
+      error: computed(() => later.value.find((block) => block.isError)?.error),
+      isLoadingError: computed(() =>
+        later.value.some((block) => block.isLoadingError),
+      ),
+      isSuccess: computed(() => later.value.every((block) => block.isSuccess)),
+    },
+    options.loadErrorMessage,
   );
-
-  watch(laterBlocks, (inView) => {
-    for (const [block, entry] of later) {
-      if (inView.includes(block)) continue;
-      entry.scope.stop();
-      later.delete(block);
-    }
-    for (const block of inView) {
-      if (later.has(block)) continue;
-      const scope = effectScope();
-      const query = scope.run(() => {
-        const blockQuery = useQuery(
-          computed(() => ({
-            ...blockOptions(block),
-            // Rows for new params wait until the first block has them, so
-            // the old rows above are never followed by new ones below.
-            enabled: !first.isPlaceholderData.value,
-          })),
-          queryClient,
-        );
-        useLoadErrorToast(blockQuery, options.loadErrorMessage);
-        return blockQuery;
-      });
-      if (query) later.set(block, { query, scope });
-    }
-  });
-
-  onScopeDispose(() => {
-    for (const entry of later.values()) entry.scope.stop();
-    later.clear();
-  });
 
   const blocks = computed(() => {
     const rows = new Map<number, ListWindow<TItem>['items']>();
     const firstRows = first.data.value?.items;
     if (firstRows) rows.set(0, firstRows);
-    for (const [block, { query }] of later) {
-      const blockRows = query.data.value?.items;
-      if (blockRows) rows.set(block, blockRows);
+    for (const { data } of later.value) {
+      if (data) rows.set(data.block, data.items);
     }
     return rows;
   });
@@ -186,11 +160,8 @@ export function useServerPagedList<
     ) {
       laterBlocks.value = next;
     }
-    for (const block of next) {
-      const query = later.get(block)?.query;
-      if (query?.isError.value && !query.isFetching.value) {
-        void query.refetch();
-      }
+    for (const block of later.value) {
+      if (block.isError && !block.isFetching) void block.refetch();
     }
   }
 

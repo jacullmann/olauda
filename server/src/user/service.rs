@@ -23,21 +23,24 @@ impl UserService {
     }
 
     pub async fn update_personalization(&self, user_id: Uuid, personalized: bool) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"UPDATE users SET personalized = $1 WHERE id = $2 RETURNING personalized"#,
             personalized,
             user_id
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&mut *tx)
         .await?
         .ok_or_else(|| AppError::not_found("User not found"))?;
 
         sqlx::query!(
             r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, 'profile:personalization:update', $2)"#,
             user_id, json!({ "personalized": personalized })
-        ).execute(&self.db).await?;
+        ).execute(&mut *tx).await?;
 
-        publish(&self.db, [Notice::account(user_id, AccountTopic::Profile)]).await?;
+        publish(&mut *tx, [Notice::account(user_id, AccountTopic::Profile)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -324,20 +327,23 @@ impl UserService {
         item_id: Uuid,
         user_id: Uuid,
     ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"DELETE FROM user_item_visibility WHERE item_id = $1 AND user_id = $2"#,
             item_id,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
             r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, 'item:visibility:remove', $2)"#,
             user_id, json!({ "itemId": item_id })
-        ).execute(&self.db).await?;
+        ).execute(&mut *tx).await?;
 
-        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -406,12 +412,14 @@ impl UserService {
         item_id: Uuid,
         user_id: Uuid,
     ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"DELETE FROM keep_checked WHERE item_id = $1 AND user_id = $2"#,
             item_id,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
@@ -419,10 +427,11 @@ impl UserService {
             user_id,
             json!({ "itemId": item_id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -437,13 +446,15 @@ impl UserService {
         .await?
         .ok_or_else(|| AppError::not_found("Not found."))?;
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"INSERT INTO pinned_items (item_id, user_id, pinned_at) VALUES ($1, $2, now())
                ON CONFLICT (item_id, user_id) DO UPDATE SET pinned_at = now()"#,
             item_id,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
@@ -451,21 +462,24 @@ impl UserService {
             user_id,
             json!({ "itemId": item_id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
 
     pub async fn unpin_item(&self, tenant_id: Uuid, item_id: Uuid, user_id: Uuid) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"DELETE FROM pinned_items WHERE item_id = $1 AND user_id = $2"#,
             item_id,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
@@ -473,10 +487,11 @@ impl UserService {
             user_id,
             json!({ "itemId": item_id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }

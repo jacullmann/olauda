@@ -8,7 +8,7 @@ import type {
 } from '@/modules/admin/types';
 import {
   adminKeys,
-  adminGroupsQuery,
+  fetchAdminGroups,
 } from '@/modules/admin/utils/adminQueries';
 import { useServerPagedList } from './useServerPagedList';
 
@@ -37,10 +37,10 @@ export function useAdminGroups() {
       sort: GroupSort;
       order: SortOrder;
     },
-    AdminGroup,
-    ReturnType<typeof adminGroupsQuery>['queryKey']
+    AdminGroup
   >({
-    query: adminGroupsQuery,
+    keyOf: adminKeys.groupList,
+    fetchBlock: fetchAdminGroups,
     listKey: adminKeys.groupLists(),
     defaults: { search: '', type: 'all', sort: 'createdAt', order: 'desc' },
     rules: {

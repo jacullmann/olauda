@@ -657,12 +657,11 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
-        tx.commit().await?;
-
         self.tokens
-            .revoke_all_for_user(target_id, ADMIN_REVOKE, None)
+            .revoke_all_for_user(&mut *tx, target_id, ADMIN_REVOKE, None)
             .await?;
-        publish(&self.db, [security_changed(target_id)]).await?;
+        publish(&mut *tx, [security_changed(target_id)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }

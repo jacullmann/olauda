@@ -48,12 +48,17 @@ impl TodoContent {
     }
 }
 
-/// Moves a private task between the two neighbours it is dropped between.
+/// Moves a private task right below another, or to the top without one.
 #[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct ReorderTodoDto {
-    pub prev_position: Option<String>,
-    pub next_position: Option<String>,
+pub struct MoveTodoDto {
+    pub after_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SetTodoCompletedDto {
+    pub completed: bool,
 }
 
 /// A private task, decrypted for its owner.
@@ -72,7 +77,7 @@ pub struct TodoDto {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct TodoToggledDto {
+pub struct TodoCompletionDto {
     pub id: Uuid,
     pub completed: bool,
     pub updated_at: DateTime<Utc>,

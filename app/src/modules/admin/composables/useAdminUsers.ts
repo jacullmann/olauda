@@ -6,7 +6,7 @@ import type {
   UserSort,
   UserStatusFilter,
 } from '@/modules/admin/types';
-import { adminKeys, adminUsersQuery } from '@/modules/admin/utils/adminQueries';
+import { adminKeys, fetchAdminUsers } from '@/modules/admin/utils/adminQueries';
 import { useServerPagedList } from './useServerPagedList';
 
 export const USER_STATUS_FILTERS = [
@@ -34,10 +34,10 @@ export function useAdminUsers() {
       sort: UserSort;
       order: SortOrder;
     },
-    AdminUser,
-    ReturnType<typeof adminUsersQuery>['queryKey']
+    AdminUser
   >({
-    query: adminUsersQuery,
+    keyOf: adminKeys.userList,
+    fetchBlock: fetchAdminUsers,
     listKey: adminKeys.userLists(),
     defaults: { search: '', status: 'all', sort: 'createdAt', order: 'desc' },
     rules: {

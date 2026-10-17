@@ -8,7 +8,7 @@ use crate::{
 };
 use serde::Serialize;
 use serde_json::json;
-use sqlx::PgPool;
+use sqlx::{PgExecutor, PgPool};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -58,7 +58,7 @@ pub async fn ensure_registration_open(db: &PgPool) -> AppResult<()> {
 
 /// Whether the user may get a session. Superadmins are exempt from
 /// shutdown, so they can still look into whatever it is for and end it.
-pub async fn ensure_admitted(db: &PgPool, user_id: Uuid) -> AppResult<()> {
+pub async fn ensure_admitted<'e>(db: impl PgExecutor<'e>, user_id: Uuid) -> AppResult<()> {
     let admitted = sqlx::query_scalar!(
         r#"SELECT NOT ac.shutdown OR EXISTS (
                       SELECT 1 FROM user_roles

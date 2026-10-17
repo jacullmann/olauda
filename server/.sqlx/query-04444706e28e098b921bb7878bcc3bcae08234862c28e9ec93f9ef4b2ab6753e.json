@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE encrypted_todos\n               SET encrypted_title = $1, encrypted_description = $2\n               WHERE id = $3\n               RETURNING id, completed, position, created_at, updated_at",
+  "query": "UPDATE encrypted_todos SET completed = $3\n               WHERE id = $1 AND user_id = $2\n               RETURNING id, completed, updated_at",
   "describe": {
     "columns": [
       {
@@ -27,28 +27,6 @@
       },
       {
         "ordinal": 2,
-        "name": "position",
-        "type_info": "Text",
-        "origin": {
-          "Table": {
-            "table": "encrypted_todos",
-            "name": "position"
-          }
-        }
-      },
-      {
-        "ordinal": 3,
-        "name": "created_at",
-        "type_info": "Timestamptz",
-        "origin": {
-          "Table": {
-            "table": "encrypted_todos",
-            "name": "created_at"
-          }
-        }
-      },
-      {
-        "ordinal": 4,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -61,18 +39,16 @@
     ],
     "parameters": {
       "Left": [
-        "Jsonb",
-        "Jsonb",
-        "Uuid"
+        "Uuid",
+        "Uuid",
+        "Bool"
       ]
     },
     "nullable": [
       false,
       false,
-      true,
-      false,
       false
     ]
   },
-  "hash": "2982f948840a9079ea55ff957a6c21d3a325128896ab71108ea48c9e8ce5b145"
+  "hash": "04444706e28e098b921bb7878bcc3bcae08234862c28e9ec93f9ef4b2ab6753e"
 }

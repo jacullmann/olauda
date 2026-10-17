@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE courses SET course_type = 'zk'\n               WHERE subject_id = $1 AND course_type IS DISTINCT FROM 'zk'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "46139b23d104807bb93c1e01236834681243b84ead1fe3f89d1473fd73505751"
+}

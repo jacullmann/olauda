@@ -8,9 +8,7 @@ import type {
   AdminGroupListQuery,
   AdminUserListQuery,
   EventLogQuery,
-  MetricPoint,
   MetricsRange,
-  ServerMetrics,
 } from '@/modules/admin/types';
 import { announcementKeys } from '@/modules/announcements/utils/announcementQueries';
 
@@ -89,31 +87,16 @@ export const accountSecurityQuery = () =>
       unwrap(api.GET('/admin/stats/account-security', { signal })),
   });
 
-// The schema's `MetricPoint` is a `[timestamp, value]` tuple, but openapi-fetch
-// types responses through `Readable<T>` (openapi-typescript-helpers), whose
-// `T extends (infer E)[] ? Readable<E>[]` branch turns tuples into arrays.
-const metricPoints = (points: readonly (number | null)[][]): MetricPoint[] =>
-  points.flatMap(([timestamp, value]): MetricPoint[] =>
-    typeof timestamp === 'number' ? [[timestamp, value ?? null]] : [],
-  );
-
 export const serverMetricsQuery = (range: MetricsRange) =>
   queryOptions({
     queryKey: adminKeys.serverMetrics(range),
-    queryFn: async ({ signal }): Promise<ServerMetrics> => {
-      const metrics = await unwrap(
+    queryFn: ({ signal }) =>
+      unwrap(
         api.GET('/admin/server-metrics', {
           params: { query: { range } },
           signal,
         }),
-      );
-      return {
-        ...metrics,
-        cpu: metricPoints(metrics.cpu),
-        networkIn: metricPoints(metrics.networkIn),
-        networkOut: metricPoints(metrics.networkOut),
-      };
-    },
+      ),
   });
 
 export const emailActivityQuery = () =>
@@ -150,12 +133,11 @@ export const eventLogQuery = (query: EventLogQuery) =>
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
 
-export const adminUsersQuery = (query: AdminUserListQuery) =>
-  queryOptions({
-    queryKey: adminKeys.userList(query),
-    queryFn: ({ signal }) =>
-      unwrap(api.GET('/admin/users', { params: { query }, signal })),
-  });
+/** One block of the user directory, keyed by `adminKeys.userList`. */
+export const fetchAdminUsers = (
+  query: AdminUserListQuery,
+  signal: AbortSignal,
+) => unwrap(api.GET('/admin/users', { params: { query }, signal }));
 
 export const adminUserQuery = (userId: string) =>
   queryOptions({
@@ -181,12 +163,11 @@ export const adminUserMembershipsQuery = (userId: string) =>
       ),
   });
 
-export const adminGroupsQuery = (query: AdminGroupListQuery) =>
-  queryOptions({
-    queryKey: adminKeys.groupList(query),
-    queryFn: ({ signal }) =>
-      unwrap(api.GET('/admin/groups', { params: { query }, signal })),
-  });
+/** One block of the group directory, keyed by `adminKeys.groupList`. */
+export const fetchAdminGroups = (
+  query: AdminGroupListQuery,
+  signal: AbortSignal,
+) => unwrap(api.GET('/admin/groups', { params: { query }, signal }));
 
 export const adminGroupQuery = (groupId: string) =>
   queryOptions({

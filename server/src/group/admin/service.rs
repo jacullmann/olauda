@@ -25,7 +25,7 @@ use crate::{
 use chrono::NaiveTime;
 use serde::Serialize;
 use serde_json::json;
-use sqlx::{PgConnection, PgPool};
+use sqlx::{PgConnection, PgExecutor, PgPool};
 use std::collections::{BTreeMap, HashSet};
 use uuid::Uuid;
 
@@ -882,6 +882,8 @@ impl GroupAdminService {
         let category = category.unwrap_or(group_type.default_category());
         validate_category(group_type, category)?;
 
+        let mut tx = self.db.begin().await?;
+
         let row = sqlx::query!(
             r#"INSERT INTO subjects (tenant_id, name, category, is_dalton) VALUES ($1, $2, $3, $4)
                RETURNING id, name, category AS "category: SubjectCategory", is_dalton"#,
@@ -890,7 +892,7 @@ impl GroupAdminService {
             category as SubjectCategory,
             is_dalton
         )
-        .fetch_one(&self.db)
+        .fetch_one(&mut *tx)
         .await
         .map_err(|e| AppError::name_taken_on_conflict(e, SUBJECT_NAME_TAKEN))?;
 
@@ -900,10 +902,11 @@ impl GroupAdminService {
             user_id,
             json!({ "subjectId": row.id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
 
         Ok(SubjectDto {
             id: row.id,
@@ -912,52 +915,6 @@ impl GroupAdminService {
             is_dalton: row.is_dalton,
             courses: Vec::new(),
         })
-    }
-
-    /// Keeps the courses of a subject consistent with its category: a
-    /// Zusatzkurs subject makes all of them ZK, a regular group strips the type
-    /// entirely, and any other Abitur subject keeps the GK/LK picks it already
-    /// has while giving untyped courses the default.
-    async fn realign_course_types(
-        &self,
-        subject_id: Uuid,
-        group_type: GroupType,
-        category: SubjectCategory,
-    ) -> AppResult<()> {
-        if !group_type.uses_course_types() {
-            sqlx::query!(
-                r#"UPDATE courses SET course_type = NULL
-                   WHERE subject_id = $1 AND course_type IS NOT NULL"#,
-                subject_id
-            )
-            .execute(&self.db)
-            .await?;
-
-            return Ok(());
-        }
-
-        if category == SubjectCategory::Zk {
-            sqlx::query!(
-                r#"UPDATE courses SET course_type = 'zk'
-                   WHERE subject_id = $1 AND course_type IS DISTINCT FROM 'zk'"#,
-                subject_id
-            )
-            .execute(&self.db)
-            .await?;
-
-            return Ok(());
-        }
-
-        sqlx::query!(
-            r#"UPDATE courses SET course_type = $2
-               WHERE subject_id = $1 AND (course_type IS NULL OR course_type = 'zk')"#,
-            subject_id,
-            CourseType::Gk as CourseType
-        )
-        .execute(&self.db)
-        .await?;
-
-        Ok(())
     }
 
     pub async fn update_subject(
@@ -969,48 +926,37 @@ impl GroupAdminService {
         category: Option<SubjectCategory>,
         is_dalton: Option<bool>,
     ) -> AppResult<()> {
+        let realign = match category {
+            Some(category) => {
+                let group_type = self.group_type(tenant_id).await?;
+                validate_category(group_type, category)?;
+                Some((group_type, category))
+            }
+            None => None,
+        };
+
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
-            r#"SELECT id FROM subjects WHERE id = $1 AND tenant_id = $2"#,
+            r#"UPDATE subjects
+               SET name = COALESCE($3, name),
+                   category = COALESCE($4, category),
+                   is_dalton = COALESCE($5, is_dalton)
+               WHERE id = $1 AND tenant_id = $2
+               RETURNING id"#,
             id,
-            tenant_id
+            tenant_id,
+            name.map(DisplayName::as_str),
+            category as Option<SubjectCategory>,
+            is_dalton
         )
-        .fetch_optional(&self.db)
-        .await?
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(|e| AppError::name_taken_on_conflict(e, SUBJECT_NAME_TAKEN))?
         .ok_or_else(|| AppError::not_found("Subject not found"))?;
 
-        if let Some(category) = category {
-            let group_type = self.group_type(tenant_id).await?;
-            validate_category(group_type, category)?;
-            sqlx::query!(
-                r#"UPDATE subjects SET category = $1 WHERE id = $2"#,
-                category as SubjectCategory,
-                id
-            )
-            .execute(&self.db)
-            .await?;
-
-            self.realign_course_types(id, group_type, category).await?;
-        }
-
-        if let Some(n) = name {
-            sqlx::query!(
-                r#"UPDATE subjects SET name = $1 WHERE id = $2"#,
-                n.as_str(),
-                id
-            )
-            .execute(&self.db)
-            .await
-            .map_err(|e| AppError::name_taken_on_conflict(e, SUBJECT_NAME_TAKEN))?;
-        }
-
-        if let Some(flag) = is_dalton {
-            sqlx::query!(
-                r#"UPDATE subjects SET is_dalton = $1 WHERE id = $2"#,
-                flag,
-                id
-            )
-            .execute(&self.db)
-            .await?;
+        if let Some((group_type, category)) = realign {
+            realign_course_types(&mut *tx, id, group_type, category).await?;
         }
 
         sqlx::query!(
@@ -1019,10 +965,11 @@ impl GroupAdminService {
             user_id,
             json!({ "subjectId": id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -1434,6 +1381,8 @@ impl GroupAdminService {
             .course_type_for_subject(tenant_id, subject_id, course_type)
             .await?;
 
+        let mut tx = self.db.begin().await?;
+
         let course = sqlx::query_as!(
             CourseDto,
             r#"INSERT INTO courses (tenant_id, name, subject_id, course_type) VALUES ($1, $2, $3, $4)
@@ -1443,7 +1392,7 @@ impl GroupAdminService {
             subject_id,
             course_type as Option<CourseType>
         )
-        .fetch_one(&self.db)
+        .fetch_one(&mut *tx)
         .await
         .map_err(|e| AppError::name_taken_on_conflict(e, COURSE_NAME_TAKEN))?;
 
@@ -1453,10 +1402,11 @@ impl GroupAdminService {
             "group-admin:course:create",
             json!({ "courseId": course.id, "subjectId": subject_id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
 
         Ok(course)
     }
@@ -1486,13 +1436,15 @@ impl GroupAdminService {
             .course_type_for_subject(tenant_id, course.subject_id, requested)
             .await?;
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"UPDATE courses SET name = $1, course_type = $2 WHERE id = $3"#,
             name.as_str(),
             course_type as Option<CourseType>,
             course_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await
         .map_err(|e| AppError::name_taken_on_conflict(e, COURSE_NAME_TAKEN))?;
 
@@ -1502,10 +1454,11 @@ impl GroupAdminService {
             "group-admin:course:update",
             json!({ "courseId": course_id, "name": name.as_str() })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
 
         Ok(CourseDto {
             id: course_id,
@@ -1520,12 +1473,14 @@ impl GroupAdminService {
         user_id: Uuid,
         course_id: Uuid,
     ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         let rows = sqlx::query!(
             r#"DELETE FROM courses WHERE id = $1 AND tenant_id = $2"#,
             course_id,
             tenant_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
         if rows.rows_affected() == 0 {
             return Err(AppError::not_found("Course not found"));
@@ -1537,10 +1492,11 @@ impl GroupAdminService {
             "group-admin:course:delete",
             json!({ "courseId": course_id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
 
         Ok(())
     }
@@ -1622,6 +1578,52 @@ impl GroupAdminService {
 
         Ok(())
     }
+}
+
+/// Keeps the courses of a subject consistent with its category: a
+/// Zusatzkurs subject makes all of them ZK, a regular group strips the type
+/// entirely, and any other Abitur subject keeps the GK/LK picks it already
+/// has while giving untyped courses the default.
+async fn realign_course_types<'e>(
+    db: impl PgExecutor<'e>,
+    subject_id: Uuid,
+    group_type: GroupType,
+    category: SubjectCategory,
+) -> AppResult<()> {
+    if !group_type.uses_course_types() {
+        sqlx::query!(
+            r#"UPDATE courses SET course_type = NULL
+               WHERE subject_id = $1 AND course_type IS NOT NULL"#,
+            subject_id
+        )
+        .execute(db)
+        .await?;
+
+        return Ok(());
+    }
+
+    if category == SubjectCategory::Zk {
+        sqlx::query!(
+            r#"UPDATE courses SET course_type = 'zk'
+               WHERE subject_id = $1 AND course_type IS DISTINCT FROM 'zk'"#,
+            subject_id
+        )
+        .execute(db)
+        .await?;
+
+        return Ok(());
+    }
+
+    sqlx::query!(
+        r#"UPDATE courses SET course_type = $2
+           WHERE subject_id = $1 AND (course_type IS NULL OR course_type = 'zk')"#,
+        subject_id,
+        CourseType::Gk as CourseType
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
 }
 
 #[cfg(test)]

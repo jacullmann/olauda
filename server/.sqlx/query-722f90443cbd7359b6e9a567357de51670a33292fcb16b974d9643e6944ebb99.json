@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH revoked AS (\n                   UPDATE refresh_tokens SET revoked_at = now(), revoked_reason = $1\n                   WHERE revoked_at IS NULL\n                     AND family_id = (SELECT family_id FROM refresh_tokens\n                                      WHERE token_hash = $2 AND revoked_at IS NULL)\n                   RETURNING user_id\n               )\n               SELECT DISTINCT user_id AS \"user_id!\" FROM revoked",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id!",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "refresh_tokens",
+            "name": "user_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "722f90443cbd7359b6e9a567357de51670a33292fcb16b974d9643e6944ebb99"
+}

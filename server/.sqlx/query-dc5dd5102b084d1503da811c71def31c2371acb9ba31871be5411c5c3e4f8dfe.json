@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT user_id, family_id FROM refresh_tokens\n               WHERE token_hash = $1 AND revoked_at IS NULL",
+  "query": "SELECT id AS user_id, email FROM users u\n           WHERE id = $1\n             AND NOT EXISTS (SELECT 1 FROM banned_users WHERE user_id = u.id)",
   "describe": {
     "columns": [
       {
@@ -9,26 +9,26 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "refresh_tokens",
-            "name": "user_id"
+            "table": "users",
+            "name": "id"
           }
         }
       },
       {
         "ordinal": 1,
-        "name": "family_id",
-        "type_info": "Uuid",
+        "name": "email",
+        "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "refresh_tokens",
-            "name": "family_id"
+            "table": "users",
+            "name": "email"
           }
         }
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -36,5 +36,5 @@
       false
     ]
   },
-  "hash": "360b8f879fa8c6144541d937501b09181a877bf8f1f13ea4abe568c080e6a695"
+  "hash": "dc5dd5102b084d1503da811c71def31c2371acb9ba31871be5411c5c3e4f8dfe"
 }

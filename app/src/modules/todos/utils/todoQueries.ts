@@ -3,6 +3,8 @@ import api, { unwrap } from '@/api/client';
 
 export const todoKeys = {
   all: ['todos'] as const,
+  /** The moves that rearrange the list, as a mutation key. */
+  order: () => [...todoKeys.all, 'order'] as const,
 };
 
 /** The user's private todos, sorted by their position. */

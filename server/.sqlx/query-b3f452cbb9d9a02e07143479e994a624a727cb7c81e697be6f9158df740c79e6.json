@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id FROM banned_users WHERE user_id = $1",
+  "query": "UPDATE items SET editor_note = $1, updated_at = now()\n               WHERE id = $2 AND tenant_id = $3\n               RETURNING id",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "banned_users",
+            "table": "items",
             "name": "id"
           }
         }
@@ -17,6 +17,8 @@
     ],
     "parameters": {
       "Left": [
+        "Text",
+        "Uuid",
         "Uuid"
       ]
     },
@@ -24,5 +26,5 @@
       false
     ]
   },
-  "hash": "86c82720fa93543cba190b0a10ebf73fdae7bee18488ddaf259eda967eced506"
+  "hash": "b3f452cbb9d9a02e07143479e994a624a727cb7c81e697be6f9158df740c79e6"
 }

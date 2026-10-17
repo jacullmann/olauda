@@ -1,233 +1,28 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, ref, shallowReactive } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useI18n } from 'vue-i18n';
 import api, { unwrap } from '@/api/client';
 import { apiErrorMessage } from '@/api/errors';
-import { queryClient } from '@/api/queryClient';
+import { useKeyedSync } from '@/common/composables/useKeyedSync';
 import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useToast } from '@/common/composables/useToast';
-import i18n from '@/i18n';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import type { Todo } from '@/modules/todos/types';
 import { positionBetween, sortTodos } from '@/modules/todos/utils/todoOrder';
 import { todoKeys, todosQuery } from '@/modules/todos/utils/todoQueries';
 
-// The checkbox flips instantly; the API call is debounced per task so rapid
-// toggles collapse into at most one request. The endpoint flips the stored
-// value instead of setting it, so requests for one task must never overlap.
-const TOGGLE_SYNC_DELAY = 400;
-
-// A drop reorders the list instantly; the API calls wait until the user
-// stops rearranging, then go out one at a time. Each request names its
-// neighbours by server-issued keys only: the keys guessed locally for moved
-// tasks are not in the server's format and would be rejected. The server
-// keys are applied once the whole batch is through, so the list never
-// re-sorts halfway through against a mix of guessed and real keys.
-const REORDER_SYNC_DELAY = 1000;
-
-/*
- * What the user changed but the server has yet to confirm lays over the
- * cached list instead of being written into it, so a refetch meanwhile
- * cannot undo it. It lives as long as the app, like the cache: a batch that
- * is still sending when the page is left completes all the same.
- */
-const pending = {
-  completed: reactive(new Map<string, boolean>()),
-  positions: reactive(new Map<string, string>()),
-  removed: reactive(new Set<string>()),
-};
-
-const toggleTimers = new Map<string, number>();
-const togglesInFlight = new Set<string>();
-
-// Ids waiting to be sent, in the order they were first moved
-const reorderQueue = new Set<string>();
-const reorderConfirmed = new Map<
-  string,
-  { position: string; updatedAt: string }
->();
-let reorderInFlight: string | null = null;
-let reorderTimer: number | undefined;
-
-const t = (key: string) => i18n.global.t(key);
-const toast = useToast();
-
-const cachedTodos = () => queryClient.getQueryData<Todo[]>(todoKeys.all) ?? [];
-
-const findCachedTodo = (id: string) =>
-  cachedTodos().find((todo) => todo.id === id);
-
-/** Mirrors what the server confirmed it now holds. */
-const patchCachedTodo = (id: string, change: Partial<Todo>) =>
-  queryClient.setQueryData<Todo[]>(todoKeys.all, (todos) =>
-    todos?.map((todo) => (todo.id === id ? { ...todo, ...change } : todo)),
-  );
-
-const withPending = (todo: Todo): Todo => ({
-  ...todo,
-  completed: pending.completed.get(todo.id) ?? todo.completed,
-  position: pending.positions.get(todo.id) ?? todo.position,
-});
-
-/** The list as the user arranged it, pending changes included. */
-const arrangeTodos = (todos: readonly Todo[]): Todo[] =>
-  sortTodos(
-    todos.filter((todo) => !pending.removed.has(todo.id)).map(withPending),
-  );
-
-function scheduleToggleSync(id: string) {
-  clearTimeout(toggleTimers.get(id));
-  toggleTimers.set(
-    id,
-    window.setTimeout(() => void flushToggleSync(id), TOGGLE_SYNC_DELAY),
-  );
-}
-
-async function flushToggleSync(id: string): Promise<void> {
-  clearTimeout(toggleTimers.get(id));
-  toggleTimers.delete(id);
-  // The running request re-checks the desired state when it finishes
-  if (togglesInFlight.has(id)) return;
-
-  const desired = pending.completed.get(id);
-  const stored = findCachedTodo(id);
-  if (desired === undefined || !stored || stored.completed === desired) {
-    pending.completed.delete(id);
-    return;
-  }
-
-  togglesInFlight.add(id);
-  try {
-    const toggled = await unwrap(
-      api.PATCH('/todos/{id}/toggle', { params: { path: { id } } }),
-    );
-    patchCachedTodo(id, {
-      completed: toggled.completed,
-      updatedAt: toggled.updatedAt,
-    });
-  } catch (error) {
-    pending.completed.delete(id);
-    toast.error(apiErrorMessage(error, t('tasks.errors.save_status')));
-    return;
-  } finally {
-    togglesInFlight.delete(id);
-  }
-
-  // User toggled again during the request; the new timer takes over
-  if (toggleTimers.has(id)) return;
-  await flushToggleSync(id);
-}
-
-function scheduleReorderSync() {
-  clearTimeout(reorderTimer);
-  reorderTimer = window.setTimeout(
-    () => void flushReorders(),
-    REORDER_SYNC_DELAY,
-  );
-}
-
-const isReorderPending = (id: string) =>
-  reorderQueue.has(id) || reorderInFlight === id;
-
-// Nearest task in `step` direction whose server key is known
-function confirmedNeighbourPosition(index: number, step: 1 | -1) {
-  const list = arrangeTodos(cachedTodos());
-  for (let i = index + step; i >= 0 && i < list.length; i += step) {
-    const task = list[i];
-    if (!task || isReorderPending(task.id)) continue;
-    return reorderConfirmed.get(task.id)?.position ?? (task.position || null);
-  }
-  return null;
-}
-
-function endReorderBatch() {
-  reorderQueue.clear();
-  reorderConfirmed.clear();
-  pending.positions.clear();
-}
-
-async function flushReorders(): Promise<void> {
-  clearTimeout(reorderTimer);
-  reorderTimer = undefined;
-  if (reorderInFlight) return;
-
-  try {
-    // A new drop restarts the timer and pauses the batch until it fires
-    while (reorderTimer === undefined) {
-      const id = reorderQueue.values().next().value;
-      if (id === undefined) break;
-      reorderQueue.delete(id);
-
-      const index = arrangeTodos(cachedTodos()).findIndex(
-        (todo) => todo.id === id,
-      );
-      if (index === -1) continue;
-
-      reorderInFlight = id;
-      const moved = await unwrap(
-        api.PATCH('/todos/{id}/reorder', {
-          params: { path: { id } },
-          body: {
-            prevPosition: confirmedNeighbourPosition(index, -1),
-            nextPosition: confirmedNeighbourPosition(index, 1),
-          },
-        }),
-      );
-      reorderInFlight = null;
-      reorderConfirmed.set(id, {
-        position: moved.position,
-        updatedAt: moved.updatedAt,
-      });
-    }
-  } catch (error) {
-    reorderInFlight = null;
-    clearTimeout(reorderTimer);
-    reorderTimer = undefined;
-    endReorderBatch();
-    // Some moves of the batch may have gone through; the server's order wins.
-    void queryClient.invalidateQueries({ queryKey: todoKeys.all });
-    toast.error(
-      apiErrorMessage(error, t('tasks.private_tasks.errors.reorder')),
-    );
-    return;
-  }
-
-  if (reorderQueue.size || reorderTimer !== undefined) return;
-
-  queryClient.setQueryData<Todo[]>(todoKeys.all, (todos) =>
-    todos?.map((todo) => {
-      const confirmed = reorderConfirmed.get(todo.id);
-      return confirmed ? { ...todo, ...confirmed } : todo;
-    }),
-  );
-  endReorderBatch();
-}
-
-/** Sends what is still waiting right away, as the tab may close next. */
-function flushPendingSyncs() {
-  for (const id of toggleTimers.keys()) void flushToggleSync(id);
-  if (reorderTimer !== undefined) void flushReorders();
-}
-
-let flushOnHideInstalled = false;
-
-function installFlushOnHideOnce() {
-  if (flushOnHideInstalled) return;
-  flushOnHideInstalled = true;
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushPendingSyncs();
-  });
-}
+// Rapid toggles of one checkbox collapse into a single request.
+const COMPLETION_SYNC_DELAY_MS = 400;
 
 export function useTodos() {
   const { t } = useI18n();
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const confirmModal = useConfirmModal();
   const { user } = storeToRefs(useUserStore());
-
-  installFlushOnHideOnce();
 
   const query = useQuery(
     computed(() => ({ ...todosQuery(), enabled: !!user.value })),
@@ -236,9 +31,78 @@ export function useTodos() {
     apiErrorMessage(error, t('tasks.private_tasks.errors.load')),
   );
 
-  const displayPrivateTasks = computed(() =>
-    user.value ? arrangeTodos(query.data.value ?? []) : [],
-  );
+  /** Mirrors what the server confirmed it now holds. */
+  const patchCachedTodo = (id: string, change: Partial<Todo>) =>
+    queryClient.setQueryData<Todo[]>(todoKeys.all, (todos) =>
+      todos?.map((todo) => (todo.id === id ? { ...todo, ...change } : todo)),
+    );
+
+  const completionWrite = useMutation({
+    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
+      unwrap(
+        api.PUT('/todos/{id}/completed', {
+          params: { path: { id } },
+          body: { completed },
+        }),
+      ),
+    onSuccess: ({ id, completed, updatedAt }) =>
+      patchCachedTodo(id, { completed, updatedAt }),
+  });
+
+  const completion = useKeyedSync<string, boolean>({
+    keyOf: (id) => id,
+    delay: COMPLETION_SYNC_DELAY_MS,
+    send: (id, completed) => completionWrite.mutateAsync({ id, completed }),
+    onFailed: (_, __, error) =>
+      toast.error(apiErrorMessage(error, t('tasks.errors.save_status'))),
+  });
+
+  // Where moved todos sort until every move is through. The keys only order
+  // the list here; the server picks its own from the neighbour named.
+  const movedPositions = shallowReactive(new Map<string, string>());
+  const removed = shallowReactive(new Set<string>());
+
+  const move = useMutation({
+    mutationKey: todoKeys.order(),
+    mutationFn: ({ id, afterId }: { id: string; afterId: string | null }) =>
+      unwrap(
+        api.PUT('/todos/{id}/position', {
+          params: { path: { id } },
+          body: { afterId },
+        }),
+      ),
+    // Moves run one after another in the order they were made, so each one
+    // finds the list as the moves before it left it.
+    scope: { id: 'todo-order' },
+    onSuccess: ({ id, position, updatedAt }) =>
+      patchCachedTodo(id, { position, updatedAt }),
+    onError: (error) =>
+      toast.error(
+        apiErrorMessage(error, t('tasks.private_tasks.errors.reorder')),
+      ),
+    onSettled: (_, error) => {
+      // The last move through decides: the cache holds the server's order now.
+      if (queryClient.isMutating({ mutationKey: todoKeys.order() }) > 1) {
+        return;
+      }
+      movedPositions.clear();
+      // Some moves may not have gone through; the server's order wins.
+      if (error) void queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
+  });
+
+  const displayPrivateTasks = computed(() => {
+    if (!user.value) return [];
+    return sortTodos(
+      (query.data.value ?? [])
+        .filter((todo) => !removed.has(todo.id))
+        .map((todo) => ({
+          ...todo,
+          completed: completion.pendingValue(todo.id) ?? todo.completed,
+          position: movedPositions.get(todo.id) ?? todo.position,
+        })),
+    );
+  });
   const loading = computed(() => !!user.value && query.isPending.value);
 
   const openMenuId = ref<string | null>(null);
@@ -250,8 +114,7 @@ export function useTodos() {
   const togglePrivateTaskCompletion = (task: Todo) => {
     const shown =
       displayPrivateTasks.value.find((todo) => todo.id === task.id) ?? task;
-    pending.completed.set(task.id, !shown.completed);
-    scheduleToggleSync(task.id);
+    void completion.set(task.id, !shown.completed, shown.completed);
   };
 
   const duplication = useMutation({
@@ -278,7 +141,7 @@ export function useTodos() {
     onError: (error) =>
       toast.error(apiErrorMessage(error, t('tasks.errors.delete'))),
     onSettled: (_, __, id) => {
-      pending.removed.delete(id);
+      removed.delete(id);
       return queryClient.invalidateQueries({ queryKey: todoKeys.all });
     },
   });
@@ -295,21 +158,23 @@ export function useTodos() {
 
   const deletePrivateTask = async (id: string, { confirm = true } = {}) => {
     if (confirm && !(await confirmDeletePrivateTask())) return;
-    pending.removed.add(id);
+    removed.add(id);
     removal.mutate(id);
   };
 
-  const reorderPrivateTask = (
-    id: string,
-    prevPosition: string | null,
-    nextPosition: string | null,
-  ) => {
-    if (!findCachedTodo(id)) return;
-    if (prevPosition || nextPosition) {
-      pending.positions.set(id, positionBetween(prevPosition, nextPosition));
-    }
-    reorderQueue.add(id);
-    scheduleReorderSync();
+  /** Moves the todo shown at index `from` to index `to`. */
+  const reorderPrivateTask = (from: number, to: number) => {
+    const order = [...displayPrivateTasks.value];
+    const [moved] = order.splice(from, 1);
+    if (!moved) return;
+    order.splice(to, 0, moved);
+
+    const above = order[to - 1];
+    movedPositions.set(
+      moved.id,
+      positionBetween(above?.position || null, order[to + 1]?.position || null),
+    );
+    move.mutate({ id: moved.id, afterId: above?.id ?? null });
   };
 
   return {

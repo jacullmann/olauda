@@ -15,7 +15,7 @@ use chrono::{DateTime, Utc};
 use ipnetwork::IpNetwork;
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use sqlx::PgPool;
+use sqlx::{PgConnection, PgExecutor, PgPool};
 use uuid::Uuid;
 
 pub type RevokeReason = &'static str;
@@ -109,6 +109,53 @@ pub struct TokenService {
     pub http: reqwest::Client,
 }
 
+/// A session is a token family, not a row: parallel refreshes leave unused
+/// sibling tokens behind, and counting those would evict real sessions.
+/// Families are ranked by their newest token, which every refresh renews,
+/// so the least recently used sessions go first.
+async fn make_room_for_new_session<'e>(
+    db: impl PgExecutor<'e>,
+    user_id: Uuid,
+) -> Result<(), AppError> {
+    sqlx::query!(
+        r#"UPDATE refresh_tokens
+           SET revoked_at = now(), revoked_reason = $1
+           WHERE user_id = $2
+             AND revoked_at IS NULL
+             AND family_id IN (
+                 SELECT family_id FROM refresh_tokens
+                 WHERE user_id = $2
+                   AND revoked_at IS NULL
+                   AND used_at IS NULL
+                   AND expires_at > now()
+                 GROUP BY family_id
+                 ORDER BY max(last_used_at) DESC
+                 OFFSET $3
+             )"#,
+        SESSION_LIMIT,
+        user_id,
+        MAX_SESSIONS_PER_USER - 1,
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+async fn find_refresh_token<'e>(
+    db: impl PgExecutor<'e>,
+    hash: &str,
+) -> Result<Option<RefreshTokenRow>, AppError> {
+    Ok(sqlx::query_as!(
+        RefreshTokenRow,
+        r#"SELECT id, user_id, family_id, used_at, revoked_at, expires_at, authenticated_at
+           FROM refresh_tokens WHERE token_hash = $1"#,
+        hash
+    )
+    .fetch_optional(db)
+    .await?)
+}
+
 fn hash_token(token: &str) -> String {
     let mut h = Sha256::new();
 
@@ -133,13 +180,19 @@ impl TokenService {
         }
     }
 
-    pub async fn issue_pair(&self, p: IssueTokenParams<'_>) -> Result<IssuedTokens, AppError> {
+    /// Runs on the caller's connection, so the new session is part of the
+    /// caller's transaction and never outlives a sign-in that failed later.
+    pub async fn issue_pair(
+        &self,
+        conn: &mut PgConnection,
+        p: IssueTokenParams<'_>,
+    ) -> Result<IssuedTokens, AppError> {
         let (family_id, parent_id, authenticated_at) = match p.origin {
             SessionOrigin::SignIn => {
                 // Every sign-in, whatever its method, ends here, so no new
                 // session can start during shutdown.
-                access_control::ensure_admitted(&self.db, p.user_id).await?;
-                self.make_room_for_new_session(p.user_id).await?;
+                access_control::ensure_admitted(&mut *conn, p.user_id).await?;
+                make_room_for_new_session(&mut *conn, p.user_id).await?;
                 (Uuid::new_v4(), None, Utc::now())
             }
             SessionOrigin::Rotation {
@@ -169,7 +222,7 @@ impl TokenService {
             p.client.ip.map(IpNetwork::from),
             authenticated_at,
         )
-        .execute(&self.db)
+        .execute(&mut *conn)
         .await?;
 
         let access_token = self.sign_access(p.user_id, p.email, family_id, authenticated_at)?;
@@ -225,36 +278,6 @@ impl TokenService {
         self.sign_access(user_id, email, session_id, authenticated_at)
     }
 
-    /// A session is a token family, not a row: parallel refreshes leave unused
-    /// sibling tokens behind, and counting those would evict real sessions.
-    /// Families are ranked by their newest token, which every refresh renews,
-    /// so the least recently used sessions go first.
-    async fn make_room_for_new_session(&self, user_id: Uuid) -> Result<(), AppError> {
-        sqlx::query!(
-            r#"UPDATE refresh_tokens
-               SET revoked_at = now(), revoked_reason = $1
-               WHERE user_id = $2
-                 AND revoked_at IS NULL
-                 AND family_id IN (
-                     SELECT family_id FROM refresh_tokens
-                     WHERE user_id = $2
-                       AND revoked_at IS NULL
-                       AND used_at IS NULL
-                       AND expires_at > now()
-                     GROUP BY family_id
-                     ORDER BY max(last_used_at) DESC
-                     OFFSET $3
-                 )"#,
-            SESSION_LIMIT,
-            user_id,
-            MAX_SESSIONS_PER_USER - 1,
-        )
-        .execute(&self.db)
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn rotate(
         &self,
         presented_token: &str,
@@ -262,7 +285,7 @@ impl TokenService {
     ) -> Result<Result<IssuedTokens, RefreshRejection>, AppError> {
         let hash = hash_token(presented_token);
 
-        let Some(row) = self.find_refresh_token(&hash).await? else {
+        let Some(row) = find_refresh_token(&self.db, &hash).await? else {
             return Ok(Err(RefreshRejection::Unknown));
         };
 
@@ -274,19 +297,21 @@ impl TokenService {
         // once shutdown ends.
         access_control::ensure_admitted(&self.db, row.user_id).await?;
 
+        let mut tx = self.db.begin().await?;
+
         let consumed = sqlx::query!(
             r#"UPDATE refresh_tokens SET used_at = now()
                WHERE id = $1 AND used_at IS NULL AND revoked_at IS NULL
                RETURNING id"#,
             row.id
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&mut *tx)
         .await?
         .is_some();
 
         if !consumed {
             // Re-read so a concurrent consume or revoke is judged on current state.
-            let Some(current) = self.find_refresh_token(&hash).await? else {
+            let Some(current) = find_refresh_token(&mut *tx, &hash).await? else {
                 return Ok(Err(RefreshRejection::Unknown));
             };
 
@@ -305,53 +330,50 @@ impl TokenService {
                         .user(current.user_id)
                         .client(client)
                         .metadata(json!({ "sessionId": current.family_id }))
-                        .record(&self.db)
+                        .record(&mut *tx)
                         .await?;
                 }
 
-                self.revoke_family(current.family_id, REUSE_DETECTED)
+                self.revoke_family(&mut *tx, current.family_id, REUSE_DETECTED)
                     .await?;
                 // Ends the stolen session's open event streams as well.
-                publish(&self.db, [security_changed(current.user_id)]).await?;
+                publish(&mut *tx, [security_changed(current.user_id)]).await?;
+                tx.commit().await?;
 
                 return Ok(Err(rejection));
             }
         }
 
-        let Some(user) = self.load_active_user(row.user_id).await? else {
-            self.revoke_family(row.family_id, ADMIN_REVOKE).await?;
+        let Some(user) = load_active_user(&mut *tx, row.user_id).await? else {
+            self.revoke_family(&mut *tx, row.family_id, ADMIN_REVOKE)
+                .await?;
+            tx.commit().await?;
             return Ok(Err(RefreshRejection::AccountInactive));
         };
 
         let issued = self
-            .issue_pair(IssueTokenParams {
-                user_id: user.user_id,
-                email: &user.email,
-                client,
-                origin: SessionOrigin::Rotation {
-                    parent_id: row.id,
-                    family_id: row.family_id,
-                    authenticated_at: row.authenticated_at,
+            .issue_pair(
+                &mut tx,
+                IssueTokenParams {
+                    user_id: user.user_id,
+                    email: &user.email,
+                    client,
+                    origin: SessionOrigin::Rotation {
+                        parent_id: row.id,
+                        family_id: row.family_id,
+                        authenticated_at: row.authenticated_at,
+                    },
                 },
-            })
+            )
             .await?;
+        tx.commit().await?;
 
         Ok(Ok(issued))
     }
 
-    async fn find_refresh_token(&self, hash: &str) -> Result<Option<RefreshTokenRow>, AppError> {
-        Ok(sqlx::query_as!(
-            RefreshTokenRow,
-            r#"SELECT id, user_id, family_id, used_at, revoked_at, expires_at, authenticated_at
-               FROM refresh_tokens WHERE token_hash = $1"#,
-            hash
-        )
-        .fetch_optional(&self.db)
-        .await?)
-    }
-
-    pub async fn revoke_family(
+    pub async fn revoke_family<'e>(
         &self,
+        db: impl PgExecutor<'e>,
         family_id: Uuid,
         reason: RevokeReason,
     ) -> Result<(), AppError> {
@@ -361,15 +383,16 @@ impl TokenService {
             reason,
             family_id,
         )
-        .execute(&self.db)
+        .execute(db)
         .await?;
         Ok(())
     }
 
     /// Ends one of the user's own sessions. `false` when no live session of
     /// theirs has that id.
-    pub async fn revoke_own_session(
+    pub async fn revoke_own_session<'e>(
         &self,
+        db: impl PgExecutor<'e>,
         user_id: Uuid,
         family_id: Uuid,
         reason: RevokeReason,
@@ -381,7 +404,7 @@ impl TokenService {
             family_id,
             user_id,
         )
-        .execute(&self.db)
+        .execute(db)
         .await?
         .rows_affected();
 
@@ -390,55 +413,47 @@ impl TokenService {
 
     /// Ends the session the token belongs to and returns whose it was, or
     /// `None` when it had already ended.
-    pub async fn revoke_current_family(
+    pub async fn revoke_current_family<'e>(
         &self,
+        db: impl PgExecutor<'e>,
         token: &str,
         reason: RevokeReason,
     ) -> Result<Option<Uuid>, AppError> {
-        let hash = hash_token(token);
-
-        let Some(row) = sqlx::query!(
-            r#"SELECT user_id, family_id FROM refresh_tokens
-               WHERE token_hash = $1 AND revoked_at IS NULL"#,
-            hash
+        let user_id = sqlx::query_scalar!(
+            r#"WITH revoked AS (
+                   UPDATE refresh_tokens SET revoked_at = now(), revoked_reason = $1
+                   WHERE revoked_at IS NULL
+                     AND family_id = (SELECT family_id FROM refresh_tokens
+                                      WHERE token_hash = $2 AND revoked_at IS NULL)
+                   RETURNING user_id
+               )
+               SELECT DISTINCT user_id AS "user_id!" FROM revoked"#,
+            reason,
+            hash_token(token),
         )
-        .fetch_optional(&self.db)
-        .await?
-        else {
-            return Ok(None);
-        };
+        .fetch_optional(db)
+        .await?;
 
-        self.revoke_family(row.family_id, reason).await?;
-
-        Ok(Some(row.user_id))
+        Ok(user_id)
     }
 
-    pub async fn revoke_all_for_user(
+    pub async fn revoke_all_for_user<'e>(
         &self,
+        db: impl PgExecutor<'e>,
         user_id: Uuid,
         reason: RevokeReason,
         except_family: Option<Uuid>,
     ) -> Result<(), AppError> {
-        if let Some(except) = except_family {
-            sqlx::query!(
-                r#"UPDATE refresh_tokens SET revoked_at = now(), revoked_reason = $1
-                   WHERE user_id = $2 AND revoked_at IS NULL AND family_id != $3"#,
-                reason,
-                user_id,
-                except,
-            )
-            .execute(&self.db)
-            .await?;
-        } else {
-            sqlx::query!(
-                r#"UPDATE refresh_tokens SET revoked_at = now(), revoked_reason = $1
-                   WHERE user_id = $2 AND revoked_at IS NULL"#,
-                reason,
-                user_id,
-            )
-            .execute(&self.db)
-            .await?;
-        }
+        sqlx::query!(
+            r#"UPDATE refresh_tokens SET revoked_at = now(), revoked_reason = $1
+               WHERE user_id = $2 AND revoked_at IS NULL
+                 AND family_id IS DISTINCT FROM $3"#,
+            reason,
+            user_id,
+            except_family,
+        )
+        .execute(db)
+        .await?;
         Ok(())
     }
 
@@ -521,37 +536,28 @@ impl TokenService {
             country_code: data["country_code"].as_str().map(String::from),
         })
     }
-
-    /// A deleted or banned user gets no new tokens.
-    async fn load_active_user(&self, user_id: Uuid) -> Result<Option<ActiveUser>, AppError> {
-        let user = sqlx::query!(r#"SELECT id, email FROM users WHERE id = $1"#, user_id)
-            .fetch_optional(&self.db)
-            .await?;
-
-        let user = match user {
-            None => return Ok(None),
-            Some(u) => u,
-        };
-
-        let ban = sqlx::query!(r#"SELECT id FROM banned_users WHERE user_id = $1"#, user_id)
-            .fetch_optional(&self.db)
-            .await?;
-
-        if ban.is_some() {
-            return Ok(None);
-        }
-
-        Ok(Some(ActiveUser {
-            user_id: user.id,
-            email: user.email,
-        }))
-    }
 }
 
 #[derive(Debug)]
 struct ActiveUser {
     user_id: Uuid,
     email: String,
+}
+
+/// A deleted or banned user gets no new tokens.
+async fn load_active_user<'e>(
+    db: impl PgExecutor<'e>,
+    user_id: Uuid,
+) -> Result<Option<ActiveUser>, AppError> {
+    Ok(sqlx::query_as!(
+        ActiveUser,
+        r#"SELECT id AS user_id, email FROM users u
+           WHERE id = $1
+             AND NOT EXISTS (SELECT 1 FROM banned_users WHERE user_id = u.id)"#,
+        user_id
+    )
+    .fetch_optional(db)
+    .await?)
 }
 
 #[derive(Debug, serde::Serialize, utoipa::ToSchema)]

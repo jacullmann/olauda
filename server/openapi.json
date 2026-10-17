@@ -3901,12 +3901,13 @@
         }
       }
     },
-    "/todos/{id}/toggle": {
-      "patch": {
+    "/todos/{id}/completed": {
+      "put": {
         "tags": [
           "todos"
         ],
-        "operationId": "toggle_todo",
+        "summary": "Marks a private task as done or open again.",
+        "operationId": "set_todo_completed",
         "parameters": [
           {
             "name": "id",
@@ -3918,13 +3919,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTodoCompletedDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TodoToggledDto"
+                  "$ref": "#/components/schemas/TodoCompletionDto"
                 }
               }
             }
@@ -3942,12 +3953,12 @@
         }
       }
     },
-    "/todos/{id}/reorder": {
-      "patch": {
+    "/todos/{id}/position": {
+      "put": {
         "tags": [
           "todos"
         ],
-        "operationId": "reorder_todo",
+        "operationId": "move_todo",
         "parameters": [
           {
             "name": "id",
@@ -3963,7 +3974,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReorderTodoDto"
+                "$ref": "#/components/schemas/MoveTodoDto"
               }
             }
           },
@@ -8194,21 +8205,24 @@
         ]
       },
       "MetricPoint": {
-        "type": "array",
-        "items": false,
-        "prefixItems": [
-          {
-            "type": "integer"
+        "type": "object",
+        "description": "One sample of a time series: when it was taken, in Unix seconds, and its\nvalue, which is `null` where Hetzner has no number and charts show a gap.",
+        "required": [
+          "timestamp"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
           },
-          {
+          "value": {
             "type": [
               "number",
               "null"
-            ]
+            ],
+            "format": "double"
           }
-        ],
-        "maxItems": 2,
-        "minItems": 2
+        }
       },
       "MfaChallengeDto": {
         "type": "object",
@@ -8290,6 +8304,19 @@
             ],
             "description": "Only while two-factor authentication is on.",
             "minimum": 0
+          }
+        }
+      },
+      "MoveTodoDto": {
+        "type": "object",
+        "description": "Moves a private task right below another, or to the top without one.",
+        "properties": {
+          "afterId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -8571,24 +8598,6 @@
         "properties": {
           "name": {
             "type": "string"
-          }
-        }
-      },
-      "ReorderTodoDto": {
-        "type": "object",
-        "description": "Moves a private task between the two neighbours it is dropped between.",
-        "properties": {
-          "prevPosition": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "nextPosition": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         }
       },
@@ -9250,6 +9259,17 @@
           }
         }
       },
+      "SetTodoCompletedDto": {
+        "type": "object",
+        "required": [
+          "completed"
+        ],
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      },
       "SignInDto": {
         "type": "object",
         "required": [
@@ -9551,6 +9571,27 @@
           "ok"
         ]
       },
+      "TodoCompletionDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "completed",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "TodoContentDto": {
         "type": "object",
         "description": "Creates a private task or replaces the text of an existing one.",
@@ -9623,27 +9664,6 @@
           },
           "position": {
             "type": "string"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "TodoToggledDto": {
-        "type": "object",
-        "required": [
-          "id",
-          "completed",
-          "updatedAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "completed": {
-            "type": "boolean"
           },
           "updatedAt": {
             "type": "string",

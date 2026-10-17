@@ -34,7 +34,7 @@ use crate::{
 use axum_extra::extract::cookie::CookieJar;
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use sqlx::PgPool;
+use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
 const DUMMY_PASSWORD_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$ptEx1UyXW3Vbni4hpQoKFA$CEEsGfXo9ruOgOAeAN4ZGpLiQK8gS+st5w9rVUimJlA";
@@ -87,20 +87,24 @@ impl AuthService {
 
     async fn issue_session(
         &self,
+        conn: &mut PgConnection,
         user_id: Uuid,
         email: &str,
         client: &ClientInfo,
-    ) -> AppResult<(CookieJar, String)> {
+    ) -> AppResult<CookieJar> {
         let opts = self.config.base_cookie_options();
 
         let issued = self
             .tokens
-            .issue_pair(IssueTokenParams {
-                user_id,
-                email,
-                client,
-                origin: SessionOrigin::SignIn,
-            })
+            .issue_pair(
+                conn,
+                IssueTokenParams {
+                    user_id,
+                    email,
+                    client,
+                    origin: SessionOrigin::SignIn,
+                },
+            )
             .await?;
 
         let csrf = generate_csrf_token();
@@ -110,7 +114,7 @@ impl AuthService {
             .add(refresh_cookie(issued.refresh_token, &opts))
             .add(crate::common::csrf::csrf_cookie(&csrf, &opts));
 
-        Ok((jar, csrf))
+        Ok(jar)
     }
 
     async fn equalize_login_timing(&self, password: String) {
@@ -256,32 +260,48 @@ impl AuthService {
         method: SignInMethod,
         client: &ClientInfo,
     ) -> AppResult<CookieJar> {
+        self.open_session(user_id, email, json!({ "method": method.as_str() }), client)
+            .await
+    }
+
+    /// Records the sign-in and issues its session in one transaction, so a
+    /// session never exists without its entry in the security log.
+    async fn open_session(
+        &self,
+        user_id: Uuid,
+        email: &str,
+        sign_in: serde_json::Value,
+        client: &ClientInfo,
+    ) -> AppResult<CookieJar> {
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"UPDATE users SET last_login_at = now() WHERE id = $1"#,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         sqlx::query!(
             r#"DELETE FROM mfa_pending_secrets WHERE user_id = $1"#,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        let (jar, _csrf) = self.issue_session(user_id, email, client).await?;
+        let jar = self.issue_session(&mut tx, user_id, email, client).await?;
 
         SecurityEvent::new(SecurityEventKind::SignIn)
             .user(user_id)
             .actor(user_id)
             .client(client)
-            .metadata(json!({ "method": method.as_str() }))
-            .record(&self.db)
+            .metadata(sign_in)
+            .record(&mut *tx)
             .await?;
 
         // The account's other devices list the new session.
-        publish(&self.db, [security_changed(user_id)]).await?;
+        publish(&mut *tx, [security_changed(user_id)]).await?;
+        tx.commit().await?;
 
         Ok(jar)
     }
@@ -330,31 +350,16 @@ impl AuthService {
         kind: SecondFactorKind,
         client: &ClientInfo,
     ) -> AppResult<CookieJar> {
-        sqlx::query!(
-            r#"UPDATE users SET last_login_at = now() WHERE id = $1"#,
-            user_id
-        )
-        .execute(&self.db)
-        .await?;
-
-        sqlx::query!(
-            r#"DELETE FROM mfa_pending_secrets WHERE user_id = $1"#,
-            user_id
-        )
-        .execute(&self.db)
-        .await?;
-
-        let opts = self.config.base_cookie_options();
-        let (jar, _csrf) = self.issue_session(user_id, email, client).await?;
-
-        SecurityEvent::new(SecurityEventKind::SignIn)
-            .user(user_id)
-            .actor(user_id)
-            .client(client)
-            .metadata(json!({ "secondFactor": kind.as_str() }))
-            .record(&self.db)
+        let jar = self
+            .open_session(
+                user_id,
+                email,
+                json!({ "secondFactor": kind.as_str() }),
+                client,
+            )
             .await?;
 
+        let opts = self.config.base_cookie_options();
         Ok(jar.add(clear_mfa_pending_cookie(&opts)))
     }
 
@@ -513,11 +518,11 @@ impl AuthService {
             ));
         }
 
-        self.tokens
-            .revoke_all_for_user(user_id, ACCOUNT_DELETED, None)
-            .await?;
-
         let mut tx = self.db.begin().await?;
+
+        self.tokens
+            .revoke_all_for_user(&mut *tx, user_id, ACCOUNT_DELETED, None)
+            .await?;
 
         sqlx::query!(r#"DELETE FROM users WHERE id = $1"#, user_id)
             .execute(&mut *tx)
@@ -698,6 +703,8 @@ impl AuthService {
 
         let hash = hash_password(new_password).await?;
 
+        let mut tx = self.db.begin().await?;
+
         // The IS NULL guard keeps a concurrent request from overwriting a
         // password that was set in the meantime.
         let updated = sqlx::query!(
@@ -707,7 +714,7 @@ impl AuthService {
             hash,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?
         .rows_affected();
 
@@ -718,20 +725,22 @@ impl AuthService {
         }
 
         self.tokens
-            .revoke_all_for_user(user_id, PASSWORD_CHANGE, None)
+            .revoke_all_for_user(&mut *tx, user_id, PASSWORD_CHANGE, None)
             .await?;
 
-        let (jar, _) = self.issue_session(user_id, &email, client).await?;
+        let jar = self.issue_session(&mut tx, user_id, &email, client).await?;
 
         SecurityEvent::new(SecurityEventKind::PasswordSet)
             .user(user_id)
             .actor(user_id)
             .client(client)
-            .record(&self.db)
+            .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
+        tx.commit().await?;
+
         security_notice::notify(&self.db, &self.email, user_id, SecurityNotice::PasswordSet);
-        publish(&self.db, [security_changed(user_id)]).await?;
 
         Ok(jar)
     }
@@ -800,6 +809,8 @@ impl AuthService {
         // concurrent resets with one token only the first succeeds. A reset
         // proves the mailbox, so it also lifts a lock that guesses at the old
         // password started.
+        let mut tx = self.db.begin().await?;
+
         let updated = sqlx::query!(
             r#"UPDATE users
                SET password_hash = $1, password_failed_attempts = 0, password_locked_until = NULL
@@ -808,7 +819,7 @@ impl AuthService {
             user.id,
             user.password_hash
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?
         .rows_affected();
 
@@ -817,7 +828,7 @@ impl AuthService {
         }
 
         self.tokens
-            .revoke_all_for_user(user.id, PASSWORD_CHANGE, None)
+            .revoke_all_for_user(&mut *tx, user.id, PASSWORD_CHANGE, None)
             .await?;
 
         // The emailed code proved control of the mailbox, which is as much
@@ -826,8 +837,11 @@ impl AuthService {
             .user(user.id)
             .actor(user.id)
             .client(client)
-            .record(&self.db)
+            .record(&mut *tx)
             .await?;
+
+        publish(&mut *tx, [security_changed(user.id)]).await?;
+        tx.commit().await?;
 
         security_notice::notify(
             &self.db,
@@ -835,7 +849,6 @@ impl AuthService {
             user.id,
             SecurityNotice::PasswordReset,
         );
-        publish(&self.db, [security_changed(user.id)]).await?;
 
         Ok(())
     }
@@ -873,18 +886,19 @@ impl AuthService {
             .record(&mut *tx)
             .await?;
 
+        self.tokens
+            .revoke_all_for_user(&mut *tx, user_id, PASSWORD_CHANGE, Some(session_id))
+            .await?;
+
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
 
-        self.tokens
-            .revoke_all_for_user(user_id, PASSWORD_CHANGE, Some(session_id))
-            .await?;
         security_notice::notify(
             &self.db,
             &self.email,
             user_id,
             SecurityNotice::PasswordRemoved,
         );
-        publish(&self.db, [security_changed(user_id)]).await?;
 
         Ok(())
     }
@@ -917,6 +931,8 @@ impl AuthService {
 
         let hash = hash_password(new_password).await?;
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"UPDATE users
                SET password_hash = $1, password_failed_attempts = 0, password_locked_until = NULL
@@ -924,21 +940,26 @@ impl AuthService {
             hash,
             user_id
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
         self.tokens
-            .revoke_all_for_user(user_id, PASSWORD_CHANGE, None)
+            .revoke_all_for_user(&mut *tx, user_id, PASSWORD_CHANGE, None)
             .await?;
 
-        let (jar, _) = self.issue_session(user_id, &user.email, client).await?;
+        let jar = self
+            .issue_session(&mut tx, user_id, &user.email, client)
+            .await?;
 
         SecurityEvent::new(SecurityEventKind::PasswordChanged)
             .user(user_id)
             .actor(user_id)
             .client(client)
-            .record(&self.db)
+            .record(&mut *tx)
             .await?;
+
+        publish(&mut *tx, [security_changed(user_id)]).await?;
+        tx.commit().await?;
 
         security_notice::notify(
             &self.db,
@@ -946,23 +967,23 @@ impl AuthService {
             user_id,
             SecurityNotice::PasswordChanged,
         );
-        publish(&self.db, [security_changed(user_id)]).await?;
 
         Ok(jar)
     }
 
     /// Ends the session the refresh token belongs to, if it is still live.
     pub async fn sign_out(&self, refresh_token: &str, client: &ClientInfo) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         if let Some(user_id) = self
             .tokens
-            .revoke_current_family(refresh_token, LOGOUT)
+            .revoke_current_family(&mut *tx, refresh_token, LOGOUT)
             .await?
         {
-            self.record_sign_out(user_id, json!({ "scope": "current" }), client)
-                .await?;
-            publish(&self.db, [security_changed(user_id)]).await?;
+            record_sign_out(&mut tx, user_id, json!({ "scope": "current" }), client).await?;
         }
 
+        tx.commit().await?;
         Ok(())
     }
 
@@ -973,16 +994,16 @@ impl AuthService {
         keep: Option<Uuid>,
         client: &ClientInfo,
     ) -> AppResult<()> {
+        let mut tx = self.db.begin().await?;
+
         self.tokens
-            .revoke_all_for_user(user_id, LOGOUT_ALL, keep)
+            .revoke_all_for_user(&mut *tx, user_id, LOGOUT_ALL, keep)
             .await?;
 
         let scope = if keep.is_some() { "others" } else { "all" };
-        self.record_sign_out(user_id, json!({ "scope": scope }), client)
-            .await?;
+        record_sign_out(&mut tx, user_id, json!({ "scope": scope }), client).await?;
 
-        publish(&self.db, [security_changed(user_id)]).await?;
-
+        tx.commit().await?;
         Ok(())
     }
 
@@ -994,40 +1015,47 @@ impl AuthService {
         session_id: Uuid,
         client: &ClientInfo,
     ) -> AppResult<bool> {
+        let mut tx = self.db.begin().await?;
+
         let ended = self
             .tokens
-            .revoke_own_session(user_id, session_id, SESSION_REVOKED)
+            .revoke_own_session(&mut *tx, user_id, session_id, SESSION_REVOKED)
             .await?;
 
         if ended {
-            self.record_sign_out(
+            record_sign_out(
+                &mut tx,
                 user_id,
                 json!({ "scope": "one", "sessionId": session_id }),
                 client,
             )
             .await?;
-            publish(&self.db, [security_changed(user_id)]).await?;
         }
 
+        tx.commit().await?;
         Ok(ended)
     }
+}
 
-    async fn record_sign_out(
-        &self,
-        user_id: Uuid,
-        metadata: serde_json::Value,
-        client: &ClientInfo,
-    ) -> AppResult<()> {
-        SecurityEvent::new(SecurityEventKind::SignOut)
-            .user(user_id)
-            .actor(user_id)
-            .client(client)
-            .metadata(metadata)
-            .record(&self.db)
-            .await?;
+/// Logs a sign-out and tells the user's devices, after the sessions it ended
+/// were revoked on the same connection.
+async fn record_sign_out(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    metadata: serde_json::Value,
+    client: &ClientInfo,
+) -> AppResult<()> {
+    SecurityEvent::new(SecurityEventKind::SignOut)
+        .user(user_id)
+        .actor(user_id)
+        .client(client)
+        .metadata(metadata)
+        .record(&mut *conn)
+        .await?;
 
-        Ok(())
-    }
+    publish(&mut *conn, [security_changed(user_id)]).await?;
+
+    Ok(())
 }
 
 pub enum LoginResult {

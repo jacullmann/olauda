@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id FROM subjects WHERE id = $1 AND tenant_id = $2",
+  "query": "DELETE FROM encrypted_todos WHERE id = $1 AND user_id = $2 RETURNING id",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "subjects",
+            "table": "encrypted_todos",
             "name": "id"
           }
         }
@@ -25,5 +25,5 @@
       false
     ]
   },
-  "hash": "695d9a447d50bc91fa660c20ad24fabc49d05b991e6860493f7dd6ce31fb2aa3"
+  "hash": "22fe68d547a50664513c25f1710177e4accfd4006f9c4ecfc1df239c124e0974"
 }

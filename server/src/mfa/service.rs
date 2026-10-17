@@ -73,13 +73,6 @@ impl MfaService {
             return Err(AppError::bad_request("MFA is already enabled."));
         }
 
-        sqlx::query!(
-            r#"DELETE FROM mfa_pending_secrets WHERE user_id = $1"#,
-            user_id
-        )
-        .execute(&self.db)
-        .await?;
-
         let secret_b32 = Totp::generate_secret();
 
         let uid = user_id.to_string();
@@ -88,24 +81,29 @@ impl MfaService {
 
         let expires_at = chrono::Utc::now() + chrono::Duration::minutes(15);
 
+        let mut tx = self.db.begin().await?;
+
         sqlx::query!(
             r#"INSERT INTO mfa_pending_secrets (user_id, encrypted_secret, expires_at) VALUES ($1, $2, $3)
-               ON CONFLICT (user_id) DO UPDATE SET encrypted_secret = $2, expires_at = $3"#,
+               ON CONFLICT (user_id) DO UPDATE
+               SET encrypted_secret = $2, expires_at = $3, created_at = now()"#,
             user_id,
             enc.to_json(),
             expires_at,
         )
-            .execute(&self.db)
-            .await?;
-
-        let otpauth_url = Totp::from_base32(&secret_b32, &user.email)?.otpauth_url();
+        .execute(&mut *tx)
+        .await?;
 
         sqlx::query!(
             r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, 'mfa:setup:started', '{}'::jsonb)"#,
             user_id
         )
-            .execute(&self.db)
-            .await?;
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        let otpauth_url = Totp::from_base32(&secret_b32, &user.email)?.otpauth_url();
 
         Ok(MfaSetupDto {
             otpauth_url,
@@ -179,14 +177,14 @@ impl MfaService {
             .record(&mut *tx)
             .await?;
 
-        tx.commit().await?;
-
         self.tokens
-            .revoke_all_for_user(user_id, MFA_CHANGE, Some(session_id))
+            .revoke_all_for_user(&mut *tx, user_id, MFA_CHANGE, Some(session_id))
             .await?;
         // Only once the other sessions are revoked, so their open streams
         // recheck them and end instead of seeing them still active.
-        publish(&self.db, [security_changed(user_id)]).await?;
+        publish(&mut *tx, [security_changed(user_id)]).await?;
+        tx.commit().await?;
+
         security_notice::notify(
             &self.db,
             &self.email,
@@ -266,14 +264,14 @@ impl MfaService {
             .record(&mut *tx)
             .await?;
 
-        tx.commit().await?;
-
         self.tokens
-            .revoke_all_for_user(user_id, MFA_CHANGE, Some(session_id))
+            .revoke_all_for_user(&mut *tx, user_id, MFA_CHANGE, Some(session_id))
             .await?;
         // Only once the other sessions are revoked, so their open streams
         // recheck them and end instead of seeing them still active.
-        publish(&self.db, [security_changed(user_id)]).await?;
+        publish(&mut *tx, [security_changed(user_id)]).await?;
+        tx.commit().await?;
+
         security_notice::notify(
             &self.db,
             &self.email,
