@@ -1,9 +1,13 @@
-use super::dto::{DismissibleNotice, UpdatePreferencesDto};
+use super::dto::{
+    DismissibleNotice, ItemIdsDto, PreferencesDto, UpdatePreferencesDto, VisibilityDto,
+    VisibilityStatus,
+};
 use crate::{
     error::{AppError, AppResult},
+    realtime::event::{AccountTopic, GroupTopic, Notice, publish},
     state::AppState,
 };
-use serde_json::{Value, json};
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -18,12 +22,8 @@ impl UserService {
         }
     }
 
-    pub async fn update_personalization(
-        &self,
-        user_id: Uuid,
-        personalized: bool,
-    ) -> AppResult<Value> {
-        let row = sqlx::query!(
+    pub async fn update_personalization(&self, user_id: Uuid, personalized: bool) -> AppResult<()> {
+        sqlx::query!(
             r#"UPDATE users SET personalized = $1 WHERE id = $2 RETURNING personalized"#,
             personalized,
             user_id
@@ -37,7 +37,9 @@ impl UserService {
             user_id, json!({ "personalized": personalized })
         ).execute(&self.db).await?;
 
-        Ok(json!({ "ok": true, "personalized": row.personalized }))
+        publish(&self.db, [Notice::account(user_id, AccountTopic::Profile)]).await?;
+
+        Ok(())
     }
 
     /// Saves the settings named in `changes` and keeps every other one. A page's
@@ -48,7 +50,7 @@ impl UserService {
         &self,
         user_id: Uuid,
         changes: &UpdatePreferencesDto,
-    ) -> AppResult<Value> {
+    ) -> AppResult<PreferencesDto> {
         let preferences = sqlx::query_scalar!(
             r#"WITH updated AS (
                    UPDATE users u
@@ -77,14 +79,12 @@ impl UserService {
         .await?
         .ok_or_else(|| AppError::not_found("User not found"))?;
 
-        Ok(json!({ "ok": true, "preferences": preferences }))
+        publish(&self.db, [Notice::account(user_id, AccountTopic::Profile)]).await?;
+
+        Ok(PreferencesDto::from_stored(preferences))
     }
 
-    pub async fn dismiss_notice(
-        &self,
-        user_id: Uuid,
-        notice: DismissibleNotice,
-    ) -> AppResult<Value> {
+    pub async fn dismiss_notice(&self, user_id: Uuid, notice: DismissibleNotice) -> AppResult<()> {
         // Appending inside a single statement keeps concurrent dismissals from
         // overwriting each other, and repeats neither duplicate the entry nor
         // log activity again.
@@ -109,7 +109,9 @@ impl UserService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [Notice::account(user_id, AccountTopic::Profile)]).await?;
+
+        Ok(())
     }
 
     pub async fn update_setup(
@@ -117,7 +119,7 @@ impl UserService {
         user_id: Uuid,
         tenant_id: Uuid,
         courses: Vec<(Uuid, Uuid)>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let (subject_ids, course_ids): (Vec<Uuid>, Vec<Uuid>) = courses.iter().copied().unzip();
 
         if !courses.is_empty() {
@@ -176,7 +178,7 @@ impl UserService {
             .await?;
         }
 
-        let courses_json: Vec<Value> = courses
+        let courses_json: Vec<_> = courses
             .iter()
             .map(|(s, c)| json!({ "subjectId": s, "courseId": c }))
             .collect();
@@ -186,13 +188,18 @@ impl UserService {
             user_id, json!({ "courses": courses_json })
         ).execute(&mut *tx).await?;
 
+        publish(
+            &mut *tx,
+            [Notice::member(user_id, tenant_id, GroupTopic::Courses)],
+        )
+        .await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// Clears the member's courses in this group and asks for them again.
-    pub async fn reset_setup(&self, user_id: Uuid, tenant_id: Uuid) -> AppResult<Value> {
+    pub async fn reset_setup(&self, user_id: Uuid, tenant_id: Uuid) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         sqlx::query!(
@@ -214,53 +221,60 @@ impl UserService {
         .execute(&mut *tx)
         .await?;
 
+        publish(
+            &mut *tx,
+            [Notice::member(user_id, tenant_id, GroupTopic::Courses)],
+        )
+        .await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn get_checks(&self, user_id: Uuid) -> AppResult<Value> {
-        let rows = sqlx::query!(
+    pub async fn get_checks(&self, user_id: Uuid) -> AppResult<ItemIdsDto> {
+        let item_ids = sqlx::query_scalar!(
             r#"SELECT item_id FROM keep_checked WHERE user_id = $1"#,
             user_id
         )
         .fetch_all(&self.db)
         .await?;
 
-        Ok(json!({ "itemIds": rows.iter().map(|r| r.item_id).collect::<Vec<_>>() }))
+        Ok(ItemIdsDto { item_ids })
     }
 
-    pub async fn get_pins(&self, user_id: Uuid) -> AppResult<Value> {
-        let rows = sqlx::query!(
+    pub async fn get_pins(&self, user_id: Uuid) -> AppResult<ItemIdsDto> {
+        let item_ids = sqlx::query_scalar!(
             r#"SELECT item_id FROM pinned_items WHERE user_id = $1"#,
             user_id
         )
         .fetch_all(&self.db)
         .await?;
 
-        Ok(json!({ "itemIds": rows.iter().map(|r| r.item_id).collect::<Vec<_>>() }))
+        Ok(ItemIdsDto { item_ids })
     }
 
-    pub async fn get_visibility(&self, user_id: Uuid) -> AppResult<Value> {
+    pub async fn get_visibility(&self, user_id: Uuid) -> AppResult<VisibilityDto> {
         let rows = sqlx::query!(
-            r#"SELECT item_id, status FROM user_item_visibility WHERE user_id = $1"#,
+            r#"SELECT item_id, status AS "status: VisibilityStatus"
+               FROM user_item_visibility WHERE user_id = $1"#,
             user_id
         )
         .fetch_all(&self.db)
         .await?;
 
-        let mut archived = vec![];
-
-        let mut kept = vec![];
-
-        for r in rows {
-            match r.status.as_deref() {
-                Some("archived") => archived.push(r.item_id),
-                Some("kept") => kept.push(r.item_id),
-                _ => {}
+        let mut visibility = VisibilityDto {
+            archived: vec![],
+            kept: vec![],
+        };
+        for row in rows {
+            match row.status {
+                Some(VisibilityStatus::Archived) => visibility.archived.push(row.item_id),
+                Some(VisibilityStatus::Kept) => visibility.kept.push(row.item_id),
+                None => {}
             }
         }
-        Ok(json!({ "archived": archived, "kept": kept }))
+
+        Ok(visibility)
     }
 
     pub async fn set_visibility(
@@ -268,12 +282,8 @@ impl UserService {
         tenant_id: Uuid,
         item_id: Uuid,
         user_id: Uuid,
-        status: &str,
-    ) -> AppResult<Value> {
-        if !matches!(status, "archived" | "kept") {
-            return Err(AppError::bad_request("Invalid visibility status."));
-        }
-
+        status: VisibilityStatus,
+    ) -> AppResult<()> {
         sqlx::query!(
             r#"SELECT id FROM items WHERE id = $1 AND tenant_id = $2"#,
             item_id,
@@ -292,7 +302,7 @@ impl UserService {
                DO UPDATE SET status = EXCLUDED.status, archived_at = now()"#,
             item_id,
             user_id,
-            status
+            status as VisibilityStatus
         )
         .execute(&mut *tx)
         .await?;
@@ -302,12 +312,18 @@ impl UserService {
             user_id, json!({ "itemId": item_id, "status": status })
         ).execute(&mut *tx).await?;
 
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn remove_visibility(&self, item_id: Uuid, user_id: Uuid) -> AppResult<Value> {
+    pub async fn remove_visibility(
+        &self,
+        tenant_id: Uuid,
+        item_id: Uuid,
+        user_id: Uuid,
+    ) -> AppResult<()> {
         sqlx::query!(
             r#"DELETE FROM user_item_visibility WHERE item_id = $1 AND user_id = $2"#,
             item_id,
@@ -321,10 +337,12 @@ impl UserService {
             user_id, json!({ "itemId": item_id })
         ).execute(&self.db).await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+
+        Ok(())
     }
 
-    pub async fn log_page_load(&self, user_id: Uuid, user_agent: &str) -> AppResult<Value> {
+    pub async fn log_page_load(&self, user_id: Uuid, user_agent: &str) -> AppResult<()> {
         // Byte slicing would panic on a multi-byte UTF-8 boundary.
         let ua: String = user_agent.chars().take(100).collect();
         sqlx::query!(
@@ -335,15 +353,10 @@ impl UserService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn check_item(
-        &self,
-        tenant_id: Uuid,
-        item_id: Uuid,
-        user_id: Uuid,
-    ) -> AppResult<Value> {
+    pub async fn check_item(&self, tenant_id: Uuid, item_id: Uuid, user_id: Uuid) -> AppResult<()> {
         sqlx::query!(
             r#"SELECT id FROM items WHERE id = $1 AND tenant_id = $2"#,
             item_id,
@@ -381,12 +394,18 @@ impl UserService {
         .execute(&mut *tx)
         .await?;
 
+        publish(&mut *tx, [marks_changed(user_id, tenant_id)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn uncheck_item(&self, item_id: Uuid, user_id: Uuid) -> AppResult<Value> {
+    pub async fn uncheck_item(
+        &self,
+        tenant_id: Uuid,
+        item_id: Uuid,
+        user_id: Uuid,
+    ) -> AppResult<()> {
         sqlx::query!(
             r#"DELETE FROM keep_checked WHERE item_id = $1 AND user_id = $2"#,
             item_id,
@@ -403,15 +422,12 @@ impl UserService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+
+        Ok(())
     }
 
-    pub async fn pin_item(
-        &self,
-        tenant_id: Uuid,
-        item_id: Uuid,
-        user_id: Uuid,
-    ) -> AppResult<Value> {
+    pub async fn pin_item(&self, tenant_id: Uuid, item_id: Uuid, user_id: Uuid) -> AppResult<()> {
         sqlx::query!(
             r#"SELECT id FROM items WHERE id = $1 AND tenant_id = $2"#,
             item_id,
@@ -438,10 +454,12 @@ impl UserService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+
+        Ok(())
     }
 
-    pub async fn unpin_item(&self, item_id: Uuid, user_id: Uuid) -> AppResult<Value> {
+    pub async fn unpin_item(&self, tenant_id: Uuid, item_id: Uuid, user_id: Uuid) -> AppResult<()> {
         sqlx::query!(
             r#"DELETE FROM pinned_items WHERE item_id = $1 AND user_id = $2"#,
             item_id,
@@ -458,6 +476,13 @@ impl UserService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [marks_changed(user_id, tenant_id)]).await?;
+
+        Ok(())
     }
+}
+
+/// A member's checks, pins and archive change only what they see.
+const fn marks_changed(user_id: Uuid, group_id: Uuid) -> Notice {
+    Notice::member(user_id, group_id, GroupTopic::TaskMarks)
 }

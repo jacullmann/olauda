@@ -1,6 +1,7 @@
 //! Paging for the admin lists, which load further rows as they are scrolled.
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 const DEFAULT_LIMIT: i64 = 50;
@@ -8,7 +9,7 @@ const MAX_LIMIT: i64 = 100;
 
 /// How many rows to skip. Anything below zero reads as zero, so a hand-edited
 /// request can never produce a negative offset.
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(from = "Option<i64>")]
 pub struct Offset(i64);
 
@@ -25,7 +26,7 @@ impl Offset {
 }
 
 /// How many rows to return, capped so no request can ask for a whole table.
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, ToSchema)]
 #[serde(from = "Option<i64>")]
 pub struct Limit(i64);
 
@@ -47,7 +48,7 @@ impl Limit {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum SortOrder {
     Asc,
@@ -66,7 +67,8 @@ impl SortOrder {
 
 /// The rows of a list from an offset on, with how many match in all, so the
 /// client can size its scrollbar before it has loaded everything.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct Window<T> {
     pub items: Vec<T>,
     pub total: i64,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePreferences } from '@/modules/account/composables/usePreferences';
+import { isSupportedLocale } from '@/i18n';
 import { Languages } from '@lucide/vue';
 import BaseMenuSelect, {
   type MenuOption,
@@ -13,10 +14,10 @@ const localeOptions: MenuOption[] = [
   { value: 'en', label: 'English', icon: Languages },
 ];
 
-const { currentLanguage, setPreference } = usePreferences();
+const { currentLanguage, setLanguage } = usePreferences();
 
 function updateLocale(loc: string) {
-  setPreference('language', loc);
+  if (isSupportedLocale(loc)) setLanguage(loc);
 }
 </script>
 

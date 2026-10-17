@@ -20,7 +20,8 @@ import {
 import AppLoadingBar from '@/shell/components/AppLoadingBar.vue';
 import AppModalHost from '@/shell/components/AppModalHost.vue';
 import AppConnectionStatus from '@/shell/components/AppConnectionStatus.vue';
-import api from '@/api/client';
+import { useLiveUpdates } from '@/shell/composables/useLiveUpdates';
+import api, { unwrap } from '@/api/client';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -29,6 +30,7 @@ const accessStatus = useAccessStatusStore();
 const { user } = storeToRefs(userStore);
 const { isAuthReady, isApiUnreachable, checkAuthStatus } = useSession();
 const { handleOAuthReturn } = useOAuth();
+useLiveUpdates();
 
 let pageloadLogged = false;
 
@@ -39,13 +41,12 @@ function reloadApp() {
 function logPageload() {
   if (pageloadLogged || !user.value) return;
   pageloadLogged = true;
-  api.post('/user/activity/pageload').catch(() => {
+  unwrap(api.POST('/user/activity/pageload')).catch(() => {
     pageloadLogged = false;
   });
 }
 
 async function returnToLogin() {
-  userStore.clearUser();
   const route = router.currentRoute.value;
   if (!route.meta.access) {
     saveLoginReturn(route.fullPath);
@@ -58,10 +59,7 @@ function handleShutdown() {
   const route = router.currentRoute.value;
   // On startup the route guard sends private pages to the login already, and
   // public ones, such as sign-up, must stay reachable.
-  if (route === START_LOCATION) {
-    userStore.clearUser();
-    return;
-  }
+  if (route === START_LOCATION) return;
   // Only signed-out visitors are on guest pages, so this was a sign-in that
   // shutdown turned away. Signed-in users go back to the login instead, where
   // superadmins can still sign in.

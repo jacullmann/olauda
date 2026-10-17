@@ -5,30 +5,17 @@ import {
   isReauthDeclined,
   retryAfterMinutes,
 } from '@/api/errors';
+import type { ErrorCode } from '@/api/schema';
 
-/** Codes the API sends when signing in or changing sign-in methods fails. */
-export const AuthErrorCode = {
-  InvalidCredentials: 'INVALID_CREDENTIALS',
-  LoginLocked: 'LOGIN_LOCKED',
-  EmailAlreadyRegistered: 'EMAIL_ALREADY_REGISTERED',
-  EmailNotVerified: 'EMAIL_NOT_VERIFIED',
-  IncorrectPassword: 'INCORRECT_PASSWORD',
-  ReauthLocked: 'REAUTH_LOCKED',
-  EmailThrottled: 'EMAIL_CODE_THROTTLED',
-  LastSignInMethod: 'LAST_SIGN_IN_METHOD',
-  RegistrationPaused: 'REGISTRATION_PAUSED',
-  Shutdown: 'SHUTDOWN',
-  RateLimited: 'RATE_LIMITED',
-} as const;
-
-const MESSAGE_KEYS: Record<string, string> = {
-  [AuthErrorCode.InvalidCredentials]: 'auth.errors.invalid_credentials',
-  [AuthErrorCode.EmailAlreadyRegistered]: 'auth.errors.email_taken',
-  [AuthErrorCode.EmailThrottled]: 'auth.errors.email_throttled',
-  [AuthErrorCode.LastSignInMethod]: 'auth.errors.last_sign_in_method',
-  [AuthErrorCode.RegistrationPaused]: 'auth.errors.registration_paused',
-  [AuthErrorCode.Shutdown]: 'auth.errors.shutdown',
-  [AuthErrorCode.RateLimited]: 'common.errors.rate_limited',
+/** The failures of signing in or changing sign-in methods the user can act on. */
+const MESSAGE_KEYS: Partial<Record<ErrorCode, string>> = {
+  INVALID_CREDENTIALS: 'auth.errors.invalid_credentials',
+  EMAIL_ALREADY_REGISTERED: 'auth.errors.email_taken',
+  EMAIL_CODE_THROTTLED: 'auth.errors.email_throttled',
+  LAST_SIGN_IN_METHOD: 'auth.errors.last_sign_in_method',
+  REGISTRATION_PAUSED: 'auth.errors.registration_paused',
+  SHUTDOWN: 'auth.errors.shutdown',
+  RATE_LIMITED: 'common.errors.rate_limited',
 };
 
 /**
@@ -38,9 +25,9 @@ const MESSAGE_KEYS: Record<string, string> = {
 export function authErrorMessage(err: unknown, fallback: string): string {
   if (isReauthDeclined(err)) return '';
   const code = apiErrorCode(err);
-  if (code === AuthErrorCode.LoginLocked) {
+  if (code === 'LOGIN_LOCKED') {
     return i18n.global.t('auth.errors.login_locked', retryAfterMinutes(err));
   }
-  const key = MESSAGE_KEYS[code ?? ''];
+  const key = code && MESSAGE_KEYS[code];
   return key ? i18n.global.t(key) : apiErrorMessage(err, fallback);
 }

@@ -3,24 +3,20 @@ import { computed } from 'vue';
 import { Filter, LayoutGrid } from '@lucide/vue';
 import { useI18n } from 'vue-i18n';
 import { usePersonalization } from '@/modules/account/composables/usePersonalization';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 
 const { t } = useI18n();
-const { setPersonalization: savePersonalization } = usePersonalization();
-
-const props = defineProps<{
-  modelValue: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'change', value: boolean): void;
-}>();
-
-const currentPersonalized = computed(() => props.modelValue);
+const userStore = useUserStore();
+const { setPersonalization } = usePersonalization();
 
 const dropdownValue = computed({
-  get: () => (currentPersonalized.value ? 'yes' : 'no'),
-  set: (val: string) => void setPersonalization(val === 'yes'),
+  get: () => ((userStore.user?.personalized ?? true) ? 'yes' : 'no'),
+  set: (value: string) => {
+    const personalized = value === 'yes';
+    if (personalized !== userStore.user?.personalized) {
+      void setPersonalization(personalized);
+    }
+  },
 });
 
 const options = computed(() => [
@@ -35,19 +31,6 @@ const options = computed(() => [
     icon: LayoutGrid,
   },
 ]);
-
-async function setPersonalization(value: boolean) {
-  if (value === currentPersonalized.value) return;
-
-  emit('update:modelValue', value);
-  const saved = await savePersonalization(value);
-  if (saved === null) {
-    emit('update:modelValue', !value);
-    return;
-  }
-
-  emit('change', saved);
-}
 </script>
 
 <template>

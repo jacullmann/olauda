@@ -1,8 +1,10 @@
 use crate::error::{AppError, AppResult};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, ToSchema)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "text", rename_all = "lowercase")]
 pub enum ItemType {
     Homework,
     Dalton,
@@ -15,15 +17,6 @@ impl ItemType {
             Self::Homework => "homework",
             Self::Dalton => "dalton",
             Self::Exam => "exam",
-        }
-    }
-
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "homework" => Some(Self::Homework),
-            "dalton" => Some(Self::Dalton),
-            "exam" => Some(Self::Exam),
-            _ => None,
         }
     }
 
@@ -101,13 +94,5 @@ mod tests {
         assert!(HOMEWORK.ensure_room_for(1, 0, 12).is_err());
         assert!(HOMEWORK.ensure_room_for(5, 0, 8).is_err());
         assert!(EXAM.ensure_room_for(7, 0, 12).is_err());
-    }
-
-    #[test]
-    fn round_trips_through_its_database_name() {
-        for t in [ItemType::Homework, ItemType::Dalton, ItemType::Exam] {
-            assert_eq!(ItemType::from_str(t.as_str()), Some(t));
-        }
-        assert_eq!(ItemType::from_str("all"), None);
     }
 }

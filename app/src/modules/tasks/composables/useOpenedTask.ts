@@ -1,13 +1,19 @@
-import { computed, ref, watch, type Ref } from 'vue';
-import { isAxiosError } from 'axios';
+import { computed, type Ref } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import { apiErrorStatus } from '@/api/errors';
 import type { Task } from '@/modules/tasks/types';
+import { taskQuery } from '@/modules/tasks/utils/taskQueries';
 
 export type OpenedItemError = 'not-found' | 'failed';
 
+const NOT_FOUND = 404;
+
 interface OpenedTaskOptions {
+  groupId: string;
   openedItemId: Readonly<Ref<string | null>>;
   findInList: (taskId: string) => Task | undefined;
-  fetchTask: (taskId: string) => Promise<Task>;
+  /** When the list last arrived, which its copy of the task is as fresh as. */
+  listUpdatedAt: Readonly<Ref<number>>;
 }
 
 /**
@@ -16,58 +22,48 @@ interface OpenedTaskOptions {
  * tab, or be dropped from the list while it stays open.
  */
 export function useOpenedTask({
+  groupId,
   openedItemId,
   findInList,
-  fetchTask,
+  listUpdatedAt,
 }: OpenedTaskOptions) {
-  const openedItem = ref<Task | null>(null);
-  const openedItemError = ref<OpenedItemError | null>(null);
-
   const listCopy = computed(() =>
     openedItemId.value ? findInList(openedItemId.value) : undefined,
   );
 
-  // The list's copy is the one every action keeps up to date, so it takes over
-  // whenever the list holds the task, also after a reload replaced it.
-  watch(listCopy, (task) => {
-    if (task) openedItem.value = task;
+  // Opened from the list, the list's copy stands in for a request of its
+  // own. Opened from a link, the task is fetched alongside the list rather
+  // than after it, and may not be part of it at all.
+  const query = useQuery(
+    computed(() => ({
+      ...taskQuery(groupId, openedItemId.value ?? ''),
+      enabled: !!openedItemId.value,
+      initialData: () => listCopy.value,
+      initialDataUpdatedAt: () => listUpdatedAt.value,
+    })),
+  );
+
+  // Someone else may have deleted the task while it was open: once its
+  // reload finds it gone, the copy seen before must not stay on screen.
+  const isGone = computed(
+    () => !listCopy.value && apiErrorStatus(query.error.value) === NOT_FOUND,
+  );
+
+  // The list's copy is the freshest whenever the list holds the task, also
+  // after a reload replaced it.
+  const openedItem = computed<Task | null>(() =>
+    isGone.value ? null : (listCopy.value ?? query.data.value ?? null),
+  );
+
+  const openedItemError = computed<OpenedItemError | null>(() => {
+    if (query.isFetching.value) return null;
+    if (isGone.value) return 'not-found';
+    return !openedItem.value && query.isError.value ? 'failed' : null;
   });
 
-  async function fetchOpenedItem(taskId: string) {
-    try {
-      const task = await fetchTask(taskId);
-      if (openedItemId.value !== taskId) return;
-      openedItem.value = listCopy.value ?? task;
-    } catch (e) {
-      if (openedItemId.value !== taskId) return;
-      openedItemError.value =
-        isAxiosError(e) && e.response?.status === 404 ? 'not-found' : 'failed';
-    }
+  async function retryOpenedItem(): Promise<void> {
+    await query.refetch();
   }
 
-  function loadOpenedItem() {
-    const taskId = openedItemId.value;
-    openedItemError.value = null;
-    openedItem.value = listCopy.value ?? null;
-    // Opened from a link, the task is fetched alongside the list rather than
-    // after it, and may not be part of it at all.
-    if (taskId && !listCopy.value) void fetchOpenedItem(taskId);
-  }
-
-  watch(openedItemId, loadOpenedItem, { immediate: true });
-
-  /** Takes over a fresher copy of the opened task. */
-  function replaceOpenedItem(task: Task) {
-    if (openedItem.value?.id === task.id) openedItem.value = task;
-  }
-
-  return {
-    openedItem,
-    openedItemError,
-    isOpenedOutsideList: computed(
-      () => !!openedItemId.value && !listCopy.value,
-    ),
-    retryOpenedItem: loadOpenedItem,
-    replaceOpenedItem,
-  };
+  return { openedItem, openedItemError, retryOpenedItem };
 }

@@ -1,28 +1,22 @@
 import {
   ref,
   computed,
+  onActivated,
+  onDeactivated,
   onMounted,
   onUnmounted,
-  shallowReactive,
-  watch,
   type Ref,
 } from 'vue';
-import { useEventListener } from '@vueuse/core';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useEventListener, useMounted } from '@vueuse/core';
+import { useQueries, useQuery } from '@tanstack/vue-query';
+import { useI18n } from 'vue-i18n';
 import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
-import { hiddenByCourses } from '@/modules/courses/utils/personalization';
 import { apiErrorMessage } from '@/api/errors';
-import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 import { usePageSettings } from '@/modules/account/composables/usePageSettings';
-import type {
-  Lesson,
-  ScheduleSubject,
-  Substitution,
-} from '@/modules/schedule/types';
-import { useI18n } from 'vue-i18n';
+import type { Lesson, Substitution } from '@/modules/schedule/types';
 import {
   groupOverlappingLessons,
   lessonLastSlot,
@@ -42,6 +36,18 @@ import {
   mondayOf,
   weeksBetween,
 } from '@/modules/schedule/utils/weekday';
+import {
+  dateOfPage as dateOfPageFrom,
+  pageOf,
+  pageOfDate as pageOfDateFrom,
+  weekOfPage,
+  weekStartOf as weekStartFrom,
+} from '@/modules/schedule/utils/schedulePages';
+import {
+  scheduleQuery,
+  substitutionsQuery,
+} from '@/modules/schedule/utils/scheduleQueries';
+import { subjectsQuery } from '@/modules/courses/utils/courseQueries';
 import { withSubstitutions } from '@/modules/schedule/utils/substitutions';
 import { personalLessons } from '@/modules/schedule/utils/personalLessons';
 import { activeOrNextGroupKeyAt } from '@/modules/schedule/utils/activeLesson';
@@ -49,8 +55,7 @@ import { useScheduleDisplay } from './useScheduleDisplay';
 import { useWeekCache } from './useWeekCache';
 
 const MS_PER_MINUTE = 60 * 1000;
-/** Back after this long, the schedule may have changed meanwhile. */
-const STALE_AFTER_MS = MS_PER_MINUTE;
+const NO_SUBSTITUTIONS: readonly Substitution[] = [];
 
 /**
  * The group's schedule with the changes of each week applied. The weeks of
@@ -78,32 +83,58 @@ export function useSchedule(shownWeek?: Ref<number>) {
     () => !!userStore.user?.personalized && hasCourseSelection.value,
   );
 
-  const lessons = ref<Lesson[]>([]);
-  const subjects = ref<ScheduleSubject[]>([]);
-  /** Each loaded week's changes by its Monday; a missing week is not known yet. */
-  const substitutionsByWeek = shallowReactive(
-    new Map<string, Substitution[]>(),
+  /*
+   * A page kept alive behind another one shares that page's queries, so only
+   * the one on screen tells about a failed load.
+   */
+  const isShown = ref(true);
+  onActivated(() => (isShown.value = true));
+  onDeactivated(() => (isShown.value = false));
+  const toastLoadError = (
+    load: {
+      error: Readonly<Ref<unknown>>;
+      isLoadingError: Readonly<Ref<boolean>>;
+      isSuccess: Readonly<Ref<boolean>>;
+    },
+    fallbackKey: string,
+  ) =>
+    useLoadErrorToast(
+      {
+        error: load.error,
+        isLoadingError: computed(
+          () => isShown.value && load.isLoadingError.value,
+        ),
+        isSuccess: load.isSuccess,
+      },
+      (error) => apiErrorMessage(error, t(fallbackKey)),
+    );
+
+  const scheduleResult = useQuery(scheduleQuery(groupId));
+  // Without its subjects, the schedule still shows its lessons as they are.
+  const subjectsResult = useQuery(subjectsQuery(groupId));
+
+  const lessons = computed<Lesson[]>(
+    () => scheduleResult.data.value?.lessons ?? [],
   );
-  /** Weeks whose changes failed to load and are not known from before. */
-  const failedSubstitutionWeeks = shallowReactive(new Set<string>());
-  const pendingSubstitutionLoads = ref(0);
-  const loadingSubs = computed(() => pendingSubstitutionLoads.value > 0);
-  const loadingLessons = ref(true);
-  const lessonsLoadError = ref(false);
-  const lessonsHiddenByServer = ref(0);
+  const loadingLessons = computed(
+    () => scheduleResult.isPending.value || subjectsResult.isPending.value,
+  );
+  /** A failed reload keeps the schedule that is already shown. */
+  const lessonsLoadError = computed(() => scheduleResult.isLoadingError.value);
+  toastLoadError(scheduleResult, 'schedule.errors.load');
+
+  function retrySchedule() {
+    void scheduleResult.refetch();
+    if (subjectsResult.isError.value) void subjectsResult.refetch();
+  }
 
   const now = ref(new Date());
   const minutesToday = computed(
     () => now.value.getHours() * 60 + now.value.getMinutes(),
   );
 
-  /*
-   * Weeks are counted from the one the schedule was opened in, so a week keeps
-   * its number while the schedule stays open. Pages count days the same way,
-   * each week holding one page per school day.
-   */
   const firstMonday = mondayOf(now.value);
-  const weekStartOf = (week: number) => addDays(firstMonday, week * 7);
+  const weekStartOf = (week: number) => weekStartFrom(firstMonday, week);
   const weekKeyOf = (week: number) => isoDate(weekStartOf(week));
   const dateOf = (day: number, week: number) =>
     addDays(weekStartOf(week), days.indexOf(day));
@@ -112,22 +143,8 @@ export function useSchedule(shownWeek?: Ref<number>) {
     weeksBetween(firstMonday, mondayOf(now.value)),
   );
 
-  const pageOf = (week: number, dayIndex: number) =>
-    week * days.length + dayIndex;
-
-  const dateOfPage = (page: number) => {
-    const week = Math.floor(page / days.length);
-    return addDays(weekStartOf(week), page - week * days.length);
-  };
-
-  /** The page showing a date; a weekend shows the Monday after. */
-  const pageOfDate = (date: Date) => {
-    const week = weeksBetween(firstMonday, mondayOf(date));
-    const dayIndex = daysSinceMonday(date);
-    return dayIndex < days.length
-      ? pageOf(week, dayIndex)
-      : pageOf(week + 1, 0);
-  };
+  const dateOfPage = (page: number) => dateOfPageFrom(firstMonday, page);
+  const pageOfDate = (date: Date) => pageOfDateFrom(firstMonday, date);
 
   const formatDayDate = (day: number, week: number): string =>
     new Intl.DateTimeFormat(locale.value, { day: 'numeric' }).format(
@@ -155,113 +172,78 @@ export function useSchedule(shownWeek?: Ref<number>) {
   const formatDayInitials = (day: number): string =>
     formatDayName(day, 'short').slice(0, 2);
 
-  /** The latest request for each week, so an older answer never overwrites a newer one. */
-  const requestOfWeek = new Map<string, number>();
-  let latestSubstitutionRequest = 0;
-
-  /** `refresh` keeps the changes on screen instead of showing them as loading. */
-  async function loadSubstitutions(
-    fromWeek: number,
-    toWeek = fromWeek,
-    { refresh = false } = {},
-  ) {
-    const request = ++latestSubstitutionRequest;
-    const weekKeys: string[] = [];
-    for (let week = fromWeek; week <= toWeek; week++) {
-      weekKeys.push(weekKeyOf(week));
+  /*
+   * Each week's changes are a query of their own, so a week swiped to loads
+   * only itself and a week swiped back to is still known.
+   */
+  // The page picks the week it opens on after this runs, during its own setup.
+  const isMounted = useMounted();
+  const neededWeekKeys = computed(() => {
+    const weeks = [todayWeek.value, todayWeek.value + 1];
+    if (shownWeek && isMounted.value) {
+      weeks.push(shownWeek.value - 1, shownWeek.value, shownWeek.value + 1);
     }
-    const isLatest = (weekKey: string) =>
-      requestOfWeek.get(weekKey) === request;
-    weekKeys.forEach((weekKey) => requestOfWeek.set(weekKey, request));
+    return [...new Set(weeks.map(weekKeyOf))];
+  });
 
-    if (!refresh) pendingSubstitutionLoads.value++;
-    try {
-      const { data } = await api.get<Substitution[]>(
-        groupPath(groupId, '/schedule/subs'),
-        { params: { from: weekKeyOf(fromWeek), to: weekKeyOf(toWeek) } },
-      );
-      weekKeys.filter(isLatest).forEach((weekKey) => {
-        substitutionsByWeek.set(
+  const substitutionResults = useQueries({
+    queries: () =>
+      neededWeekKeys.value.map((weekKey) =>
+        substitutionsQuery(groupId, { from: weekKey, to: weekKey }),
+      ),
+  });
+
+  const substitutionResultOf = computed(
+    () =>
+      new Map(
+        neededWeekKeys.value.map((weekKey, index) => [
           weekKey,
-          data.filter((sub) => sub.weekStart === weekKey),
-        );
-        failedSubstitutionWeeks.delete(weekKey);
-      });
-    } catch (error) {
-      console.error('Error loading substitutions:', error);
-      // Left unrequested, the weeks are asked for again once they are needed.
-      const failedWeeks = weekKeys.filter(isLatest);
-      failedWeeks.forEach((weekKey) => requestOfWeek.delete(weekKey));
-      // A week known from before keeps showing what it had.
-      const newlyFailed = failedWeeks.filter(
-        (weekKey) => !substitutionsByWeek.has(weekKey),
-      );
-      // One toast per outage, not one per week swiped to while it lasts.
-      if (newlyFailed.length > 0 && failedSubstitutionWeeks.size === 0) {
-        useToast().error(
-          apiErrorMessage(error, t('schedule.errors.load_changes')),
-        );
-      }
-      newlyFailed.forEach((weekKey) => failedSubstitutionWeeks.add(weekKey));
-    } finally {
-      if (!refresh) pendingSubstitutionLoads.value--;
-    }
-  }
+          substitutionResults.value[index],
+        ]),
+      ),
+  );
 
-  const substitutionsOf = (week: number): readonly Substitution[] =>
-    substitutionsByWeek.get(weekKeyOf(week)) ?? [];
+  // Cached per week, so a week only rebuilds once its own changes do.
+  const substitutionsOf = useWeekCache(
+    (week): readonly Substitution[] =>
+      substitutionResultOf.value.get(weekKeyOf(week))?.data ?? NO_SUBSTITUTIONS,
+  );
 
   /** Whether the week's changes loaded, so an empty list really means none. */
   const substitutionsLoadedFor = (week: number) =>
-    substitutionsByWeek.has(weekKeyOf(week));
+    substitutionResultOf.value.get(weekKeyOf(week))?.data !== undefined;
 
   /** Whether the week's changes are unknown because loading them failed. */
   const substitutionsFailedFor = (week: number) =>
-    failedSubstitutionWeeks.has(weekKeyOf(week));
+    !!substitutionResultOf.value.get(weekKeyOf(week))?.isLoadingError;
 
-  /*
-   * The server filters lessons by the member's saved course setting, so a
-   * setting still being saved would be answered with the old filter.
-   */
-  const savedCourseFilter = computed(() =>
-    userStore.savingPersonalization
-      ? null
-      : JSON.stringify([userStore.user?.personalized, userStore.user?.courses]),
+  const loadingSubs = computed(() =>
+    substitutionResults.value.some((result) => result.isPending),
   );
-  let loadedCourseFilter: string | null = null;
-  let latestScheduleRequest = 0;
 
-  /** `refresh` keeps the schedule on screen instead of its skeleton. */
-  async function loadSchedule({ refresh = false } = {}) {
-    const request = ++latestScheduleRequest;
-    loadedCourseFilter = savedCourseFilter.value;
-    if (!refresh) loadingLessons.value = true;
-    try {
-      const [lessonRes, subjectRes] = await Promise.all([
-        api.get(groupPath(groupId, '/schedule')),
-        api
-          .get(groupPath(groupId, '/schedule/subjects'))
-          .catch(() => ({ data: [] })),
-      ]);
-      if (request !== latestScheduleRequest) return;
-      lessons.value = lessonRes.data;
-      lessonsHiddenByServer.value = hiddenByCourses(lessonRes);
-      subjects.value = subjectRes.data || [];
-      lessonsLoadError.value = false;
-    } catch (error) {
-      if (request !== latestScheduleRequest) return;
-      console.error('Error loading schedule:', error);
-      // A refresh that fails leaves the schedule that is already shown.
-      if (refresh) return;
-      lessonsLoadError.value = true;
-      useToast().error(apiErrorMessage(error, t('schedule.errors.load')));
-    } finally {
-      if (request === latestScheduleRequest) loadingLessons.value = false;
-    }
+  const failedSubstitutions = computed(() =>
+    substitutionResults.value.filter((result) => result.isLoadingError),
+  );
+
+  // One toast per outage, not one per week swiped to while it lasts.
+  toastLoadError(
+    {
+      error: computed(() => failedSubstitutions.value[0]?.error),
+      isLoadingError: computed(() => failedSubstitutions.value.length > 0),
+      isSuccess: computed(() =>
+        substitutionResults.value.every((result) => result.isSuccess),
+      ),
+    },
+    'schedule.errors.load_changes',
+  );
+
+  /** Asks again for the weeks on screen whose changes failed to load. */
+  function retrySubstitutions() {
+    failedSubstitutions.value.forEach((result) => void result.refetch());
   }
 
   const personalLessonList = computed(() =>
-    personalLessons(lessons.value ?? [], subjects.value, {
+    personalLessons(lessons.value, subjectsResult.data.value ?? [], {
       courseIds: new Set(
         (userStore.user?.courses ?? []).map(({ courseId }) => courseId),
       ),
@@ -275,7 +257,9 @@ export function useSchedule(shownWeek?: Ref<number>) {
 
   /** Lessons the member does not see because of their course selection. */
   const hiddenLessonCount = computed(
-    () => lessonsHiddenByServer.value + personalLessonList.value.hiddenCount,
+    () =>
+      (scheduleResult.data.value?.hiddenByCourses ?? 0) +
+      personalLessonList.value.hiddenCount,
   );
 
   const lastSlotByDayOf = (dayLessons: Lesson[]) => {
@@ -397,29 +381,13 @@ export function useSchedule(shownWeek?: Ref<number>) {
     );
   };
 
-  onMounted(() => {
-    tick();
-    void loadSchedule();
-  });
+  onMounted(tick);
 
   // A phone suspends timers in the background, so it catches up on return.
-  // Changes made meanwhile, such as a cancelled lesson, are fetched as well.
-  let hiddenSince: number | null = null;
   useEventListener(document, 'visibilitychange', () => {
-    if (document.visibilityState !== 'visible') {
-      hiddenSince = Date.now();
-      return;
-    }
+    if (document.visibilityState !== 'visible') return;
     clearTimeout(timer);
     tick();
-    if (hiddenSince !== null && Date.now() - hiddenSince > STALE_AFTER_MS) {
-      void refresh();
-    }
-    hiddenSince = null;
-  });
-
-  watch(savedCourseFilter, (filter) => {
-    if (filter !== null && filter !== loadedCourseFilter) void loadSchedule();
   });
 
   onUnmounted(() => {
@@ -455,45 +423,8 @@ export function useSchedule(shownWeek?: Ref<number>) {
   });
 
   /** The week a glance at the schedule is about, the next one at its end. */
-  const schoolWeek = computed(() =>
-    Math.floor(defaultPage.value / days.length),
-  );
+  const schoolWeek = computed(() => weekOfPage(defaultPage.value));
   const schoolWeekSchedule = computed(() => scheduleOfWeek(schoolWeek.value));
-
-  const neededWeeks = computed(() => {
-    const weeks = [todayWeek.value, todayWeek.value + 1];
-    if (shownWeek) {
-      weeks.push(shownWeek.value - 1, shownWeek.value, shownWeek.value + 1);
-    }
-    return weeks;
-  });
-
-  function loadMissingSubstitutions(weeks: number[]) {
-    const missing = weeks.filter((week) => !requestOfWeek.has(weekKeyOf(week)));
-    if (missing.length === 0) return;
-    void loadSubstitutions(Math.min(...missing), Math.max(...missing));
-  }
-
-  watch(neededWeeks, loadMissingSubstitutions, { immediate: true });
-
-  /** Asks again for the weeks on screen whose changes failed to load. */
-  function retrySubstitutions() {
-    loadMissingSubstitutions(neededWeeks.value);
-  }
-
-  /** Reloads what is shown without hiding it behind skeletons meanwhile. */
-  async function refresh() {
-    const weekRanges: [number, number][] = [
-      [todayWeek.value, todayWeek.value + 1],
-    ];
-    if (shownWeek) weekRanges.push([shownWeek.value - 1, shownWeek.value + 1]);
-    await Promise.all([
-      loadSchedule({ refresh: !lessonsLoadError.value }),
-      ...weekRanges.map(([from, to]) =>
-        loadSubstitutions(from, to, { refresh: true }),
-      ),
-    ]);
-  }
 
   const activeOrNextGroupKey = computed(() =>
     activeOrNextGroupKeyAt(
@@ -510,7 +441,7 @@ export function useSchedule(shownWeek?: Ref<number>) {
     loadingSubs,
     loadingLessons,
     lessonsLoadError,
-    loadSchedule,
+    retrySchedule,
     days,
     scheduleConfig,
     scheduleOfWeek,
@@ -539,7 +470,5 @@ export function useSchedule(shownWeek?: Ref<number>) {
     substitutionsLoadedFor,
     substitutionsFailedFor,
     retrySubstitutions,
-    loadSubstitutions,
-    refresh,
   };
 }

@@ -2,15 +2,18 @@ use crate::{
     common::{names::DisplayName, text::DisplayText},
     error::AppResult,
 };
-use serde::Deserialize;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+use uuid::Uuid;
 
 const TITLE_MAX_CHARS: usize = 100;
 const DESCRIPTION_MAX_CHARS: usize = 2000;
 
 /// Creates a private task or replaces the text of an existing one.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct TodoDto {
+pub struct TodoContentDto {
     pub title: String,
     pub description: Option<String>,
 }
@@ -21,7 +24,7 @@ pub struct TodoContent {
     description: Option<DisplayText>,
 }
 
-impl TodoDto {
+impl TodoContentDto {
     pub fn parse(&self) -> AppResult<TodoContent> {
         Ok(TodoContent {
             title: DisplayName::parse(&self.title, TITLE_MAX_CHARS, "title")?,
@@ -45,9 +48,40 @@ impl TodoContent {
     }
 }
 
-#[derive(Debug, Deserialize)]
+/// Moves a private task between the two neighbours it is dropped between.
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ReorderTodoDto {
     pub prev_position: Option<String>,
     pub next_position: Option<String>,
+}
+
+/// A private task, decrypted for its owner.
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoDto {
+    pub id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub completed: bool,
+    /// A fractional index; the list is sorted by it.
+    pub position: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoToggledDto {
+    pub id: Uuid,
+    pub completed: bool,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoMovedDto {
+    pub id: Uuid,
+    pub position: String,
+    pub updated_at: DateTime<Utc>,
 }

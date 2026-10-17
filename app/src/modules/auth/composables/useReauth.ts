@@ -5,18 +5,15 @@ import {
   browserSupportsWebAuthn,
   startAuthentication,
 } from '@simplewebauthn/browser';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorCode, retryAfterMinutes } from '@/api/errors';
+import type { ErrorCode, ReauthStatus } from '@/api/schema';
 import { mfaErrorMessage } from './useMfa';
-import type {
-  PasskeyChallengeResponse,
-  ReauthStatus,
-} from '@/modules/auth/types';
-import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
 import {
   isPasskeyDismissed,
   passkeyErrorMessage,
 } from '@/modules/auth/utils/passkeyErrors';
+import { requestOptions } from '@/modules/auth/utils/passkeyOptions';
 import { saveReauthReturn } from '@/modules/auth/utils/reauthReturn';
 import {
   emptySecondFactor,
@@ -24,7 +21,7 @@ import {
 } from '@/modules/auth/utils/secondFactor';
 import type { ReauthStep } from '@/modules/auth/stores/useReauthModal';
 
-const ERROR_KEYS: Record<string, string> = {
+const ERROR_KEYS: Partial<Record<ErrorCode, string>> = {
   INCORRECT_PASSWORD: 'auth.errors.password_wrong',
   SECOND_FACTOR_REQUIRED: 'auth.reauth.errors.second_factor_missing',
 };
@@ -62,7 +59,7 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
     fallbackKey = 'auth.reauth.errors.confirm',
   ): string {
     const code = apiErrorCode(err);
-    if (code === AuthErrorCode.ReauthLocked) {
+    if (code === 'REAUTH_LOCKED') {
       return t('auth.errors.reauth_locked', retryAfterMinutes(err));
     }
     const key = code ? ERROR_KEYS[code] : undefined;
@@ -92,9 +89,8 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
     password.value = '';
     secondFactor.value = emptySecondFactor();
     try {
-      const { data } = await api.get<ReauthStatus>('/auth/reauth');
-      status.value = data;
-      if (data.recentUntil && step.value === 'choose') onConfirmed();
+      status.value = await unwrap(api.GET('/auth/reauth'));
+      if (status.value.recentUntil && step.value === 'choose') onConfirmed();
     } catch {
       error.value = t('auth.reauth.errors.load');
     } finally {
@@ -104,30 +100,38 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
 
   const confirmWithPassword = () =>
     attempt(() =>
-      api.post('/auth/reauth/password', {
-        password: password.value,
-        secondFactor: needsSecondFactor.value ? proof.value : undefined,
-      }),
+      unwrap(
+        api.POST('/auth/reauth/password', {
+          body: {
+            password: password.value,
+            secondFactor: needsSecondFactor.value ? proof.value : undefined,
+          },
+        }),
+      ),
     );
 
   const confirmGoogleSecondFactor = () =>
-    attempt(() => api.post('/auth/reauth/google/second-factor', proof.value));
+    attempt(async () => {
+      if (!proof.value) return;
+      await unwrap(
+        api.POST('/auth/reauth/google/second-factor', { body: proof.value }),
+      );
+    });
 
   async function confirmWithPasskey(): Promise<void> {
     if (submitting.value) return;
     submitting.value = true;
     error.value = '';
     try {
-      const { data } = await api.post<PasskeyChallengeResponse>(
-        '/auth/reauth/passkey/start',
-      );
+      const challenge = await unwrap(api.POST('/auth/reauth/passkey/start'));
       const credential = await startAuthentication({
-        optionsJSON: data.options,
+        optionsJSON: requestOptions(challenge),
       });
-      await api.post('/auth/reauth/passkey/finish', {
-        challengeId: data.challengeId,
-        credential,
-      });
+      await unwrap(
+        api.POST('/auth/reauth/passkey/finish', {
+          body: { challengeId: challenge.challengeId, credential },
+        }),
+      );
       onConfirmed();
     } catch (err: unknown) {
       if (!isPasskeyDismissed(err)) {
@@ -147,11 +151,9 @@ export function useReauth(step: Ref<ReauthStep>, onConfirmed: () => void) {
     submitting.value = true;
     error.value = '';
     try {
-      const { data } = await api.post<{ url: string }>(
-        '/auth/reauth/google/start',
-      );
+      const { url } = await unwrap(api.POST('/auth/reauth/google/start'));
       saveReauthReturn(router.currentRoute.value.fullPath);
-      window.location.assign(data.url);
+      window.location.assign(url);
     } catch (err: unknown) {
       error.value = errorMessage(err, 'auth.reauth.errors.google');
       submitting.value = false;

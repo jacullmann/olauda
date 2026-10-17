@@ -2,7 +2,7 @@ use crate::{
     access_control,
     auth::{
         security_notice,
-        service::{AuthService, LoginResult},
+        service::{AuthService, LoginResult, security_changed},
         session_context::account_is_active,
         sign_in_methods::{SignInMethod, SignInMethods},
     },
@@ -13,6 +13,8 @@ use crate::{
     },
     config::Config,
     error::{AppError, AppResult},
+    oauth::dto::LinkedProviderDto,
+    realtime::event::publish,
     reauth::service::{GoogleReauth, ReauthService},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
@@ -490,6 +492,7 @@ impl OAuthService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
         Ok(())
     }
@@ -549,11 +552,7 @@ impl OAuthService {
             .await
     }
 
-    pub async fn unlink_google_account(
-        &self,
-        user_id: Uuid,
-        client: &ClientInfo,
-    ) -> AppResult<Value> {
+    pub async fn unlink_google_account(&self, user_id: Uuid, client: &ClientInfo) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         SignInMethods::lock(&mut tx, user_id)
@@ -575,6 +574,7 @@ impl OAuthService {
                 .client(client)
                 .record(&mut *tx)
                 .await?;
+            publish(&mut *tx, [security_changed(user_id)]).await?;
         }
 
         tx.commit().await?;
@@ -588,10 +588,10 @@ impl OAuthService {
             );
         }
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn get_linked_providers(&self, user_id: Uuid) -> AppResult<Value> {
+    pub async fn get_linked_providers(&self, user_id: Uuid) -> AppResult<Vec<LinkedProviderDto>> {
         let rows = sqlx::query!(
             r#"SELECT provider, provider_email FROM oauth_accounts WHERE user_id = $1"#,
             user_id
@@ -599,12 +599,13 @@ impl OAuthService {
         .fetch_all(&self.db)
         .await?;
 
-        Ok(json!({
-            "providers": rows.iter().map(|r| json!({
-                "provider": r.provider,
-                "email": r.provider_email
-            })).collect::<Vec<_>>()
-        }))
+        Ok(rows
+            .into_iter()
+            .map(|r| LinkedProviderDto {
+                provider: r.provider,
+                email: r.provider_email,
+            })
+            .collect())
     }
 
     /// The account the Google identity signs in to, or `None` when no account

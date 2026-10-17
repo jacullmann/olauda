@@ -1,4 +1,4 @@
-import { reactive, ref, watch, type Ref } from 'vue';
+import { reactive, ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from '@/common/composables/useToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
@@ -10,7 +10,6 @@ interface TaskImagesOptions {
   isLoggedIn: Readonly<Ref<boolean>>;
   imageUpload: ReturnType<typeof useImageUpload>;
   permissions: TaskPermissions;
-  refreshTask: (taskId: string) => Promise<void>;
 }
 
 /** Uploading and deleting a task's images, and the menu an image opens. */
@@ -18,7 +17,6 @@ export function useTaskImages({
   isLoggedIn,
   imageUpload,
   permissions,
-  refreshTask,
 }: TaskImagesOptions) {
   const { t } = useI18n();
   const toast = useToast();
@@ -33,7 +31,6 @@ export function useTaskImages({
   });
 
   const deletingImage = ref(false);
-  const uploadingForTaskId = ref<string | null>(null);
 
   function handleImageContextMenu(
     event: MouseEvent,
@@ -64,7 +61,6 @@ export function useTaskImages({
     if (!target || !permissions.canUploadImages.value) return;
 
     imageUpload.init(target.attachments);
-    uploadingForTaskId.value = target.id;
     imageUpload.uploadImage(target.type, target.id);
     closeImageMenu();
   }
@@ -73,7 +69,6 @@ export function useTaskImages({
     if (!files.length || !permissions.canUploadImages.value) return;
 
     imageUpload.init(task.attachments);
-    uploadingForTaskId.value = task.id;
     void imageUpload.uploadFiles(files, task.type, task.id);
   }
 
@@ -92,23 +87,10 @@ export function useTaskImages({
     if (!isConfirmed) return;
 
     deletingImage.value = true;
-    try {
-      await imageUpload.removeImg(image, task.id);
-      await refreshTask(task.id);
-    } catch {
-      toast.error(t('tasks.images.errors.delete'), 4000);
-    } finally {
-      deletingImage.value = false;
-    }
+    const removed = await imageUpload.removeImg(image, task.id);
+    deletingImage.value = false;
+    if (!removed) toast.error(imageUpload.uploadError.value);
   }
-
-  // Feedback lives in the upload progress toast; refresh so partial uploads show up too.
-  watch(imageUpload.uploading, async (isUploading, wasUploading) => {
-    const taskId = uploadingForTaskId.value;
-    if (!wasUploading || isUploading || !taskId) return;
-    uploadingForTaskId.value = null;
-    await refreshTask(taskId);
-  });
 
   return {
     imageMenu,

@@ -4,13 +4,13 @@ import {
   browserSupportsWebAuthn,
   startAuthentication,
 } from '@simplewebauthn/browser';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { isMfaChallengeExpired } from './useMfa';
-import type { PasskeyChallengeResponse } from '@/modules/auth/types';
 import {
   isPasskeyDismissed,
   passkeyErrorMessage,
 } from '@/modules/auth/utils/passkeyErrors';
+import { requestOptions } from '@/modules/auth/utils/passkeyOptions';
 
 interface MfaPasskeyCallbacks {
   onVerified: () => void;
@@ -32,16 +32,15 @@ export function useMfaPasskey({ onVerified, onExpired }: MfaPasskeyCallbacks) {
     verifying.value = true;
     error.value = '';
     try {
-      const { data } = await api.post<PasskeyChallengeResponse>(
-        '/auth/mfa/passkey/challenge',
-      );
+      const challenge = await unwrap(api.POST('/auth/mfa/passkey/challenge'));
       const credential = await startAuthentication({
-        optionsJSON: data.options,
+        optionsJSON: requestOptions(challenge),
       });
-      await api.post('/auth/mfa/passkey/verify', {
-        challengeId: data.challengeId,
-        credential,
-      });
+      await unwrap(
+        api.POST('/auth/mfa/passkey/verify', {
+          body: { challengeId: challenge.challengeId, credential },
+        }),
+      );
       onVerified();
     } catch (err: unknown) {
       if (isMfaChallengeExpired(err)) onExpired();

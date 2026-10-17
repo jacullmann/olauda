@@ -1,15 +1,12 @@
 use super::handlers::*;
 use crate::state::AppState;
-use axum::{Router, routing::get};
+use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub fn router() -> Router<AppState> {
-    Router::new().route("/system/access", get(get_access_status))
+pub fn router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(get_access_status))
 }
 
 /// Merged into the super admin router, behind its `require_superadmin` layer.
-pub fn admin_router() -> Router<AppState> {
-    Router::new().route(
-        "/admin/access-controls",
-        get(get_access_controls).patch(update_access_controls),
-    )
+pub fn admin_router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(get_access_controls, update_access_controls))
 }

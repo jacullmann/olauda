@@ -3,14 +3,29 @@ import type { Lesson, Substitution } from '@/modules/schedule/types';
 import { withSubstitutions } from './substitutions';
 
 function lesson(id: string, extra: Partial<Lesson> = {}): Lesson {
-  return { id, day: 1, slot: 1, duration: 1, room: 'A1', ...extra };
+  return {
+    id,
+    day: 1,
+    slot: 1,
+    duration: 1,
+    room: 'A1',
+    isDalton: false,
+    ...extra,
+  };
 }
 
 function sub(
   lessonId: string,
   extra: Partial<Substitution> = {},
 ): Substitution {
-  return { lessonId, ...extra } as Substitution;
+  return {
+    id: `sub-${lessonId}`,
+    lessonId,
+    weekStart: '2024-01-01',
+    cancelled: false,
+    createdAt: '2024-01-01',
+    ...extra,
+  };
 }
 
 describe('withSubstitutions', () => {

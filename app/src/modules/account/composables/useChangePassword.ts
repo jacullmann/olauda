@@ -1,9 +1,8 @@
 import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import type { ChangePasswordErrors } from '@/modules/auth/types';
 import { apiErrorCode, apiErrorMessage, retryAfterMinutes } from '@/api/errors';
-import { AuthErrorCode } from '@/modules/auth/utils/authErrors';
 import { isStrongPassword } from '@/modules/auth/utils/password';
 
 export function useChangePassword(onSuccess: () => void) {
@@ -70,18 +69,22 @@ export function useChangePassword(onSuccess: () => void) {
 
     submitting.value = true;
     try {
-      await api.post('/auth/change-password', {
-        currentPassword: currentPassword.value,
-        newPassword: newPassword.value,
-      });
+      await unwrap(
+        api.POST('/auth/change-password', {
+          body: {
+            currentPassword: currentPassword.value,
+            newPassword: newPassword.value,
+          },
+        }),
+      );
 
       onSuccess();
     } catch (e: unknown) {
       switch (apiErrorCode(e)) {
-        case AuthErrorCode.IncorrectPassword:
+        case 'INCORRECT_PASSWORD':
           errors.current = t('auth.errors.password_wrong');
           break;
-        case AuthErrorCode.ReauthLocked:
+        case 'REAUTH_LOCKED':
           error.value = t('auth.errors.reauth_locked', retryAfterMinutes(e));
           break;
         default:

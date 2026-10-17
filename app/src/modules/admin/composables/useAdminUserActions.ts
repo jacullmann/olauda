@@ -1,28 +1,75 @@
-import { ref, type Ref } from 'vue';
+import { computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import type { AdminUser } from '@/modules/admin/types';
-import { useAdminStats } from './useAdminStats';
+import { adminKeys } from '@/modules/admin/utils/adminQueries';
 
 export type UserAction = 'ban' | 'unban' | 'reset_mfa' | 'delete';
 
+function request(action: UserAction, id: string): Promise<unknown> {
+  const params = { params: { path: { id } } };
+  switch (action) {
+    case 'ban':
+      return unwrap(api.POST('/admin/users/{id}/ban', params));
+    case 'unban':
+      return unwrap(api.DELETE('/admin/users/{id}/ban', params));
+    case 'reset_mfa':
+      return unwrap(api.DELETE('/admin/users/{id}/mfa', params));
+    case 'delete':
+      return unwrap(api.DELETE('/admin/users/{id}', params));
+  }
+}
+
 /** The moderation of one account, each step confirmed before it is taken. */
-export function useAdminUserActions(user: Ref<AdminUser | null>) {
+export function useAdminUserActions(user: Readonly<Ref<AdminUser | null>>) {
   const toast = useToast();
   const confirmModal = useConfirmModal();
+  const queryClient = useQueryClient();
   const { t } = useI18n();
-  const { loadStats } = useAdminStats();
 
-  const pendingAction = ref<UserAction | null>(null);
+  const invalidate = (...keys: readonly (readonly unknown[])[]) =>
+    Promise.all(
+      keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    );
 
-  /** Asks, then runs the request; resolves whether it was carried out. */
+  const moderation = useMutation({
+    mutationFn: ({
+      action,
+      target,
+    }: {
+      action: UserAction;
+      target: AdminUser;
+    }) => request(action, target.id),
+    onSuccess: (_, { action, target }) => {
+      if (action !== 'delete') {
+        return invalidate(adminKeys.users(), adminKeys.stats());
+      }
+      // The page is left, so its account must not load again and show as gone.
+      queryClient.removeQueries({ queryKey: adminKeys.user(target.id) });
+      return invalidate(
+        adminKeys.users(),
+        adminKeys.groups(),
+        adminKeys.stats(),
+        adminKeys.reports(),
+      );
+    },
+  });
+
+  const pendingAction = computed<UserAction | null>(() =>
+    moderation.isPending.value
+      ? (moderation.variables.value?.action ?? null)
+      : null,
+  );
+
+  /** Asks, then runs the action; resolves whether it was carried out. */
   async function perform(
     action: UserAction,
     target: AdminUser,
     options: { submitText: string; danger: boolean; errorKey: string },
-    request: () => Promise<unknown>,
   ): Promise<boolean> {
     const confirmed = await confirmModal.ask({
       title: t(`admin.users.${action}_modal.title`),
@@ -34,15 +81,12 @@ export function useAdminUserActions(user: Ref<AdminUser | null>) {
     });
     if (!confirmed) return false;
 
-    pendingAction.value = action;
     try {
-      await request();
+      await moderation.mutateAsync({ action, target });
       return true;
-    } catch {
-      toast.error(t(options.errorKey));
+    } catch (error) {
+      toast.error(apiErrorMessage(error, t(options.errorKey)));
       return false;
-    } finally {
-      pendingAction.value = null;
     }
   }
 
@@ -51,23 +95,11 @@ export function useAdminUserActions(user: Ref<AdminUser | null>) {
     if (!target || target.isSuperadmin) return;
 
     const action = target.isBanned ? 'unban' : 'ban';
-    const done = await perform(
-      action,
-      target,
-      {
-        submitText: t(`admin.users.actions.${action}`),
-        danger: action === 'ban',
-        errorKey: `admin.users.errors.${action}`,
-      },
-      () =>
-        action === 'ban'
-          ? api.post(`/admin/users/${target.id}/ban`)
-          : api.delete(`/admin/users/${target.id}/ban`),
-    );
-    if (!done) return;
-
-    target.isBanned = action === 'ban';
-    await loadStats();
+    await perform(action, target, {
+      submitText: t(`admin.users.actions.${action}`),
+      danger: action === 'ban',
+      errorKey: `admin.users.errors.${action}`,
+    });
   }
 
   /** Support for a user who lost their authenticator and recovery codes. */
@@ -75,17 +107,11 @@ export function useAdminUserActions(user: Ref<AdminUser | null>) {
     const target = user.value;
     if (!target?.mfaEnabled) return;
 
-    const done = await perform(
-      'reset_mfa',
-      target,
-      {
-        submitText: t('admin.users.actions.reset_mfa'),
-        danger: true,
-        errorKey: 'admin.users.errors.reset_mfa',
-      },
-      () => api.delete(`/admin/users/${target.id}/mfa`),
-    );
-    if (done) target.mfaEnabled = false;
+    await perform('reset_mfa', target, {
+      submitText: t('admin.users.actions.reset_mfa'),
+      danger: true,
+      errorKey: 'admin.users.errors.reset_mfa',
+    });
   }
 
   /** Resolves whether the account is gone, so its page can be left. */
@@ -93,21 +119,14 @@ export function useAdminUserActions(user: Ref<AdminUser | null>) {
     const target = user.value;
     if (!target || target.isSuperadmin) return false;
 
-    const done = await perform(
-      'delete',
-      target,
-      {
-        submitText: t('common.buttons.delete'),
-        danger: true,
-        errorKey: 'admin.users.errors.delete',
-      },
-      () => api.delete(`/admin/users/${target.id}`),
-    );
-    if (!done) return false;
+    const done = await perform('delete', target, {
+      submitText: t('common.buttons.delete'),
+      danger: true,
+      errorKey: 'admin.users.errors.delete',
+    });
     // The page is left, so the user no longer sees the account go.
-    toast.success(t('admin.users.success.delete'));
-    await loadStats();
-    return true;
+    if (done) toast.success(t('admin.users.success.delete'));
+    return done;
   }
 
   return { pendingAction, toggleBan, resetMfa, deleteUser };

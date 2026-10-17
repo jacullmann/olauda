@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  useTemplateRef,
-} from 'vue';
+import { ref, computed, nextTick, onUnmounted, useTemplateRef } from 'vue';
 import {
   ShieldCheck,
   ShieldOff,
@@ -17,7 +10,7 @@ import {
   AlertTriangle,
   LifeBuoy,
 } from '@lucide/vue';
-import { useMfa } from '@/modules/auth/composables/useMfa';
+import { useMfaSettings } from '@/modules/auth/composables/useMfaSettings';
 import { useI18n } from 'vue-i18n';
 import AccountSettingsSecurityRecoveryCodes from './AccountSettingsSecurityRecoveryCodes.vue';
 import { useToast } from '@/common/composables/useToast';
@@ -32,23 +25,15 @@ const { t } = useI18n();
 const toast = useToast();
 const confirmModal = useConfirmModal();
 
-defineProps<{
-  mfaEnabled: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'mfaChanged', enabled: boolean): void;
-}>();
-
 const {
+  mfaEnabled,
   recoveryCodesLeft,
   mfaError,
-  fetchMfaStatus,
   startMfaSetup,
   activateMfa: doActivateMfa,
   deactivateMfa: doDeactivateMfa,
   regenerateRecoveryCodes: doRegenerateRecoveryCodes,
-} = useMfa();
+} = useMfaSettings();
 
 const setupMode = ref(false);
 const setupStep = ref(1);
@@ -82,8 +67,6 @@ const recoveryCodesLow = computed(
     recoveryCodesLeft.value !== null &&
     recoveryCodesLeft.value <= LOW_RECOVERY_CODES,
 );
-
-onMounted(() => void fetchMfaStatus());
 
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 const remainingTime = ref('');
@@ -191,7 +174,6 @@ async function activateMfa() {
   if (result.ok) {
     cancelSetup();
     newRecoveryCodes.value = result.data;
-    emit('mfaChanged', true);
   } else {
     verifyError.value = result.error || t('auth.mfa.errors.turn_on');
     verifyCode.value = '';
@@ -215,11 +197,7 @@ async function deactivate() {
   const result = await doDeactivateMfa();
   loading.value = false;
 
-  if (result.ok) {
-    emit('mfaChanged', false);
-  } else if (result.error) {
-    toast.error(result.error);
-  }
+  if (!result.ok && result.error) toast.error(result.error);
 }
 
 async function regenerateRecoveryCodes() {

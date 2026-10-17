@@ -1,20 +1,22 @@
-import { ref } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import {
   browserSupportsWebAuthn,
   sendSignal,
   startRegistration,
 } from '@simplewebauthn/browser';
-import api from '@/api/client';
-import type {
-  Passkey,
-  PasskeyListResponse,
-  PasskeyRegistrationResponse,
-} from '@/modules/auth/types';
+import api, { unwrap } from '@/api/client';
+import type { PasskeyList, PasskeySummary } from '@/api/schema';
+import {
+  accountKeys,
+  passkeysQuery,
+} from '@/modules/account/utils/accountQueries';
 import {
   isPasskeyDismissed,
   passkeyErrorMessage,
 } from '@/modules/auth/utils/passkeyErrors';
+import { creationOptions } from '@/modules/auth/utils/passkeyOptions';
 import { parseUserAgent } from '@/common/utils/userAgent';
 import { useToast } from '@/common/composables/useToast';
 
@@ -23,49 +25,39 @@ export type PasskeyActionResult =
   | { ok: false; dismissed: true }
   | { ok: false; dismissed: false; error: string };
 
+/**
+ * Tells the passkey manager which passkeys the account still accepts, so it
+ * can hide those removed here, including ones removed on another device.
+ */
+function signalAcceptedPasskeys(list: PasskeyList): void {
+  sendSignal({
+    signalName: 'allAcceptedCredentials',
+    rpID: list.rpId,
+    userID: list.userHandle,
+    allAcceptedCredentialIDs: list.passkeys.map((p) => p.credentialId),
+  }).catch(() => {
+    // Best effort: most browsers do not support the signal API yet.
+  });
+}
+
 /** Manages the signed-in user's passkeys in the account settings. */
 export function usePasskeys() {
   const { t } = useI18n();
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   const supported = browserSupportsWebAuthn();
-  const passkeys = ref<Passkey[]>([]);
-  const loading = ref(false);
-  const loadFailed = ref(false);
+  const list = useQuery(passkeysQuery());
+  const passkeys = computed(() => list.data.value?.passkeys ?? []);
 
-  let account: Pick<PasskeyListResponse, 'rpId' | 'userHandle'> | null = null;
+  watch(list.data, (current) => current && signalAcceptedPasskeys(current));
+  watch(list.error, (error) => {
+    if (error)
+      toast.error(passkeyErrorMessage(error, 'auth.passkeys.errors.load'));
+  });
 
-  /**
-   * Tells the passkey manager which passkeys the account still accepts, so it
-   * can hide those removed here, including ones removed on another device.
-   */
-  function signalAcceptedPasskeys(): void {
-    if (!account) return;
-    sendSignal({
-      signalName: 'allAcceptedCredentials',
-      rpID: account.rpId,
-      userID: account.userHandle,
-      allAcceptedCredentialIDs: passkeys.value.map((p) => p.credentialId),
-    }).catch(() => {
-      // Best effort: most browsers do not support the signal API yet.
-    });
-  }
-
-  async function fetchPasskeys(): Promise<void> {
-    loading.value = true;
-    loadFailed.value = false;
-    try {
-      const { data } = await api.get<PasskeyListResponse>('/passkeys');
-      passkeys.value = data.passkeys;
-      account = { rpId: data.rpId, userHandle: data.userHandle };
-      signalAcceptedPasskeys();
-    } catch (err: unknown) {
-      loadFailed.value = true;
-      toast.error(passkeyErrorMessage(err, 'auth.passkeys.errors.load'));
-    } finally {
-      loading.value = false;
-    }
-  }
+  const changed = () =>
+    queryClient.invalidateQueries({ queryKey: accountKeys.all });
 
   function defaultPasskeyName(): string {
     const { browser, os } = parseUserAgent(navigator.userAgent);
@@ -73,59 +65,61 @@ export function usePasskeys() {
     return os ?? browser ?? t('auth.passkeys.default_name');
   }
 
-  async function addPasskey(): Promise<PasskeyActionResult> {
-    try {
-      const { data } = await api.post<PasskeyRegistrationResponse>(
-        '/passkeys/registration/start',
+  const add = useMutation({
+    mutationFn: async () => {
+      const registration = await unwrap(
+        api.POST('/passkeys/registration/start'),
       );
-      const credential = await startRegistration({ optionsJSON: data.options });
-      const { data: created } = await api.post<Passkey>(
-        '/passkeys/registration/finish',
-        { name: defaultPasskeyName(), credential },
+      const credential = await startRegistration({
+        optionsJSON: creationOptions(registration),
+      });
+      return unwrap(
+        api.POST('/passkeys/registration/finish', {
+          body: { name: defaultPasskeyName(), credential },
+        }),
       );
-      passkeys.value = [...passkeys.value, created];
-      return { ok: true };
-    } catch (err: unknown) {
-      if (isPasskeyDismissed(err)) return { ok: false, dismissed: true };
-      return {
-        ok: false,
-        dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.add'),
-      };
-    }
-  }
+    },
+    onSettled: changed,
+  });
 
-  async function renamePasskey(
-    passkey: Passkey,
-    name: string,
+  const rename = useMutation({
+    mutationFn: ({
+      passkey,
+      name,
+    }: {
+      passkey: PasskeySummary;
+      name: string;
+    }) =>
+      unwrap(
+        api.PATCH('/passkeys/{id}', {
+          params: { path: { id: passkey.id } },
+          body: { name },
+        }),
+      ),
+    onSettled: changed,
+  });
+
+  const remove = useMutation({
+    mutationFn: (passkey: PasskeySummary) =>
+      unwrap(
+        api.DELETE('/passkeys/{id}', { params: { path: { id: passkey.id } } }),
+      ),
+    onSettled: changed,
+  });
+
+  async function settle(
+    action: Promise<unknown>,
+    fallbackKey: string,
   ): Promise<PasskeyActionResult> {
     try {
-      await api.patch(`/passkeys/${passkey.id}`, { name });
-      passkeys.value = passkeys.value.map((p) =>
-        p.id === passkey.id ? { ...p, name: name.trim() } : p,
-      );
-      return { ok: true };
-    } catch (err: unknown) {
-      return {
-        ok: false,
-        dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.rename'),
-      };
-    }
-  }
-
-  async function removePasskey(passkey: Passkey): Promise<PasskeyActionResult> {
-    try {
-      await api.delete(`/passkeys/${passkey.id}`);
-      passkeys.value = passkeys.value.filter((p) => p.id !== passkey.id);
-      signalAcceptedPasskeys();
+      await action;
       return { ok: true };
     } catch (err: unknown) {
       if (isPasskeyDismissed(err)) return { ok: false, dismissed: true };
       return {
         ok: false,
         dismissed: false,
-        error: passkeyErrorMessage(err, 'auth.passkeys.errors.remove'),
+        error: passkeyErrorMessage(err, fallbackKey),
       };
     }
   }
@@ -133,11 +127,16 @@ export function usePasskeys() {
   return {
     supported,
     passkeys,
-    loading,
-    loadFailed,
-    fetchPasskeys,
-    addPasskey,
-    renamePasskey,
-    removePasskey,
+    loading: list.isPending,
+    loadFailed: list.isError,
+    fetchPasskeys: () => list.refetch(),
+    addPasskey: () => settle(add.mutateAsync(), 'auth.passkeys.errors.add'),
+    renamePasskey: (passkey: PasskeySummary, name: string) =>
+      settle(
+        rename.mutateAsync({ passkey, name }),
+        'auth.passkeys.errors.rename',
+      ),
+    removePasskey: (passkey: PasskeySummary) =>
+      settle(remove.mutateAsync(passkey), 'auth.passkeys.errors.remove'),
   };
 }

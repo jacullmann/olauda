@@ -33,14 +33,9 @@ const todoFormModal = useTodoFormModal();
 
 const {
   user,
-  privateTasks,
   displayPrivateTasks,
   loading,
-  initialLoad,
   openMenuId,
-  loadPrivateTasks,
-  addPrivateTask,
-  updatePrivateTask,
   togglePrivateTaskCompletion,
   duplicatePrivateTask,
   confirmDeletePrivateTask,
@@ -117,30 +112,18 @@ watch(openMenuId, (newVal) => {
   }
 });
 
-todoFormModal.onSuccess((task) => {
-  const exists = privateTasks.value.some((t) => t.id === task.id);
-  if (exists) {
-    updatePrivateTask(task);
-  } else {
-    addPrivateTask(task);
-  }
-});
-
 function moveTask(from: number, to: number) {
   const order = [...displayPrivateTasks.value];
   const [moved] = order.splice(from, 1);
   if (!moved) return;
   order.splice(to, 0, moved);
 
-  const realPosition = (item: { id: string } | undefined) =>
-    item
-      ? privateTasks.value.find((t) => t.id === item.id)?.position || null
-      : null;
+  const position = (item: Todo | undefined) => item?.position || null;
 
   reorderPrivateTask(
     moved.id,
-    realPosition(order[to - 1]),
-    realPosition(order[to + 1]),
+    position(order[to - 1]),
+    position(order[to + 1]),
   );
 }
 
@@ -166,7 +149,7 @@ const NOTICE_ENTRANCE_ORDER = 1;
 const LIST_ENTRANCE_ORDER = 2;
 const SKELETON_COUNT = 10;
 
-const showSkeleton = computed(() => loading.value && initialLoad.value);
+const showSkeleton = loading;
 
 const privacyNotice = useDismissibleNotice('privateTasks');
 
@@ -186,8 +169,6 @@ const emptyStateEntered = ref(false);
 function handleEmptyStateAnimationEnd(event: AnimationEvent) {
   if (hasSettledEntrance(event)) emptyStateEntered.value = true;
 }
-
-defineExpose({ loadPrivateTasks, addPrivateTask, updatePrivateTask });
 </script>
 
 <template>
@@ -248,7 +229,7 @@ defineExpose({ loadPrivateTasks, addPrivateTask, updatePrivateTask });
 
       <template v-if="!showSkeleton">
         <BaseEmptyState
-          v-if="privateTasks.length === 0"
+          v-if="displayPrivateTasks.length === 0"
           class="flex-1 p-12 text-center text-on-ghost-muted"
           :class="{ 'animate-enter': !emptyStateEntered }"
           :style="{ '--enter-delay': entranceDelay(LIST_ENTRANCE_ORDER) }"

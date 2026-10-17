@@ -13,10 +13,14 @@ use crate::{
     },
     error::{AppError, AppResult},
     group::{
-        dto::{CourseSetup, GroupMemberDto, GroupStatusDto, GroupSummaryDto},
+        dto::{
+            CourseSetup, GroupMemberDto, GroupStatusDto, GroupSummaryDto, InviteAcceptedDto,
+            InviteCreatedDto, InvitePreviewDto, ScheduleConfigDto,
+        },
         invite_token::{InviteToken, invalid_invite},
         member_policy::{self, Caller, Target},
     },
+    realtime::event::{AccountTopic, GroupTopic, Notice, publish},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
@@ -62,9 +66,9 @@ struct Membership {
     schedule_config: Value,
     avatar_public_id: Option<String>,
     permissions: Value,
-    group_type: String,
+    group_type: GroupType,
     dalton_enabled: bool,
-    role_name: String,
+    role_id: i32,
     done_course_setup: bool,
     offers_course_choice: bool,
     banned: bool,
@@ -90,7 +94,7 @@ impl GroupService {
         }
     }
 
-    pub async fn create_group(&self, params: CreateGroupParams<'_>) -> AppResult<Value> {
+    pub async fn create_group(&self, params: CreateGroupParams<'_>) -> AppResult<Uuid> {
         let user_id = params.user_id;
         let group_name = params.group_name;
         let avatar_id = params.avatar_id;
@@ -109,7 +113,7 @@ impl GroupService {
             group_name.as_str(),
             avatar_id,
             user_id,
-            group_type.as_str(),
+            group_type as GroupType,
             dalton_enabled
         )
         .fetch_one(&mut *tx)
@@ -134,15 +138,16 @@ impl GroupService {
             .client(params.client)
             .metadata(json!({
                 "groupName": group_name_str,
-                "groupType": group_type.as_str(),
+                "groupType": group_type,
                 "daltonEnabled": dalton_enabled,
             }))
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::account(user_id, AccountTopic::Groups)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "groupId": group_id }))
+        Ok(group_id)
     }
 
     pub async fn get_status(&self, user_id: Option<Uuid>) -> AppResult<GroupStatusDto> {
@@ -164,29 +169,29 @@ impl GroupService {
         let groups = memberships
             .into_iter()
             .map(|g| {
-                let role = Role::from_str_or_user(&g.role_name);
+                let role = role_from_db(g.role_id)?;
                 let has_owner_rights = is_superadmin || g.owner_id == user_id;
                 let standing = Standing::resolve(role, has_owner_rights, g.muted);
                 let permissions = GroupPermissions::from_json_with_defaults(&g.permissions);
-                let effective_permissions = permissions.effective_keys(standing);
+                let effective_permissions = permissions.effective_permissions(standing);
 
-                GroupSummaryDto {
+                Ok(GroupSummaryDto {
                     id: g.id,
                     name: g.name,
                     owner_id: g.owner_id,
-                    role: role.as_str(),
-                    schedule_config: g.schedule_config,
+                    role,
+                    schedule_config: ScheduleConfigDto::from_stored(g.schedule_config),
                     avatar_url: g.avatar_public_id.map(|id| self.cloudinary.image_url(&id)),
                     permissions,
-                    group_type: GroupType::from_str_or_regular(&g.group_type).as_str(),
+                    group_type: g.group_type,
                     dalton_enabled: g.dalton_enabled,
                     effective_permissions,
                     course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
                     banned: g.banned,
                     muted: standing == Standing::Muted,
-                }
+                })
             })
-            .collect();
+            .collect::<AppResult<_>>()?;
 
         Ok(GroupStatusDto {
             authenticated: true,
@@ -199,8 +204,8 @@ impl GroupService {
         Ok(sqlx::query_as!(
             Membership,
             r#"SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS "avatar_public_id?",
-                      g.permissions, g.group_type, g.dalton_enabled, r.name AS role_name,
-                      ur.done_course_setup, g.banned_at IS NOT NULL AS "banned!",
+                      g.permissions, g.group_type AS "group_type: GroupType", g.dalton_enabled,
+                      ur.role_id, ur.done_course_setup, g.banned_at IS NOT NULL AS "banned!",
                       EXISTS (SELECT 1 FROM group_mutes m
                               WHERE m.tenant_id = g.id AND m.user_id = ur.user_id) AS "muted!",
                       EXISTS (SELECT 1 FROM courses c
@@ -209,7 +214,6 @@ impl GroupService {
                           AS "offers_course_choice!"
                FROM user_roles ur
                JOIN groups g ON g.id = ur.tenant_id
-               JOIN roles r ON r.id = ur.role_id
                LEFT JOIN assets avatar ON avatar.id = g.avatar_id
                WHERE ur.user_id = $1
                ORDER BY ur.assigned_at"#,
@@ -225,7 +229,7 @@ impl GroupService {
         let g = sqlx::query!(
             r#"SELECT g.name AS "name!", g.schedule_config AS "schedule_config!",
                       avatar.public_id AS "avatar_public_id?",
-                      g.group_type AS "group_type!", g.dalton_enabled AS "dalton_enabled!",
+                      g.group_type AS "group_type!: GroupType", g.dalton_enabled AS "dalton_enabled!",
                       g.banned_at IS NOT NULL AS "banned!",
                       COALESCE(ur.done_course_setup, false) AS "done_course_setup!",
                       ur.user_id IS NOT NULL AND EXISTS (
@@ -248,13 +252,13 @@ impl GroupService {
             id: tc.tenant_id,
             name: g.name,
             owner_id: tc.group_owner_id,
-            role: tc.tenant_role.as_str(),
-            schedule_config: g.schedule_config,
+            role: tc.tenant_role,
+            schedule_config: ScheduleConfigDto::from_stored(g.schedule_config),
             avatar_url: g.avatar_public_id.map(|id| self.cloudinary.image_url(&id)),
             permissions: tc.group_permissions.clone(),
-            group_type: GroupType::from_str_or_regular(&g.group_type).as_str(),
+            group_type: g.group_type,
             dalton_enabled: g.dalton_enabled,
-            effective_permissions: tc.effective_permission_keys(),
+            effective_permissions: tc.effective_permissions(),
             course_setup: CourseSetup::of(g.done_course_setup, g.offers_course_choice),
             banned: g.banned,
             muted: tc.standing() == Standing::Muted,
@@ -305,6 +309,14 @@ impl GroupService {
         .execute(&mut *tx)
         .await?;
 
+        publish(
+            &mut *tx,
+            [
+                Notice::account(user_id, AccountTopic::Groups),
+                Notice::group(group_id, GroupTopic::Members),
+            ],
+        )
+        .await?;
         tx.commit().await?;
 
         Ok(())
@@ -315,7 +327,7 @@ impl GroupService {
         tenant_id: Uuid,
         user_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<InviteCreatedDto> {
         let token = InviteToken::generate();
         let expires_at = chrono::Utc::now() + INVITE_TTL;
 
@@ -341,9 +353,12 @@ impl GroupService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Members)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "token": token.as_str() }))
+        Ok(InviteCreatedDto {
+            token: token.as_str().to_owned(),
+        })
     }
 
     pub async fn list_members(
@@ -418,7 +433,7 @@ impl GroupService {
         &self,
         token: &InviteToken,
         viewer_id: Option<Uuid>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<InvitePreviewDto> {
         let invite = sqlx::query!(
             r#"SELECT g.id,
                       g.name,
@@ -439,17 +454,21 @@ impl GroupService {
         .await?
         .ok_or_else(invalid_invite)?;
 
-        Ok(json!({
-            "valid": true,
-            "groupName": invite.name,
-            "avatarUrl": invite.avatar_public_id.map(|id| self.cloudinary.image_url(&id)),
-            "memberCount": invite.member_count,
-            "alreadyMember": invite.already_member,
-            "groupId": invite.already_member.then_some(invite.id),
-        }))
+        Ok(InvitePreviewDto {
+            group_name: invite.name,
+            avatar_url: invite
+                .avatar_public_id
+                .map(|id| self.cloudinary.image_url(&id)),
+            member_count: invite.member_count,
+            already_member: invite.already_member,
+            group_id: invite.already_member.then_some(invite.id),
+        })
     }
 
-    pub async fn accept_invite(&self, params: AcceptInviteParams<'_>) -> AppResult<Value> {
+    pub async fn accept_invite(
+        &self,
+        params: AcceptInviteParams<'_>,
+    ) -> AppResult<InviteAcceptedDto> {
         let user_id = params.user_id;
         let token = params.token;
 
@@ -513,9 +532,20 @@ impl GroupService {
             .record(&mut *tx)
             .await?;
 
+        publish(
+            &mut *tx,
+            [
+                Notice::account(user_id, AccountTopic::Groups),
+                Notice::group(group_id, GroupTopic::Members),
+            ],
+        )
+        .await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "groupId": group_id, "alreadyMember": false }))
+        Ok(InviteAcceptedDto {
+            group_id,
+            already_member: false,
+        })
     }
 
     /// Distinguishes "already a member" from an invalid token after the
@@ -524,7 +554,7 @@ impl GroupService {
         &self,
         token: &InviteToken,
         user_id: Uuid,
-    ) -> AppResult<Value> {
+    ) -> AppResult<InviteAcceptedDto> {
         let membership = sqlx::query!(
             r#"SELECT gi.tenant_id
                FROM group_invites gi
@@ -537,7 +567,10 @@ impl GroupService {
         .await?
         .ok_or_else(invalid_invite)?;
 
-        Ok(json!({ "ok": true, "groupId": membership.tenant_id, "alreadyMember": true }))
+        Ok(InviteAcceptedDto {
+            group_id: membership.tenant_id,
+            already_member: true,
+        })
     }
 }
 

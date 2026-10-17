@@ -33,6 +33,15 @@ Write **idiomatic, performant, secure code that speaks for itself.**
 - No panics in production code
 - Error messages should help debugging without leaking internals
 
+**API contract:**
+- Every handler takes and returns typed DTOs (`Deserialize`/`Serialize` + `utoipa::ToSchema`), never `serde_json::Value` or `json!`, and carries `#[utoipa::path]`. Routes are registered with `utoipa_axum` (`OpenApiRouter`, `routes!`), so the spec cannot drift from the router
+- Errors leave as `ErrorBody`; a reason the client acts on gets an `ErrorCode`, never a parsed message
+- After changing the API: `UPDATE_OPENAPI=1 cargo test` (rewrites `server/openapi.json`), then `pnpm api:types` in `app/`. CI fails if either is stale
+
+**Live updates:**
+- Every write publishes a `Notice` with `realtime::publish` after the change: inside its transaction when it has one, so a rolled-back change is never announced. A change that revokes sessions publishes only after the revocation, so open streams recheck the revoked state
+- Events name what changed (scope + topic), never its content: clients reload through the regular, authorized endpoints. A new kind of data gets a topic, not a payload
+
 **Performance:**
 - Minimize database round-trips. Batch queries when sensible
 - Avoid `clone()` in hot paths. Use references
@@ -49,7 +58,7 @@ Every file has one owner, and its location and name say who that is and what kin
 ```
 src/
   main.ts  App.vue
-  api/        transport every request shares: client, error mapping, reauth hook, file storage, groupPath
+  api/        transport every request shares: typed client, generated schema, query client, error mapping, reauth hook, file storage
   i18n/  router/  assets/
   common/     domain-free building blocks: no imports from shell/ or modules/, no feature i18n keys
     components/  Base* design-system components, registered globally
@@ -84,10 +93,17 @@ src/
 - Types: a module's shared types in `types.ts`; `common/types.ts` only for domain-free shapes.
 - No kebab-case or snake_case `.ts`/`.vue` file names, except names a tool requires (`vite-env.d.ts`). Route names stay kebab-case (`group-tasks`).
 
+**Server state:**
+- Requests go through the typed client only: `unwrap(api.GET('/path/{id}', { params, body }))` from `@/api/client`. No `fetch`, no axios, no hand-built URLs, no hand-written copies of API types (import them from `@/api/schema`)
+- Server data lives in TanStack Vue Query, not in Pinia or refs: each module keeps its key factory and `queryOptions` factories in one `utils/<concept>Queries.ts` (`taskQueries.ts`), and composables read with `useQuery` and write with `useMutation`. Optimistic writes stay synchronous: `cancelQueries` reverts within the call, so it is never awaited before the cache write
+- A load that fails reports through `useLoadErrorToast`: once, and only when the view stays empty. Background refetches of data on screen fail silently
+- Group data is keyed `[...groupKeys.topic(groupId, topic), ...]` with the server's live update topic, so `shell/utils/liveUpdates.ts` can invalidate it. A new topic or cross-topic dependency is added there, with a test
+- Mutations invalidate what they change; they update the cache directly (`setQueryData`, rolled back `onError`) only where the user expects instant feedback, such as toggles and reordering
+
 **Composition API patterns:**
 - Extract logic into composables. Keep components thin
 - Use `ref()`, `computed()`, `watch()` idiomatically
-- State in Pinia stores; UI logic in composables
+- Client state in Pinia stores; UI logic in composables
 
 **Types everywhere:**
 - Full TypeScript coverage. No `any`

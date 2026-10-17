@@ -1,12 +1,13 @@
+use super::dto::{ReportDto, ReportedTaskDto};
 use crate::{
     common::{client::ClientInfo, text::DisplayText},
     error::{AppError, AppResult},
-    items::attachments,
+    items::{attachments, item_type::ItemType},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
-use serde_json::{Value, json};
-use sqlx::PgPool;
+use serde_json::json;
+use sqlx::{PgPool, types::Json};
 use uuid::Uuid;
 
 pub const REASON_MAX_CHARS: usize = 5000;
@@ -40,11 +41,12 @@ impl ReportsService {
         reporter_email: &str,
         item_id: Uuid,
         reason: Option<&DisplayText>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let item = sqlx::query!(
-            r#"SELECT i.id, i.type, i.title,
+            r#"SELECT i.id, i.type AS "type: ItemType", i.title,
                       COALESCE(s.name, i.custom_subject) AS "subject_name!", c.name AS "course_name?",
-                      i.description, i.due_date, i.editor_note, i.tenant_id,
+                      COALESCE(i.description, '') AS "description!", i.due_date,
+                      COALESCE(i.editor_note, '') AS "editor_note!", i.tenant_id,
                       u.email AS "creator_email?: String"
                FROM items i
                LEFT JOIN subjects s ON s.id = i.subject_id
@@ -62,19 +64,19 @@ impl ReportsService {
         // task is gone.
         let item_attachments = attachments::of_item(&self.db, item.id).await?;
 
-        let details = json!({
-            "itemId": item.id,
-            "itemTitle": item.title,
-            "itemType": item.r#type,
-            "itemSubject": item.subject_name,
-            "itemCourse": item.course_name,
-            "itemDescription": item.description,
-            "itemAttachments": item_attachments,
-            "itemDueDate": item.due_date,
-            "itemEditorNote": item.editor_note,
-            "itemTenantId": item.tenant_id,
-            "creatorEmail": item.creator_email,
-        });
+        let details = ReportedTaskDto {
+            item_id: item.id,
+            item_title: item.title,
+            item_type: Some(item.r#type),
+            item_subject: item.subject_name,
+            item_course: item.course_name,
+            item_description: item.description,
+            item_attachments: item_attachments.into_iter().map(|a| a.file).collect(),
+            item_due_date: Some(item.due_date),
+            item_editor_note: item.editor_note,
+            item_tenant_id: Some(item.tenant_id),
+            creator_email: item.creator_email,
+        };
 
         self.insert(
             ReportType::Task,
@@ -93,7 +95,7 @@ impl ReportsService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true, "message": "Item reported successfully." }))
+        Ok(())
     }
 
     async fn insert(
@@ -102,7 +104,7 @@ impl ReportsService {
         reason: Option<&DisplayText>,
         reporter_id: Uuid,
         reporter_email: &str,
-        details: Value,
+        details: ReportedTaskDto,
     ) -> AppResult<()> {
         sqlx::query!(
             r#"INSERT INTO reports (report_type, reason, reporter_id, reporter_email, details)
@@ -111,7 +113,7 @@ impl ReportsService {
             reason.map(DisplayText::as_str),
             reporter_id,
             reporter_email,
-            details
+            Json(details) as _
         )
         .execute(&self.db)
         .await?;
@@ -119,12 +121,10 @@ impl ReportsService {
         Ok(())
     }
 
-    /// `contentDeleted` tells the admin UI that the reported task no longer
-    /// exists, so it shows the snapshot kept in `details` instead.
-    pub async fn list(&self) -> AppResult<Value> {
+    pub async fn list(&self) -> AppResult<Vec<ReportDto>> {
         let rows = sqlx::query!(
-            r#"SELECT r.id, r.report_type, r.reason, r.reporter_id, r.reporter_email,
-                      r.reported_at, r.details,
+            r#"SELECT r.id, r.report_type, r.reason, r.reporter_id AS "reported_by", r.reporter_email,
+                      r.reported_at, r.details AS "task: Json<ReportedTaskDto>",
                       NOT EXISTS (
                         SELECT 1 FROM items WHERE id = (r.details->>'itemId')::uuid
                       ) AS "content_deleted!"
@@ -134,25 +134,19 @@ impl ReportsService {
         .fetch_all(&self.db)
         .await?;
 
-        let reports: Vec<Value> = rows
+        Ok(rows
             .into_iter()
-            .map(|r| {
-                let mut map = match r.details {
-                    Value::Object(map) => map,
-                    _ => serde_json::Map::new(),
-                };
-                map.insert("id".into(), json!(r.id));
-                map.insert("reportType".into(), json!(r.report_type));
-                map.insert("reason".into(), json!(r.reason));
-                map.insert("reportedBy".into(), json!(r.reporter_id));
-                map.insert("reporterEmail".into(), json!(r.reporter_email));
-                map.insert("reportedAt".into(), json!(r.reported_at));
-                map.insert("contentDeleted".into(), json!(r.content_deleted));
-                Value::Object(map)
+            .map(|r| ReportDto {
+                id: r.id,
+                report_type: r.report_type,
+                reason: r.reason,
+                reported_by: r.reported_by,
+                reporter_email: r.reporter_email,
+                reported_at: r.reported_at,
+                task: r.task.0,
+                content_deleted: r.content_deleted,
             })
-            .collect();
-
-        Ok(json!(reports))
+            .collect())
     }
 
     pub async fn delete(
@@ -160,7 +154,7 @@ impl ReportsService {
         report_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         let res = sqlx::query!(r#"DELETE FROM reports WHERE id = $1"#, report_id)
@@ -180,6 +174,6 @@ impl ReportsService {
 
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 }

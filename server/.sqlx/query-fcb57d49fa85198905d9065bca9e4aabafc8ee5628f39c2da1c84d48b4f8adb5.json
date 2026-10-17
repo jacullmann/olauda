@@ -1,0 +1,157 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT g.id, g.name, g.owner_id, g.schedule_config, avatar.public_id AS \"avatar_public_id?\",\n                      g.permissions, g.group_type AS \"group_type: GroupType\", g.dalton_enabled,\n                      ur.role_id, ur.done_course_setup, g.banned_at IS NOT NULL AS \"banned!\",\n                      EXISTS (SELECT 1 FROM group_mutes m\n                              WHERE m.tenant_id = g.id AND m.user_id = ur.user_id) AS \"muted!\",\n                      EXISTS (SELECT 1 FROM courses c\n                              JOIN subjects s ON s.id = c.subject_id\n                              WHERE s.tenant_id = g.id AND s.category <> 'core')\n                          AS \"offers_course_choice!\"\n               FROM user_roles ur\n               JOIN groups g ON g.id = ur.tenant_id\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               WHERE ur.user_id = $1\n               ORDER BY ur.assigned_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "owner_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "owner_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "schedule_config",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "schedule_config"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "avatar_public_id?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "assets",
+            "name": "public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "permissions",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "permissions"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "group_type: GroupType",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "group_type"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "dalton_enabled",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "dalton_enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "role_id",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "role_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "done_course_setup",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "done_course_setup"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "banned!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 11,
+        "name": "muted!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 12,
+        "name": "offers_course_choice!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "fcb57d49fa85198905d9065bca9e4aabafc8ee5628f39c2da1c84d48b4f8adb5"
+}

@@ -5,6 +5,8 @@ import { useGroups } from '@/modules/groups/composables/useGroups';
 import { usePersonalization } from '@/modules/account/composables/usePersonalization';
 import { useOpenGroup } from '@/modules/groups/composables/useOpenGroup';
 import { usePreferences } from '@/modules/account/composables/usePreferences';
+import { isThemeMode } from '@/common/composables/useTheme';
+import { isSupportedLocale } from '@/i18n';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import type { SearchMode, SearchView } from '@/modules/search/types';
 
@@ -53,7 +55,8 @@ export function usePickerSearchViews(): Record<
   const { t } = useI18n();
   const { activeGroupId, userGroups } = useGroups();
   const { openGroup } = useOpenGroup();
-  const { currentTheme, currentLanguage, setPreference } = usePreferences();
+  const { currentTheme, currentLanguage, setTheme, setLanguage } =
+    usePreferences();
   const { setPersonalization } = usePersonalization();
   const userStore = useUserStore();
 
@@ -84,7 +87,7 @@ export function usePickerSearchViews(): Record<
         { id: 'light', label: t('common.theme.light'), icon: Sun },
       ],
       current: currentTheme.value,
-      choose: (id) => setPreference('theme', id),
+      choose: (id) => isThemeMode(id) && setTheme(id),
     }),
   );
 
@@ -97,7 +100,7 @@ export function usePickerSearchViews(): Record<
         { id: 'en', label: 'English', icon: Languages },
       ],
       current: currentLanguage.value,
-      choose: (id) => setPreference('language', id),
+      choose: (id) => isSupportedLocale(id) && setLanguage(id),
     }),
   );
 

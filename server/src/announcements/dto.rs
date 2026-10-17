@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -7,7 +8,7 @@ use validator::Validate;
 pub const CONTENT_MAX_CHARS: usize = 160;
 
 /// An announcement as one member sees it.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AnnouncementDto {
     pub id: Uuid,
@@ -18,7 +19,7 @@ pub struct AnnouncementDto {
     pub read: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateAnnouncementDto {
     pub content: String,
@@ -26,7 +27,7 @@ pub struct CreateAnnouncementDto {
     pub important: bool,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MarkAnnouncementsReadDto {
     /// Clearing all sends every unread id at once.

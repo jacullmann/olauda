@@ -7,16 +7,15 @@ import {
   startAuthentication,
   type AuthenticationResponseJSON,
 } from '@simplewebauthn/browser';
-import { isAxiosError } from 'axios';
-import api from '@/api/client';
-import { apiErrorCode } from '@/api/errors';
+import api, { unwrap } from '@/api/client';
+import { ApiError, apiErrorCode } from '@/api/errors';
+import type { PasskeyChallengeDto } from '@/api/schema';
 import { useToast } from '@/common/composables/useToast';
-import type { PasskeyChallengeResponse } from '@/modules/auth/types';
 import {
-  PasskeyErrorCode,
   isPasskeyDismissed,
   passkeyErrorMessage,
 } from '@/modules/auth/utils/passkeyErrors';
+import { requestOptions } from '@/modules/auth/utils/passkeyOptions';
 
 /** Replaces the autofill challenge this long before the server lets it expire. */
 const AUTOFILL_RENEW_MARGIN_MS = 30_000;
@@ -41,33 +40,28 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
     }
   }
 
-  async function requestChallenge(): Promise<PasskeyChallengeResponse> {
-    const { data } = await api.post<PasskeyChallengeResponse>(
-      '/auth/passkey/challenge',
-    );
-    return data;
-  }
+  const requestChallenge = (): Promise<PasskeyChallengeDto> =>
+    unwrap(api.POST('/auth/passkey/challenge'));
 
   async function verify(
-    challenge: PasskeyChallengeResponse,
+    challenge: PasskeyChallengeDto,
     credential: AuthenticationResponseJSON,
   ): Promise<void> {
     signingIn.value = true;
     try {
-      await api.post('/auth/passkey/verify', {
-        challengeId: challenge.challengeId,
-        credential,
-      });
+      await unwrap(
+        api.POST('/auth/passkey/verify', {
+          body: { challengeId: challenge.challengeId, credential },
+        }),
+      );
     } catch (err: unknown) {
-      if (
-        apiErrorCode(err) === PasskeyErrorCode.Unknown &&
-        challenge.options.rpId
-      ) {
+      const { rpId } = requestOptions(challenge);
+      if (apiErrorCode(err) === 'PASSKEY_UNKNOWN' && rpId) {
         // The passkey was removed from its account; let the passkey manager
         // stop offering it.
         sendSignal({
           signalName: 'unknownCredential',
-          rpID: challenge.options.rpId,
+          rpID: rpId,
           credentialID: credential.id,
         }).catch(() => {
           // Best effort: most browsers do not support the signal API yet.
@@ -95,7 +89,7 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
     clearRenewTimer();
     if (!active || !(await browserSupportsWebAuthnAutofill())) return;
 
-    let challenge: PasskeyChallengeResponse;
+    let challenge: PasskeyChallengeDto;
     try {
       challenge = await requestChallenge();
     } catch {
@@ -103,7 +97,8 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
     }
     if (!active) return;
 
-    const timeout = challenge.options.timeout ?? FALLBACK_CHALLENGE_TIMEOUT_MS;
+    const optionsJSON = requestOptions(challenge);
+    const timeout = optionsJSON.timeout ?? FALLBACK_CHALLENGE_TIMEOUT_MS;
     renewTimer = setTimeout(
       () => void offerPasskeyAutofill(),
       Math.max(timeout - AUTOFILL_RENEW_MARGIN_MS, AUTOFILL_RENEW_MARGIN_MS),
@@ -111,7 +106,7 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
 
     try {
       const credential = await startAuthentication({
-        optionsJSON: challenge.options,
+        optionsJSON,
         useBrowserAutofill: true,
       });
       clearRenewTimer();
@@ -122,7 +117,7 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
       reportFailure(err);
       // Only a refusal by the server is worth another round; a browser that
       // failed the ceremony itself would just fail again.
-      if (isAxiosError(err)) void offerPasskeyAutofill();
+      if (err instanceof ApiError) void offerPasskeyAutofill();
     }
   }
 
@@ -135,7 +130,7 @@ export function usePasskeySignIn(onSignedIn: () => void | Promise<void>) {
       const challenge = await requestChallenge();
       // Starting this ceremony aborts the pending autofill request.
       const credential = await startAuthentication({
-        optionsJSON: challenge.options,
+        optionsJSON: requestOptions(challenge),
       });
       await verify(challenge, credential);
     } catch (err: unknown) {

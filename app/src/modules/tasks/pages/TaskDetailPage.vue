@@ -29,8 +29,7 @@ const {
   openedItem: item,
   openedItemError,
   retryOpenedItem,
-  checksLoading,
-  pinsLoading,
+  marksLoading,
   onMenuAction,
   toggleArchive,
   deleteItem,
@@ -61,9 +60,7 @@ const {
 
 // Checks and pins decide the controls, so the task waits for them rather
 // than flipping its checkbox a moment after it appeared.
-const isReady = computed(
-  () => !!item.value && !checksLoading.value && !pinsLoading.value,
-);
+const isReady = computed(() => !!item.value && !marksLoading.value);
 
 const hasNote = computed(
   () =>

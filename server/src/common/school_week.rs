@@ -1,9 +1,10 @@
 use chrono::{Datelike, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// A school week, named by its Monday. Any other day is rejected while
 /// deserializing, so a week can only ever be named one way.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, ToSchema)]
 #[serde(try_from = "NaiveDate", into = "NaiveDate")]
 pub struct WeekStart(NaiveDate);
 

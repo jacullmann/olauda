@@ -1,23 +1,27 @@
-import { ref, type Ref } from 'vue';
+import { computed, ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import { useInvite } from '@/modules/groups/composables/useInvite';
 import { useInviteModal } from '@/modules/groups/stores/useInviteModal';
 import type { AdminGroup } from '@/modules/admin/types';
+import { adminKeys } from '@/modules/admin/utils/adminQueries';
 
 export type GroupAction = 'invite' | 'ban' | 'unban' | 'delete';
 
 /** The moderation of one group; banning asks first, deleting asks for its name. */
-export function useAdminGroupActions(group: Ref<AdminGroup | null>) {
+export function useAdminGroupActions(group: Readonly<Ref<AdminGroup | null>>) {
   const toast = useToast();
   const confirmModal = useConfirmModal();
   const inviteModal = useInviteModal();
+  const queryClient = useQueryClient();
   const { createInvite } = useInvite();
   const { t } = useI18n();
 
-  const pendingAction = ref<GroupAction | null>(null);
+  const inviting = ref(false);
   const deleteModalOpen = ref(false);
 
   /** A link for a superadmin to join with, e.g. to help from inside the group. */
@@ -25,7 +29,7 @@ export function useAdminGroupActions(group: Ref<AdminGroup | null>) {
     const target = group.value;
     if (!target) return;
 
-    pendingAction.value = 'invite';
+    inviting.value = true;
     try {
       const res = await createInvite(target.id);
       if (res.ok && res.token) {
@@ -34,9 +38,24 @@ export function useAdminGroupActions(group: Ref<AdminGroup | null>) {
         toast.error(res.error ?? t('groups.errors.create_invite'));
       }
     } finally {
-      pendingAction.value = null;
+      inviting.value = false;
     }
   }
+
+  const ban = useMutation({
+    mutationFn: ({ action, id }: { action: 'ban' | 'unban'; id: string }) => {
+      const params = { params: { path: { id } } };
+      return unwrap(
+        action === 'ban'
+          ? api.POST('/admin/groups/{id}/ban', params)
+          : api.DELETE('/admin/groups/{id}/ban', params),
+      );
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: adminKeys.groups() }),
+    onError: (error, { action }) =>
+      toast.error(apiErrorMessage(error, t(`admin.groups.errors.${action}`))),
+  });
 
   async function toggleBan() {
     const target = group.value;
@@ -51,24 +70,32 @@ export function useAdminGroupActions(group: Ref<AdminGroup | null>) {
       submitText: t(`admin.groups.actions.${action}`),
       danger: action === 'ban',
     });
-    if (!confirmed) return;
-
-    pendingAction.value = action;
-    try {
-      const { data } = await (action === 'ban'
-        ? api.post<{ bannedAt: string | null }>(
-            `/admin/groups/${target.id}/ban`,
-          )
-        : api.delete<{ bannedAt: string | null }>(
-            `/admin/groups/${target.id}/ban`,
-          ));
-      target.bannedAt = data.bannedAt;
-    } catch {
-      toast.error(t(`admin.groups.errors.${action}`));
-    } finally {
-      pendingAction.value = null;
-    }
+    if (confirmed) ban.mutate({ action, id: target.id });
   }
+
+  const deletion = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.DELETE('/admin/groups/{id}', { params: { path: { id } } })),
+    onSuccess: (_, id) => {
+      // The page is left, so its group must not load again and show as gone.
+      queryClient.removeQueries({ queryKey: adminKeys.group(id) });
+      return Promise.all(
+        [
+          adminKeys.groups(),
+          adminKeys.userDetails(),
+          adminKeys.stats(),
+          adminKeys.reports(),
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+
+  const pendingAction = computed<GroupAction | null>(() => {
+    if (inviting.value) return 'invite';
+    if (ban.isPending.value) return ban.variables.value?.action ?? null;
+    if (deletion.isPending.value) return 'delete';
+    return null;
+  });
 
   function requestDelete() {
     deleteModalOpen.value = true;
@@ -83,18 +110,15 @@ export function useAdminGroupActions(group: Ref<AdminGroup | null>) {
     const target = group.value;
     if (!target) return false;
 
-    pendingAction.value = 'delete';
     try {
-      await api.delete(`/admin/groups/${target.id}`);
+      await deletion.mutateAsync(target.id);
       deleteModalOpen.value = false;
       // The page is left, so the user no longer sees the group go.
       toast.success(t('admin.groups.success.delete'));
       return true;
-    } catch {
-      toast.error(t('groups.errors.delete'));
+    } catch (error) {
+      toast.error(apiErrorMessage(error, t('groups.errors.delete')));
       return false;
-    } finally {
-      pendingAction.value = null;
     }
   }
 

@@ -3,7 +3,6 @@ import { useGroups } from '@/modules/groups/composables/useGroups';
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { Camera, ImagePlus, Trash2, Upload } from '@lucide/vue';
 import GroupAvatarCropModal from './GroupAvatarCropModal.vue';
 import GroupTypeRadioGroup from './GroupTypeRadioGroup.vue';
@@ -25,8 +24,6 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const { createGroup } = useGroups();
-
-const userStore = useUserStore();
 
 const groupNameInputRef = ref<HTMLInputElement | null>(null);
 
@@ -129,12 +126,6 @@ async function submit() {
     );
 
     if (res.ok) {
-      try {
-        await userStore.fetchUser();
-      } catch {
-        // The group was created; a stale profile refreshes on next navigation.
-      }
-
       emit('cancel');
       await router.push({
         name: 'group-dashboard',

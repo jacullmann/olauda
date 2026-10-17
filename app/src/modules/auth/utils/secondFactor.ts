@@ -1,4 +1,4 @@
-import type { SecondFactorProof } from '@/modules/auth/types';
+import type { SecondFactorProof } from '@/api/schema';
 
 /** The authenticator app's code, or a recovery code standing in for it. */
 export type SecondFactorMode = 'code' | 'recoveryCode';

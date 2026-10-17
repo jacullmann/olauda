@@ -2,6 +2,7 @@ use super::dto::*;
 use crate::{
     auth::{
         security_notice,
+        service::security_changed,
         session_context::is_superadmin,
         token::{ADMIN_REVOKE, TokenService},
     },
@@ -9,21 +10,23 @@ use crate::{
         client::ClientInfo,
         cloudinary::Cloudinary,
         email::{EmailService, EmailStatsError, SecurityNotice},
+        group_type::GroupType,
         hetzner::{HetznerCloud, HetznerError},
         pagination::{Window, search_params},
         role::{MemberRole, Role},
     },
-    error::{AppError, AppResult},
+    error::{AppError, AppResult, ErrorCode},
     group::{
         member_policy::{self, Caller, Target},
         service::role_from_db,
     },
     mfa::service::disable_mfa,
+    realtime::event::{AccountTopic, GroupTopic, Notice, publish},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
 use chrono::Utc;
-use serde_json::{Value, json};
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -70,14 +73,19 @@ pub async fn read_email_quota(email: &EmailService) -> AppResult<EmailQuotaDto> 
 
 fn resend_failure(error: EmailStatsError) -> AppError {
     let (code, message) = match error {
-        EmailStatsError::NotConfigured => ("RESEND_NOT_CONFIGURED", "RESEND_API_KEY is not set."),
+        EmailStatsError::NotConfigured => {
+            (ErrorCode::ResendNotConfigured, "RESEND_API_KEY is not set.")
+        }
         EmailStatsError::KeyRejected => (
-            "RESEND_KEY_REJECTED",
+            ErrorCode::ResendKeyRejected,
             "Resend refused RESEND_API_KEY; reading metrics needs a full access key.",
         ),
         EmailStatsError::Resend(e) => {
             tracing::error!("Resend API request failed: {e}");
-            ("RESEND_UNREACHABLE", "The Resend API could not be reached.")
+            (
+                ErrorCode::ResendUnreachable,
+                "The Resend API could not be reached.",
+            )
         }
     };
     AppError::Upstream { code, message }
@@ -86,17 +94,17 @@ fn resend_failure(error: EmailStatsError) -> AppError {
 fn hetzner_failure(error: HetznerError) -> AppError {
     let (code, message) = match error {
         HetznerError::TokenRejected => (
-            "HETZNER_TOKEN_REJECTED",
+            ErrorCode::HetznerTokenRejected,
             "Hetzner rejected HETZNER_API_TOKEN.",
         ),
         HetznerError::ServerNotFound => (
-            "HETZNER_SERVER_NOT_FOUND",
+            ErrorCode::HetznerServerNotFound,
             "Hetzner knows no server with HETZNER_SERVER_ID.",
         ),
         HetznerError::Http(e) => {
             tracing::error!("Hetzner API request failed: {e}");
             (
-                "HETZNER_UNREACHABLE",
+                ErrorCode::HetznerUnreachable,
                 "The Hetzner API could not be reached.",
             )
         }
@@ -304,7 +312,7 @@ impl SuperAdminService {
 
         let rows_query = sqlx::query_as!(
             AdminGroupRow,
-            r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type,
+            r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type AS "group_type: GroupType",
                       g.owner_id, g.created_at, g.banned_at, u.email AS owner_email,
                       members.n AS "member_count!", items.n AS "item_count!"
                FROM groups g
@@ -363,7 +371,7 @@ impl SuperAdminService {
     pub async fn get_group(&self, group_id: Uuid) -> AppResult<AdminGroupDto> {
         let row = sqlx::query_as!(
             AdminGroupRow,
-            r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type,
+            r#"SELECT g.id, g.name, avatar.public_id AS "avatar_public_id?", g.group_type AS "group_type: GroupType",
                       g.owner_id, g.created_at, g.banned_at, u.email AS owner_email,
                       (SELECT COUNT(*) FROM user_roles WHERE tenant_id = g.id) AS "member_count!",
                       (SELECT COUNT(*) FROM items WHERE tenant_id = g.id) AS "item_count!"
@@ -387,7 +395,7 @@ impl SuperAdminService {
         group_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         // Banning twice keeps the original date.
@@ -409,9 +417,10 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::group(group_id, GroupTopic::Settings)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "bannedAt": group.banned_at }))
+        Ok(())
     }
 
     pub async fn unban_group(
@@ -419,7 +428,7 @@ impl SuperAdminService {
         group_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         let name = sqlx::query_scalar!(
@@ -438,9 +447,10 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::group(group_id, GroupTopic::Settings)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "bannedAt": null }))
+        Ok(())
     }
 
     pub async fn delete_group(
@@ -448,8 +458,16 @@ impl SuperAdminService {
         group_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
+
+        // Read before the cascade removes them: every member loses the group.
+        let members = sqlx::query_scalar!(
+            r#"SELECT user_id FROM user_roles WHERE tenant_id = $1"#,
+            group_id
+        )
+        .fetch_all(&mut *tx)
+        .await?;
 
         // Everything in the group cascades with it; the asset sweep deletes
         // the files its items and avatar leave behind.
@@ -469,9 +487,13 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
+        let notices = members
+            .into_iter()
+            .map(|member| Notice::account(member, AccountTopic::Groups));
+        publish(&mut *tx, notices).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "deletedGroupId": group_id }))
+        Ok(())
     }
 
     pub async fn list_users(&self, query: &UsersQuery) -> AppResult<Window<AdminUserDto>> {
@@ -614,7 +636,7 @@ impl SuperAdminService {
         target_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         if is_superadmin(&self.db, target_id).await? {
             return Err(AppError::bad_request("Admins cannot be banned."));
         }
@@ -640,8 +662,9 @@ impl SuperAdminService {
         self.tokens
             .revoke_all_for_user(target_id, ADMIN_REVOKE, None)
             .await?;
+        publish(&self.db, [security_changed(target_id)]).await?;
 
-        Ok(json!({ "ok": true, "isBanned": true }))
+        Ok(())
     }
 
     pub async fn unban_user(
@@ -649,7 +672,7 @@ impl SuperAdminService {
         target_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         sqlx::query!(r#"DELETE FROM banned_users WHERE user_id = $1"#, target_id)
@@ -665,7 +688,7 @@ impl SuperAdminService {
 
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "isBanned": false }))
+        Ok(())
     }
 
     /// Support for a user who lost both their authenticator and their
@@ -676,7 +699,7 @@ impl SuperAdminService {
         target_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         if !disable_mfa(&mut tx, target_id).await? {
@@ -692,6 +715,7 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(target_id)]).await?;
         tx.commit().await?;
 
         security_notice::notify(
@@ -701,7 +725,7 @@ impl SuperAdminService {
             SecurityNotice::TwoFactorResetBySupport,
         );
 
-        Ok(json!({ "ok": true, "mfaEnabled": false }))
+        Ok(())
     }
 
     pub async fn delete_user(
@@ -709,7 +733,7 @@ impl SuperAdminService {
         target_id: Uuid,
         admin_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         if is_superadmin(&self.db, target_id).await? {
             return Err(AppError::forbidden("Admins cannot be deleted."));
         }
@@ -746,9 +770,10 @@ impl SuperAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(target_id)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 }
 

@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// What the sign-in and sign-up pages need to know before anyone signs in.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AccessStatusDto {
     pub registration_open: bool,
@@ -10,7 +11,7 @@ pub struct AccessStatusDto {
 
 /// Each switch is changed only when sent, so two admins flipping different
 /// switches at once never undo each other. Serialized as is for the audit log.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UpdateAccessControlsDto {
     #[serde(skip_serializing_if = "Option::is_none")]

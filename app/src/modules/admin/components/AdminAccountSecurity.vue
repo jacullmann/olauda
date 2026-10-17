@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountSecurity } from '@/modules/admin/composables/useAccountSecurity';
 import AdminPieChart, {
@@ -10,7 +10,7 @@ import AdminPieChart, {
 const I18N_BASE = 'admin.overview.accounts';
 
 const { t, n } = useI18n();
-const { security, load } = useAccountSecurity();
+const { security } = useAccountSecurity();
 
 const charts = computed(() => {
   const s = security.value;
@@ -54,8 +54,6 @@ const charts = computed(() => {
     },
   ];
 });
-
-onMounted(load);
 </script>
 
 <template>

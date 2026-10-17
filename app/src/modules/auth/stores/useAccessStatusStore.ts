@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import api from '@/api/client';
-
-interface AccessStatus {
-  registrationOpen: boolean;
-  shutdown: boolean;
-}
+import api, { unwrap } from '@/api/client';
 
 /**
  * Whether superadmins paused sign-ups or shut the platform down,
@@ -17,9 +12,9 @@ export const useAccessStatusStore = defineStore('access-status', () => {
 
   async function load(): Promise<void> {
     try {
-      const { data } = await api.get<AccessStatus>('/system/access');
-      registrationOpen.value = data.registrationOpen;
-      shutdown.value = data.shutdown;
+      const status = await unwrap(api.GET('/system/access'));
+      registrationOpen.value = status.registrationOpen;
+      shutdown.value = status.shutdown;
     } catch {
       // The forms stay usable; a refused request explains itself.
     }

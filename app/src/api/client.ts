@@ -1,38 +1,149 @@
-import axios, { AxiosError } from 'axios';
+import createClient from 'openapi-fetch';
 import {
+  ApiError,
   bannedGroupId,
-  mutedGroupId,
   isAccessTokenRejected,
-  isShutdown,
   isReauthRequired,
   isSessionRejected,
+  isShutdown,
+  mutedGroupId,
 } from './errors';
 import { requestReauth } from './reauth';
+import type { paths } from './schema';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
-  withCredentials: true,
-});
+/** Where the API lives; `/api` in development, proxied by Vite. */
+export const API_BASE_URL: string = import.meta.env.VITE_API_URL || '';
 
-const getCsrfFromCookie = (): string | null => {
-  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-};
-
-api.interceptors.request.use((config) => {
-  const token = getCsrfFromCookie();
-  if (token) config.headers['x-csrf-token'] = token;
-  return config;
-});
-
-const REFRESH_URL = '/auth/refresh';
+const CSRF_COOKIE = 'csrf_token';
+const CSRF_HEADER = 'x-csrf-token';
+const REFRESH_PATH = '/auth/refresh';
 // The confirmation dialog's own requests: waiting on a confirmation from
 // inside it would never settle.
-const REAUTH_URL_PREFIX = '/auth/reauth';
+const REAUTH_PATH_PREFIX = '/auth/reauth';
 const REFRESH_LOCK = 'auth-refresh';
 const LAST_REFRESH_KEY = 'auth:last-refresh';
 // Bounds how long other tabs can be stuck waiting on the refresh lock.
 const REFRESH_TIMEOUT_MS = 15_000;
+
+/**
+ * The typed API client. Requests resolve to `{ data }` or `{ error }`;
+ * `unwrap` turns them into the data or a thrown `ApiError`.
+ */
+const api = createClient<paths>({
+  baseUrl: API_BASE_URL,
+  credentials: 'include',
+  fetch: sendWithSession,
+});
+
+export default api;
+
+type ApiResult = { data?: unknown; error?: unknown; response: Response };
+
+/** What a request answers with when it succeeds. */
+type SuccessData<R extends ApiResult> = R extends { error?: never }
+  ? R['data']
+  : never;
+
+/** The data of a successful request; any other answer throws an `ApiError`. */
+export async function unwrap<R extends ApiResult>(
+  pending: Promise<R>,
+): Promise<SuccessData<R>> {
+  const result = await pending;
+  if (result.response.ok) return result.data as SuccessData<R>;
+  throw new ApiError(result.response.status, result.error);
+}
+
+const csrfToken = (): string | null => {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${CSRF_COOKIE}=([^;]*)`),
+  );
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+};
+
+/** Sets the CSRF cookie the changing requests have to repeat as a header. */
+export async function ensureCsrf(): Promise<void> {
+  if (!csrfToken()) await unwrap(api.GET('/system/csrf/init'));
+}
+
+/** The path of a request as the API names it, without the base URL's. */
+function apiPath(request: Request): string {
+  const base = new URL(API_BASE_URL || '/', window.location.origin);
+  const basePath = base.pathname.replace(/\/$/, '');
+  return new URL(request.url).pathname.slice(basePath.length);
+}
+
+/**
+ * Sends a request and recovers what the session itself can fix: an expired
+ * access token is refreshed and a sensitive action confirmed, after which the
+ * request is repeated once as if nothing happened. Conditions that concern
+ * the whole app (shutdown, a banned group, a mute) are announced on the way.
+ */
+async function sendWithSession(request: Request): Promise<Response> {
+  const path = apiPath(request);
+  let refreshed = false;
+  let reauthed = false;
+
+  for (;;) {
+    // The body can only be read once, so every attempt gets its own copy.
+    const attempt = request.clone();
+    const token = csrfToken();
+    if (token) attempt.headers.set(CSRF_HEADER, token);
+
+    const response = await fetch(attempt);
+    if (response.ok) return response;
+
+    const error = await ApiError.from(response.clone());
+    announce(error);
+
+    // Only once, so a confirmation that does not take cannot loop.
+    if (
+      !reauthed &&
+      !path.startsWith(REAUTH_PATH_PREFIX) &&
+      isReauthRequired(error)
+    ) {
+      reauthed = true;
+      if (await requestReauth()) continue;
+      return response;
+    }
+
+    // Only an expired or missing access token is fixed by a refresh. The
+    // refresh is excluded explicitly: waiting on itself would never settle.
+    if (path === REFRESH_PATH || !isAccessTokenRejected(error)) {
+      return response;
+    }
+    if (refreshed) {
+      // The access token from a successful refresh was refused as well.
+      notify('auth-expired');
+      return response;
+    }
+    refreshed = true;
+    try {
+      await refreshSessionOrSignOut();
+    } catch {
+      return response;
+    }
+  }
+}
+
+/** Tells the app about conditions no single caller can handle alone. */
+function announce(error: ApiError): void {
+  // Nothing is retried after shutdown: it lasts until a superadmin ends it.
+  if (isShutdown(error)) return notify('shutdown');
+
+  // A group banned while it is open closes at once instead of failing
+  // request by request.
+  const banned = bannedGroupId(error);
+  if (banned) return notify('group-banned', banned);
+
+  // A mute placed while the group is open hides what can no longer be done
+  // at once; the caller still reports the failed action.
+  const muted = mutedGroupId(error);
+  if (muted) notify('group-muted', muted);
+}
+
+function notify(type: string, detail?: string): void {
+  window.dispatchEvent(new CustomEvent(type, { detail }));
+}
 
 let refreshInFlight: Promise<void> | null = null;
 let refreshOrSignOutInFlight: Promise<void> | null = null;
@@ -61,7 +172,11 @@ const refreshedSince = (time: number): boolean => {
 };
 
 const postRefresh = async (): Promise<void> => {
-  await api.post(REFRESH_URL, null, { timeout: REFRESH_TIMEOUT_MS });
+  await unwrap(
+    api.POST('/auth/refresh', {
+      signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
+    }),
+  );
   recordRefresh();
 };
 
@@ -85,22 +200,6 @@ function performRefresh(): Promise<void> {
   return refreshInFlight;
 }
 
-function notifySessionEnded(): void {
-  window.dispatchEvent(new CustomEvent('auth-expired'));
-}
-
-function notifyShutdown(): void {
-  window.dispatchEvent(new CustomEvent('shutdown'));
-}
-
-function notifyGroupBanned(groupId: string): void {
-  window.dispatchEvent(new CustomEvent('group-banned', { detail: groupId }));
-}
-
-function notifyGroupMuted(groupId: string): void {
-  window.dispatchEvent(new CustomEvent('group-muted', { detail: groupId }));
-}
-
 /**
  * Rotates the session's tokens. A failure has no side effects, so callers
  * that resolve the session themselves (e.g. at startup) decide what it means.
@@ -116,95 +215,11 @@ export const refreshSession = (): Promise<void> => performRefresh();
 export function refreshSessionOrSignOut(): Promise<void> {
   refreshOrSignOutInFlight ??= performRefresh()
     .catch((error: unknown) => {
-      if (isSessionRejected(error)) notifySessionEnded();
+      if (isSessionRejected(error)) notify('auth-expired');
       throw error;
     })
     .finally(() => {
       refreshOrSignOutInFlight = null;
     });
   return refreshOrSignOutInFlight;
-}
-
-api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const original = error.config;
-
-    // Any request, the refresh included, can be the first to meet shutdown.
-    // Nothing is retried: it lasts until a superadmin ends it.
-    if (isShutdown(error)) {
-      notifyShutdown();
-      return Promise.reject(error);
-    }
-
-    // A group banned while it is open closes at once instead of failing
-    // request by request.
-    const groupId = bannedGroupId(error);
-    if (groupId) {
-      notifyGroupBanned(groupId);
-      return Promise.reject(error);
-    }
-
-    // A mute placed while the group is open hides what can no longer be done
-    // at once; the caller still reports the failed action.
-    const mutedInGroupId = mutedGroupId(error);
-    if (mutedInGroupId) {
-      notifyGroupMuted(mutedInGroupId);
-      return Promise.reject(error);
-    }
-
-    // A sensitive action needs a recent sign-in: once the user confirmed who
-    // they are, the request is repeated as if nothing happened. Only once, so
-    // a confirmation that does not take cannot loop.
-    if (
-      original &&
-      !original._reauthed &&
-      !original.url?.startsWith(REAUTH_URL_PREFIX) &&
-      (await isReauthRequired(error))
-    ) {
-      original._reauthed = true;
-      if (await requestReauth()) return api(original);
-      return Promise.reject(error);
-    }
-
-    // Only an expired or missing access token is fixed by a refresh. The
-    // refresh is excluded explicitly: waiting on itself would never settle.
-    if (
-      !original ||
-      original.url === REFRESH_URL ||
-      !isAccessTokenRejected(error)
-    ) {
-      return Promise.reject(error);
-    }
-
-    if (original._retried) {
-      // The access token from a successful refresh was refused as well.
-      notifySessionEnded();
-      return Promise.reject(error);
-    }
-    original._retried = true;
-
-    try {
-      await refreshSessionOrSignOut();
-    } catch {
-      return Promise.reject(error);
-    }
-
-    return api(original);
-  },
-);
-
-export const ensureCsrf = async (): Promise<void> => {
-  if (!getCsrfFromCookie()) {
-    await api.get('/system/csrf/init');
-  }
-};
-
-export default api;
-
-declare module 'axios' {
-  export interface InternalAxiosRequestConfig {
-    _retried?: boolean;
-    _reauthed?: boolean;
-  }
 }

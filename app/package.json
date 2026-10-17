@@ -15,6 +15,9 @@
     "lint": "eslint \"src/**/*.{ts,vue}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,css}\"",
     "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json",
+    "api:types": "node scripts/generate-api-types.mjs",
+    "api:check": "node scripts/generate-api-types.mjs --check",
     "i18n:sync": "node scripts/i18n-sync.mjs"
   },
   "dependencies": {
@@ -22,9 +25,10 @@
     "@lucide/vue": "^1.51.0",
     "@simplewebauthn/browser": "^14.0.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/vue-query": "^5.104.3",
     "@tanstack/vue-virtual": "^3.13.39",
     "@vueuse/core": "^14.4.0",
-    "axios": "^1.20.0",
+    "openapi-fetch": "^0.17.0",
     "pinia": "^2.3.1",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.3.3",
@@ -36,6 +40,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@tailwindcss/typography": "^0.5.20",
+    "@tanstack/eslint-plugin-query": "^5.104.3",
     "@types/node": "^22.20.5",
     "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-vue": "^6.0.9",
@@ -45,6 +50,7 @@
     "eslint-plugin-prettier": "^5.5.6",
     "eslint-plugin-vue": "^9.33.0",
     "globals": "^16.5.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.9",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.0",

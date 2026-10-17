@@ -1,59 +1,73 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// How a group organises its subjects and its schedule.
 ///
 /// A regular group is one class that attends every lesson together. An Abitur
 /// group is a whole year in which nearly every lesson belongs to a single
 /// course, so lessons are scheduled per course instead of per subject.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, sqlx::Type, ToSchema,
+)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "text", rename_all = "lowercase")]
 pub enum GroupType {
     #[default]
     Regular,
     Abitur,
 }
 
-/// The category that makes every course below it a Zusatzkurs.
-pub const ZUSATZKURS_CATEGORY: &str = "zk";
+/// How members pick a subject's courses. Both sets describe how a member picks
+/// a course, never how a course is graded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, ToSchema)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "text", rename_all = "lowercase")]
+pub enum SubjectCategory {
+    Core,
+    Elective,
+    Extra,
+    Mandatory,
+    Optional,
+    /// Zusatzkurs: makes every course of the subject a ZK.
+    Zk,
+}
 
-/// Course types an editor may pick. `zk` is missing on purpose: it follows from
-/// the subject category instead of being chosen per course.
-pub const SELECTABLE_COURSE_TYPES: &[&str] = &["gk", "lk"];
-
-pub const DEFAULT_COURSE_TYPE: &str = "gk";
+/// The level of an Abitur course; regular groups have none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, ToSchema)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "text", rename_all = "lowercase")]
+pub enum CourseType {
+    Gk,
+    Lk,
+    Zk,
+}
 
 impl GroupType {
-    pub const fn as_str(self) -> &'static str {
+    /// The subject categories that may be assigned in this kind of group.
+    pub const fn subject_categories(self) -> &'static [SubjectCategory] {
         match self {
-            Self::Regular => "regular",
-            Self::Abitur => "abitur",
+            Self::Regular => &[
+                SubjectCategory::Core,
+                SubjectCategory::Elective,
+                SubjectCategory::Extra,
+            ],
+            Self::Abitur => &[
+                SubjectCategory::Mandatory,
+                SubjectCategory::Optional,
+                SubjectCategory::Zk,
+            ],
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "regular" => Some(Self::Regular),
-            "abitur" => Some(Self::Abitur),
-            _ => None,
-        }
-    }
-
-    /// Unknown values from older rows degrade to a regular group instead of
-    /// failing the request they appear in.
-    pub fn from_str_or_regular(s: &str) -> Self {
-        Self::from_str(s).unwrap_or(Self::Regular)
-    }
-
-    /// The subject categories that may be assigned in this kind of group. Both
-    /// sets describe how a member picks a course, never how a course is graded.
-    pub const fn subject_categories(self) -> &'static [&'static str] {
+    /// The category a new subject gets when the client does not send one.
+    pub const fn default_category(self) -> SubjectCategory {
         match self {
-            Self::Regular => &["core", "elective", "extra"],
-            Self::Abitur => &["mandatory", "optional", ZUSATZKURS_CATEGORY],
+            Self::Regular => SubjectCategory::Core,
+            Self::Abitur => SubjectCategory::Mandatory,
         }
     }
 
-    pub fn allows_category(self, category: &str) -> bool {
+    pub fn allows_category(self, category: SubjectCategory) -> bool {
         self.subject_categories().contains(&category)
     }
 
@@ -63,37 +77,28 @@ impl GroupType {
     }
 }
 
-/// The type a course ends up with. A Zusatzkurs subject forces `zk` on all of
+/// The type a course ends up with. A Zusatzkurs subject forces ZK on all of
 /// its courses, a regular group has no course types at all, and every other
-/// Abitur subject lets the editor pick between GK and LK.
+/// Abitur subject lets the editor pick between GK and LK, GK by default.
+/// Fails with the requested type when the editor may not pick it.
 pub fn resolve_course_type(
     group_type: GroupType,
-    subject_category: &str,
-    requested: Option<&str>,
-) -> Result<Option<&'static str>, String> {
+    subject_category: SubjectCategory,
+    requested: Option<CourseType>,
+) -> Result<Option<CourseType>, CourseType> {
     if !group_type.uses_course_types() {
         return Ok(None);
     }
 
-    if subject_category == ZUSATZKURS_CATEGORY {
-        return Ok(Some("zk"));
+    if subject_category == SubjectCategory::Zk {
+        return Ok(Some(CourseType::Zk));
     }
 
-    let Some(requested) = requested else {
-        return Ok(Some(DEFAULT_COURSE_TYPE));
-    };
-
-    SELECTABLE_COURSE_TYPES
-        .iter()
-        .find(|t| **t == requested)
-        .copied()
-        .map(Some)
-        .ok_or_else(|| {
-            format!(
-                "Course type '{requested}' is not available. Allowed: {}.",
-                SELECTABLE_COURSE_TYPES.join(", ")
-            )
-        })
+    match requested {
+        None => Ok(Some(CourseType::Gk)),
+        Some(CourseType::Zk) => Err(CourseType::Zk),
+        Some(picked) => Ok(Some(picked)),
+    }
 }
 
 #[cfg(test)]
@@ -101,26 +106,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unknown_type_falls_back_to_regular() {
-        assert_eq!(
-            GroupType::from_str_or_regular("gymnasium"),
-            GroupType::Regular
-        );
-        assert_eq!(GroupType::from_str_or_regular("abitur"), GroupType::Abitur);
+    fn categories_are_scoped_to_the_group_type() {
+        assert!(GroupType::Regular.allows_category(SubjectCategory::Core));
+        assert!(!GroupType::Regular.allows_category(SubjectCategory::Mandatory));
+        assert!(GroupType::Abitur.allows_category(SubjectCategory::Mandatory));
+        assert!(!GroupType::Abitur.allows_category(SubjectCategory::Core));
     }
 
     #[test]
-    fn categories_are_scoped_to_the_group_type() {
-        assert!(GroupType::Regular.allows_category("core"));
-        assert!(!GroupType::Regular.allows_category("mandatory"));
-        assert!(GroupType::Abitur.allows_category("mandatory"));
-        assert!(!GroupType::Abitur.allows_category("core"));
+    fn new_subjects_get_a_category_of_their_group_type() {
+        for group_type in [GroupType::Regular, GroupType::Abitur] {
+            assert!(group_type.allows_category(group_type.default_category()));
+        }
     }
 
     #[test]
     fn regular_courses_have_no_type() {
         assert_eq!(
-            resolve_course_type(GroupType::Regular, "elective", Some("lk")),
+            resolve_course_type(
+                GroupType::Regular,
+                SubjectCategory::Elective,
+                Some(CourseType::Lk)
+            ),
             Ok(None)
         );
     }
@@ -128,21 +135,32 @@ mod tests {
     #[test]
     fn zusatzkurs_subjects_force_zk_on_their_courses() {
         assert_eq!(
-            resolve_course_type(GroupType::Abitur, ZUSATZKURS_CATEGORY, Some("lk")),
-            Ok(Some("zk"))
+            resolve_course_type(GroupType::Abitur, SubjectCategory::Zk, Some(CourseType::Lk)),
+            Ok(Some(CourseType::Zk))
         );
     }
 
     #[test]
     fn abitur_courses_pick_between_gk_and_lk() {
         assert_eq!(
-            resolve_course_type(GroupType::Abitur, "mandatory", Some("lk")),
-            Ok(Some("lk"))
+            resolve_course_type(
+                GroupType::Abitur,
+                SubjectCategory::Mandatory,
+                Some(CourseType::Lk)
+            ),
+            Ok(Some(CourseType::Lk))
         );
         assert_eq!(
-            resolve_course_type(GroupType::Abitur, "optional", None),
-            Ok(Some("gk"))
+            resolve_course_type(GroupType::Abitur, SubjectCategory::Optional, None),
+            Ok(Some(CourseType::Gk))
         );
-        assert!(resolve_course_type(GroupType::Abitur, "mandatory", Some("zk")).is_err());
+        assert!(
+            resolve_course_type(
+                GroupType::Abitur,
+                SubjectCategory::Mandatory,
+                Some(CourseType::Zk)
+            )
+            .is_err()
+        );
     }
 }

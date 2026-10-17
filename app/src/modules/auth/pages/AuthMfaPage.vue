@@ -21,13 +21,8 @@ const { ready, passkeyAvailable, expire, settle } = useMfaChallenge(
 async function handleMfaVerified() {
   settle();
 
-  try {
-    await checkAuthStatus();
-
-    await userStore.fetchUser();
-  } catch (error) {
-    console.error('Fehler beim Laden des Users nach MFA:', error);
-  }
+  await checkAuthStatus();
+  await userStore.fetchUser();
 
   await router.push(consumeLoginReturn() ?? homeRoute.value);
 }

@@ -19,10 +19,6 @@ function minutesIntoWeek(date: Date): number {
   );
 }
 
-function courseIdOf(lesson: Lesson): string | null {
-  return lesson.courseId || lesson.courses?.id || null;
-}
-
 /** Earlier first; of parallel lessons, one of the member's own courses first. */
 function compareTimedLessons(a: TimedLesson, b: TimedLesson): number {
   if (a.start !== b.start) return a.start - b.start;
@@ -41,16 +37,14 @@ export function findUpcomingLesson(
 ): Lesson | null {
   const timed = lessons
     .filter((lesson) => !lesson.cancelled)
-    .map((lesson): TimedLesson => {
-      const courseId = courseIdOf(lesson);
-      return {
-        lesson,
-        start:
-          (lesson.day - 1) * MINUTES_PER_DAY +
-          lessonMinutes(config, lesson).start,
-        takesPlaceForMember: !!courseId && takenCourseIds.has(courseId),
-      };
-    });
+    .map((lesson): TimedLesson => ({
+      lesson,
+      start:
+        (lesson.day - 1) * MINUTES_PER_DAY +
+        lessonMinutes(config, lesson).start,
+      takesPlaceForMember:
+        !!lesson.courseId && takenCourseIds.has(lesson.courseId),
+    }));
 
   const nowInWeek = minutesIntoWeek(now);
   const laterThisWeek = timed.filter(({ start }) => start > nowInWeek);

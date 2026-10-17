@@ -1,67 +1,60 @@
 import { computed } from 'vue';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
+import type { PreferencesDto, UpdatePreferencesDto } from '@/api/schema';
 import { useTheme, type ThemeMode } from '@/common/composables/useTheme';
-import {
-  useUserStore,
-  type UserPreferences,
-} from '@/modules/account/stores/useUserStore';
+import { useSession } from '@/modules/auth/composables/useSession';
 import i18n, { type SupportedLocale, LOCALE_KEY } from '@/i18n';
 
-type PreferenceKey = 'theme' | 'language';
-
-function applyLanguage(language: string): void {
-  i18n.global.locale.value = language as SupportedLocale;
+function applyLanguage(language: SupportedLocale): void {
+  i18n.global.locale.value = language;
   localStorage.setItem(LOCALE_KEY, language);
   document.documentElement.setAttribute('lang', language);
 }
 
+/** Saves a change to the account's preferences. */
+export function savePreferences(
+  change: UpdatePreferencesDto,
+): Promise<PreferencesDto> {
+  return unwrap(api.PATCH('/user/preferences', { body: change }));
+}
+
+/** The theme and language, applied at once and kept with the account. */
 export function usePreferences() {
   const { applyTheme, selectedThemeMode } = useTheme();
-  const userStore = useUserStore();
+  const { isLoggedIn } = useSession();
 
   const currentTheme = computed(() => selectedThemeMode.value);
   const currentLanguage = computed(() => i18n.global.locale.value);
 
-  function setPreference(key: PreferenceKey, value: string): void {
-    if (key === 'theme') {
-      applyTheme(value as ThemeMode);
-    } else {
-      applyLanguage(value);
-    }
-
-    if (!userStore.isLoggedIn) return;
-
-    // Applied locally first, so a failed sync must not block the UI.
-    void api.patch('/user/preferences', { [key]: value }).catch((err) => {
-      console.error(`Failed to sync preference ${key} to backend`, err);
-    });
+  function persist(change: UpdatePreferencesDto): void {
+    if (!isLoggedIn.value) return;
+    // Applied locally first; a failed save only costs the next device.
+    savePreferences(change).catch(() => undefined);
   }
 
-  function syncFromBackend(preferences: UserPreferences): boolean {
-    if (!preferences) return false;
+  function setTheme(theme: ThemeMode): void {
+    applyTheme(theme);
+    persist({ theme });
+  }
 
-    let hasChanges = false;
+  function setLanguage(language: SupportedLocale): void {
+    applyLanguage(language);
+    persist({ language });
+  }
 
-    if (preferences.theme && preferences.theme !== currentTheme.value) {
-      applyTheme(preferences.theme);
-      hasChanges = true;
+  /** Applies what the account saved, e.g. on another device. */
+  function syncFromBackend({ theme, language }: PreferencesDto): void {
+    if (theme && theme !== currentTheme.value) applyTheme(theme);
+    if (language && language !== currentLanguage.value) {
+      applyLanguage(language);
     }
-
-    if (
-      preferences.language &&
-      preferences.language !== currentLanguage.value
-    ) {
-      applyLanguage(preferences.language);
-      hasChanges = true;
-    }
-
-    return hasChanges;
   }
 
   return {
     currentTheme,
     currentLanguage,
-    setPreference,
+    setTheme,
+    setLanguage,
     syncFromBackend,
   };
 }

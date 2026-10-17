@@ -2,18 +2,20 @@ use super::dto::{AccessStatusDto, UpdateAccessControlsDto};
 use crate::{
     common::{client::ClientInfo, role::Role},
     error::{AppError, AppResult},
+    realtime::event::{Notice, PlatformTopic, publish},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
 use serde::Serialize;
 use serde_json::json;
 use sqlx::PgPool;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// The switches as stored and as superadmins manage them. Shutdown closes
 /// sign-ups without touching `registration_paused`, so ending it restores
 /// what sign-ups were set to.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AccessControls {
     pub registration_paused: bool,
@@ -140,6 +142,7 @@ impl AccessControlService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::platform(PlatformTopic::Access)]).await?;
         tx.commit().await?;
 
         Ok(controls)

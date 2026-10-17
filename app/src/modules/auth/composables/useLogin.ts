@@ -1,13 +1,9 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { useMfa } from './useMfa';
+import api, { unwrap } from '@/api/client';
 import type { SignUpCredentials } from './useConfirmSignUp';
 import { apiErrorCode } from '@/api/errors';
-import {
-  AuthErrorCode,
-  authErrorMessage,
-} from '@/modules/auth/utils/authErrors';
+import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 
 /** Subset of `BaseInput`'s exposed API that these forms rely on. */
 interface FocusableInput {
@@ -19,7 +15,6 @@ export function useLogin(
   onMfaRequired: () => void | Promise<void>,
 ) {
   const { t } = useI18n();
-  const { resetMfaState } = useMfa();
 
   const email = ref('');
   const password = ref('');
@@ -78,21 +73,19 @@ export function useLogin(
 
     submitting.value = true;
     try {
-      const { data } = await api.post('/auth/login', {
-        email: email.value,
-        password: password.value,
-      });
+      const { requiresMfa } = await unwrap(
+        api.POST('/auth/login', {
+          body: { email: email.value, password: password.value },
+        }),
+      );
 
-      if (data.ok) {
-        if (data.requiresMfa) {
-          resetMfaState();
-          void onMfaRequired();
-        } else {
-          void onLoggedIn();
-        }
+      if (requiresMfa) {
+        void onMfaRequired();
+      } else {
+        void onLoggedIn();
       }
     } catch (e: unknown) {
-      if (apiErrorCode(e) === AuthErrorCode.EmailNotVerified) {
+      if (apiErrorCode(e) === 'EMAIL_NOT_VERIFIED') {
         unconfirmedSignUp.value = {
           email: email.value.trim(),
           password: password.value,

@@ -24,7 +24,7 @@ export function useImpliedCourse(item: MaybeRefOrGetter<CourseOfSubject>) {
       return true;
 
     return (
-      subjectStore.subjects.find((s) => s.id === subjectId)?.courses?.length ===
+      subjectStore.subjects.find((s) => s.id === subjectId)?.courses.length ===
       1
     );
   });

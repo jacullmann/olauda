@@ -1,14 +1,11 @@
 use super::handlers::*;
 use crate::state::AppState;
-use axum::{
-    Router,
-    routing::{get, patch, put},
-};
+use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/todos", get(get_todos).post(create_todo))
-        .route("/todos/{id}", put(update_todo).delete(delete_todo))
-        .route("/todos/{id}/toggle", patch(toggle_todo))
-        .route("/todos/{id}/reorder", patch(reorder_todo))
+pub fn router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(get_todos, create_todo))
+        .routes(routes!(update_todo, delete_todo))
+        .routes(routes!(toggle_todo))
+        .routes(routes!(reorder_todo))
 }

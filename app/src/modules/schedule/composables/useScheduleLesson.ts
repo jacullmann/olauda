@@ -4,26 +4,12 @@ import {
   formatMinuteRange,
   lessonMinutes,
 } from '@/modules/schedule/utils/slotTimes';
+import { isoDate, mondayOf } from '@/modules/schedule/utils/weekday';
 import {
-  SCHOOL_DAYS,
-  daysSinceMonday,
-  isoDate,
-  mondayOf,
-  parseIsoDate,
-  weeksBetween,
-} from '@/modules/schedule/utils/weekday';
+  pageOf,
+  schoolDayOfDate,
+} from '@/modules/schedule/utils/schedulePages';
 import { useSchedule } from './useSchedule';
-
-/**
- * The school day a YYYY-MM-DD date names, its week counted from this one as
- * the schedule counts weeks; null for a weekend or no date at all.
- */
-function schoolDayOfDate(date: string): { week: number; day: number } | null {
-  const parsed = parseIsoDate(date);
-  const day = SCHOOL_DAYS[daysSinceMonday(parsed)];
-  if (isoDate(parsed) !== date || day === undefined) return null;
-  return { week: weeksBetween(mondayOf(new Date()), mondayOf(parsed)), day };
-}
 
 /**
  * One lesson as the schedule shows it in the week of a date, with that week's
@@ -34,7 +20,9 @@ export function useScheduleLesson(
   date: MaybeRefOrGetter<string>,
   lessonId: MaybeRefOrGetter<string>,
 ) {
-  const schoolDay = computed(() => schoolDayOfDate(toValue(date)));
+  // Weeks count from this one, as the schedule counts them.
+  const firstMonday = mondayOf(new Date());
+  const schoolDay = computed(() => schoolDayOfDate(firstMonday, toValue(date)));
   const week = computed(() => schoolDay.value?.week ?? 0);
 
   const {
@@ -47,12 +35,11 @@ export function useScheduleLesson(
     substitutionsOf,
     substitutionsLoadedFor,
     substitutionsFailedFor,
-    loadSubstitutions,
     dateOfPage,
     weekKeyOf,
     formatDayHeading,
     getDisplayName,
-    loadSchedule,
+    retrySchedule,
     retrySubstitutions,
   } = useSchedule(week);
 
@@ -88,8 +75,9 @@ export function useScheduleLesson(
 
   const lessonDate = computed(() => {
     if (!lesson.value) return null;
-    const page = week.value * days.length + days.indexOf(lesson.value.day);
-    return isoDate(dateOfPage(page));
+    return isoDate(
+      dateOfPage(pageOf(week.value, days.indexOf(lesson.value.day))),
+    );
   });
 
   const dayLessons = computed(() =>
@@ -135,15 +123,12 @@ export function useScheduleLesson(
    */
   const changesLoaded = computed(() => substitutionsLoadedFor(week.value));
 
-  const reloadChanges = () =>
-    loadSubstitutions(week.value, week.value, { refresh: true });
-
   return {
     week,
     weekStart: computed(() => weekKeyOf(week.value)),
     loading,
     loadError: lessonsLoadError,
-    loadSchedule,
+    retrySchedule,
     retrySubstitutions,
     getDisplayName,
     changesFailed: computed(() => substitutionsFailedFor(week.value)),
@@ -156,6 +141,5 @@ export function useScheduleLesson(
     scheduledDayHeading,
     existingChange,
     changesLoaded,
-    reloadChanges,
   };
 }

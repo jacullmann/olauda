@@ -458,12 +458,8 @@ router.beforeEach(async (to, from) => {
   }
 
   const userStore = useUserStore();
-  if (isLoggedIn.value && !to.meta.access && !userStore.initialized) {
-    try {
-      await userStore.fetchUser();
-    } catch {
-      // Navigation must not be blocked by a failed profile fetch.
-    }
+  if (isLoggedIn.value && !to.meta.access && !userStore.user) {
+    await userStore.fetchUser();
   }
 
   // After the profile fetch, so a title that depends on the user sees it.
@@ -472,7 +468,6 @@ router.beforeEach(async (to, from) => {
   document.title = titleKey ? `${i18n.global.t(titleKey)} | Olauda` : 'Olauda';
 
   if (to.meta.requiresSuperAdmin) {
-    if (!userStore.initialized) await userStore.fetchUser();
     if (!userStore.isSuperadmin) {
       finish();
       return { name: 'groups', replace: true };

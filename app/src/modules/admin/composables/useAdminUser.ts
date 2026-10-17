@@ -1,55 +1,87 @@
-import { ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
+import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 import { useI18n } from 'vue-i18n';
-import axios from 'axios';
-import api from '@/api/client';
-import { apiErrorStatus } from '@/api/errors';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage, apiErrorStatus } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
-import type {
-  MemberRole,
-  AdminMembership,
-  AdminUser,
-} from '@/modules/admin/types';
+import type { MemberRole, AdminMembership } from '@/modules/admin/types';
+import {
+  adminKeys,
+  adminUserMembershipsQuery,
+  adminUserQuery,
+} from '@/modules/admin/utils/adminQueries';
 
 const NOT_FOUND = 404;
 
 export type UserDetailsState = 'loading' | 'ready' | 'not-found' | 'failed';
 
-/** An account with its groups, as its admin page shows it. */
+/**
+ * An account with its groups, as its admin page shows it. Another account's
+ * details never show, not even dimmed while loading, as each account has its
+ * own queries.
+ */
 export function useAdminUser(userId: MaybeRefOrGetter<string>) {
   const toast = useToast();
   const confirmModal = useConfirmModal();
+  const queryClient = useQueryClient();
   const { t } = useI18n();
 
-  const user = ref<AdminUser | null>(null);
-  const memberships = ref<AdminMembership[]>([]);
-  const state = ref<UserDetailsState>('loading');
-  const changingGroupId = ref<string | null>(null);
+  const userQuery = useQuery(computed(() => adminUserQuery(toValue(userId))));
+  const membershipsQuery = useQuery(
+    computed(() => adminUserMembershipsQuery(toValue(userId))),
+  );
 
-  let controller: AbortController | null = null;
+  const user = computed(() => userQuery.data.value ?? null);
+  const memberships = computed(() => membershipsQuery.data.value ?? []);
 
-  async function load() {
-    controller?.abort();
-    const current = new AbortController();
-    controller = current;
-    const id = toValue(userId);
-    const config = { signal: current.signal };
-    state.value = 'loading';
-
-    try {
-      const [userRes, groupsRes] = await Promise.all([
-        api.get<AdminUser>(`/admin/users/${id}`, config),
-        api.get<AdminMembership[]>(`/admin/users/${id}/groups`, config),
-      ]);
-      user.value = userRes.data;
-      memberships.value = groupsRes.data;
-      state.value = 'ready';
-    } catch (error) {
-      if (axios.isCancel(error)) return;
-      state.value =
-        apiErrorStatus(error) === NOT_FOUND ? 'not-found' : 'failed';
+  const state = computed<UserDetailsState>(() => {
+    if (user.value && membershipsQuery.data.value) return 'ready';
+    if (userQuery.isFetching.value || membershipsQuery.isFetching.value) {
+      return 'loading';
     }
+    const error = userQuery.error.value ?? membershipsQuery.error.value;
+    if (!error) return 'loading';
+    return apiErrorStatus(error) === NOT_FOUND ? 'not-found' : 'failed';
+  });
+
+  function reload() {
+    void userQuery.refetch();
+    void membershipsQuery.refetch();
   }
+
+  const roleChange = useMutation({
+    mutationFn: ({
+      userId: id,
+      membership,
+      role,
+    }: {
+      userId: string;
+      membership: AdminMembership;
+      role: MemberRole;
+    }) =>
+      unwrap(
+        api.PATCH('/admin/users/{id}/groups/{group_id}/role', {
+          params: { path: { id, group_id: membership.groupId } },
+          body: { role },
+        }),
+      ),
+    // Transferring ownership also changes the previous owner, and the
+    // assignable roles follow the new role, so the server stays the source.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.userDetails() }),
+        queryClient.invalidateQueries({ queryKey: adminKeys.groups() }),
+      ]),
+    onError: (error) =>
+      toast.error(apiErrorMessage(error, t('admin.users.errors.change_role'))),
+  });
+
+  const changingGroupId = computed(() =>
+    roleChange.isPending.value
+      ? (roleChange.variables.value?.membership.groupId ?? null)
+      : null,
+  );
 
   async function changeRole(membership: AdminMembership, role: MemberRole) {
     const id = toValue(userId);
@@ -68,40 +100,14 @@ export function useAdminUser(userId: MaybeRefOrGetter<string>) {
       if (!isConfirmed) return;
     }
 
-    changingGroupId.value = membership.groupId;
-    try {
-      await api.patch(`/admin/users/${id}/groups/${membership.groupId}/role`, {
-        role,
-      });
-      // Transferring ownership also changes the previous owner, and the
-      // assignable roles follow the new role, so the server stays the source.
-      const { data } = await api.get<AdminMembership[]>(
-        `/admin/users/${id}/groups`,
-      );
-      if (toValue(userId) === id) memberships.value = data;
-    } catch {
-      toast.error(t('admin.users.errors.change_role'));
-    } finally {
-      changingGroupId.value = null;
-    }
+    roleChange.mutate({ userId: id, membership, role });
   }
-
-  // Another account's details must never show, not even dimmed while loading.
-  watch(
-    () => toValue(userId),
-    () => {
-      user.value = null;
-      memberships.value = [];
-      void load();
-    },
-    { immediate: true },
-  );
 
   return {
     user,
     memberships,
     state,
-    reload: load,
+    reload,
     changingGroupId,
     changeRole,
   };

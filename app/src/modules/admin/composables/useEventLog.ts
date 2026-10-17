@@ -1,14 +1,17 @@
-import { computed, ref, shallowRef, watch } from 'vue';
-import axios from 'axios';
-import api from '@/api/client';
+import { computed } from 'vue';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/vue-query';
 import { isUuid } from '@/common/utils/uuid';
 import type {
-  EventLogEntry,
-  EventLogPage,
+  EventLogQuery,
   EventOutcome,
   EventSource,
   SortOrder,
 } from '@/modules/admin/types';
+import { eventLogQuery } from '@/modules/admin/utils/adminQueries';
 import {
   EVENT_SOURCES,
   isDateKey,
@@ -67,6 +70,7 @@ export type EventLogState = 'loading' | 'ready' | 'failed';
  * groups link here with the filter for them set.
  */
 export function useEventLog() {
+  const queryClient = useQueryClient();
   const { params, isDefault, setParams } = useRouteQueryState<EventLogFilters>({
     defaults: DEFAULTS,
     rules: {
@@ -97,81 +101,79 @@ export function useEventLog() {
     return setParams({ ...DEFAULTS, order: params.value.order });
   }
 
-  // Appended to, never edited in place.
-  const entries = shallowRef<EventLogEntry[]>([]);
-  const total = ref<number | null>(null);
-  const nextCursor = ref<string | null>(null);
-  const state = ref<EventLogState>('loading');
-  const loadingMore = ref(false);
-  const loadMoreFailed = ref(false);
-
-  function request(cursor: string | null, signal: AbortSignal) {
+  const apiQuery = computed<EventLogQuery>(() => {
     const p = params.value;
     const set = (value: string) => value || undefined;
-    return api.get<EventLogPage>('/admin/events', {
-      signal,
-      params: {
-        userId: set(p.userId),
-        search: set(p.search),
-        source: set(p.source),
-        category: set(p.category),
-        type: set(p.type),
-        outcome: set(p.outcome),
-        ip: set(p.ip),
-        groupId: set(p.groupId),
-        from: p.from ? localDayStart(p.from) : undefined,
-        to: p.to ? localDayStart(p.to, 1) : undefined,
-        order: p.order,
-        cursor: cursor ?? undefined,
-      },
-    });
-  }
+    return {
+      userId: set(p.userId),
+      search: set(p.search),
+      source: p.source || undefined,
+      category: set(p.category),
+      type: set(p.type),
+      outcome: p.outcome || undefined,
+      ip: set(p.ip),
+      groupId: set(p.groupId),
+      from: p.from ? localDayStart(p.from) : undefined,
+      to: p.to ? localDayStart(p.to, 1) : undefined,
+      order: p.order,
+    };
+  });
 
-  let controller: AbortController | null = null;
+  // Changed filters keep the entries shown so far, dimmed, until theirs arrive.
+  const query = useInfiniteQuery(
+    computed(() => ({
+      ...eventLogQuery(apiQuery.value),
+      placeholderData: keepPreviousData,
+      // Any refetch of an infinite query reloads every page scrolled through,
+      // one after the other, and that includes invalidations, which ignore
+      // `staleTime`. So a filter's log loads by itself only until it has
+      // data; after that only `reload` and scrolling on fetch, as a disabled
+      // query skips focus, reconnect, mount and invalidation refetches.
+      enabled: () => (cached: { state: { data: unknown } }) =>
+        cached.state.data === undefined,
+    })),
+  );
 
-  function restart() {
-    controller?.abort();
-    controller = new AbortController();
-    return controller;
-  }
+  const entries = computed(
+    () => query.data.value?.pages.flatMap((page) => page.items) ?? [],
+  );
+  const total = computed(() => query.data.value?.pages[0]?.total ?? null);
 
-  async function load() {
-    const current = restart();
-    state.value = 'loading';
-    loadingMore.value = false;
-    loadMoreFailed.value = false;
-
-    try {
-      const { data } = await request(null, current.signal);
-      entries.value = data.items;
-      total.value = data.total;
-      nextCursor.value = data.nextCursor;
-      state.value = 'ready';
-    } catch (error) {
-      if (!axios.isCancel(error)) state.value = 'failed';
+  const state = computed<EventLogState>(() => {
+    if (query.isError.value && !query.isFetchNextPageError.value) {
+      return query.isFetching.value ? 'loading' : 'failed';
     }
-  }
-
-  async function loadMore() {
-    const cursor = nextCursor.value;
-    if (!cursor || loadingMore.value || state.value !== 'ready') return;
-
-    const current = restart();
-    loadingMore.value = true;
-    loadMoreFailed.value = false;
-
-    try {
-      const { data } = await request(cursor, current.signal);
-      entries.value = [...entries.value, ...data.items];
-      nextCursor.value = data.nextCursor;
-    } catch (error) {
-      if (!axios.isCancel(error)) loadMoreFailed.value = true;
-    } finally {
-      if (controller === current) loadingMore.value = false;
+    if (
+      query.isPending.value ||
+      query.isPlaceholderData.value ||
+      (query.isFetching.value && !query.isFetchingNextPage.value)
+    ) {
+      return 'loading';
     }
+    return 'ready';
+  });
+
+  function loadMore() {
+    if (!query.hasNextPage.value || query.isFetching.value) return;
+    if (state.value !== 'ready') return;
+    void query.fetchNextPage();
   }
 
-  watch(params, load, { immediate: true });
+  /** Starts over from the first page, as a refetch would load every page again. */
+  function reload() {
+    queryClient.setQueryData(
+      eventLogQuery(apiQuery.value).queryKey,
+      (data) =>
+        data && {
+          pages: data.pages.slice(0, 1),
+          pageParams: data.pageParams.slice(0, 1),
+        },
+    );
+    void query.refetch();
+  }
+
+  // A log kept from an earlier visit is shown while its newest page reloads.
+  if (query.data.value) reload();
 
   return {
     params,
@@ -181,11 +183,11 @@ export function useEventLog() {
     clearFilters,
     entries,
     total,
-    hasMore: computed(() => nextCursor.value !== null),
+    hasMore: query.hasNextPage,
     state,
-    loadingMore,
-    loadMoreFailed,
+    loadingMore: query.isFetchingNextPage,
+    loadMoreFailed: query.isFetchNextPageError,
     loadMore,
-    reload: load,
+    reload,
   };
 }

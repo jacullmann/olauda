@@ -1,26 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import { WebAuthnError } from '@simplewebauthn/browser';
+import { ApiError } from '@/api/errors';
 import i18n from '@/i18n';
-import {
-  PasskeyErrorCode,
-  isPasskeyDismissed,
-  passkeyErrorMessage,
-} from './passkeyErrors';
+import { isPasskeyDismissed, passkeyErrorMessage } from './passkeyErrors';
 
 const FALLBACK = 'auth.passkeys.errors.sign_in';
 const { t } = i18n.global;
 
-function apiError(status: number, data: unknown): AxiosError {
-  const response = {
-    status,
-    data,
-    headers: {},
-    config: { headers: new AxiosHeaders() },
-    statusText: '',
-  } as AxiosResponse;
-  return new AxiosError('failed', undefined, undefined, undefined, response);
-}
+const apiError = (status: number, body: unknown) => new ApiError(status, body);
 
 function browserError(
   name: string,
@@ -55,7 +42,7 @@ describe('passkeyErrorMessage', () => {
   it('explains each server refusal by its code', () => {
     const err = apiError(401, {
       error: 'This passkey is not registered.',
-      code: PasskeyErrorCode.Unknown,
+      code: 'PASSKEY_UNKNOWN',
     });
     expect(passkeyErrorMessage(err, FALLBACK)).toBe(
       t('auth.passkeys.errors.not_registered'),

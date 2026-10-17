@@ -1,52 +1,29 @@
 import { ref, computed } from 'vue';
 import type { RouteLocationNamedRaw } from 'vue-router';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorMessage } from '@/api/errors';
-import { groupPath } from '@/api/groupPath';
+import { queryClient } from '@/api/queryClient';
 import i18n from '@/i18n';
-import { useSession } from '@/modules/auth/composables/useSession';
-import type { ScheduleConfig } from '@/modules/schedule/types';
 import {
-  toCourseSetup,
-  toGroupType,
-  type CourseSetup,
-  type GroupType,
-  type PermissionKey,
-  type PermissionMatrix,
-} from '@/modules/groups/types';
-
-export type UserGroup = {
-  id: string;
-  name: string;
-  role: string;
-  ownerId: string;
-  scheduleConfig?: ScheduleConfig;
-  avatarUrl?: string | null;
-  permissions: PermissionMatrix;
-  groupType: GroupType;
-  daltonEnabled: boolean;
-  effectivePermissions: PermissionKey[];
-  courseSetup: CourseSetup;
-  /** A superadmin banned the group: members cannot open it until it is lifted. */
-  banned: boolean;
-  /** A moderator muted the user: they can read the group but change nothing. */
-  muted: boolean;
-};
-
-/** A group as the API sends it, before unknown values are normalized. */
-export type RawGroup = Omit<
+  sessionStatus,
+  useSession,
+} from '@/modules/auth/composables/useSession';
+import { sessionKey } from '@/modules/auth/utils/sessionQueries';
+import { groupSummaryQuery } from '@/modules/groups/utils/groupQueries';
+import type {
+  CourseSetup,
+  GroupType,
+  PermissionKey,
   UserGroup,
-  'groupType' | 'effectivePermissions' | 'courseSetup' | 'banned' | 'muted'
-> & {
-  groupType?: string;
-  effectivePermissions?: string[];
-  courseSetup?: string;
-  banned?: boolean;
-  muted?: boolean;
-};
+} from '@/modules/groups/types';
+import type { GroupStatusDto } from '@/api/schema';
 
-const userGroups = ref<UserGroup[]>([]);
-const landingGroupId = ref<string | null>(null);
+export type { UserGroup };
+
+const userGroups = computed(() => sessionStatus.value?.groups ?? []);
+const landingGroupId = computed(
+  () => sessionStatus.value?.landingGroupId ?? null,
+);
 
 /**
  * The group the current route shows. It is per tab and derived from the URL
@@ -60,53 +37,8 @@ const recentGroupId = ref<string | null>(null);
 /** A group a superadmin opened without being a member of it. */
 const foreignGroup = ref<UserGroup | null>(null);
 
-const PERMISSION_KEYS: readonly string[] = [
-  'edit_group_profile',
-  'edit_group_configuration',
-  'edit_subjects_courses',
-  'edit_schedule',
-  'create_items',
-  'upload_images',
-  'manage_notes',
-  'manage_schedule_changes',
-  'manage_announcements',
-  'moderate_members',
-  'edit_other_content',
-  'delete_other_content',
-  'invite_members',
-] satisfies PermissionKey[];
-
-function isPermissionKey(s: string): s is PermissionKey {
-  return PERMISSION_KEYS.includes(s);
-}
-
-function toUserGroup(raw: RawGroup): UserGroup {
-  return {
-    ...raw,
-    groupType: toGroupType(raw.groupType),
-    daltonEnabled: raw.daltonEnabled === true,
-    effectivePermissions: (raw.effectivePermissions ?? []).filter(
-      isPermissionKey,
-    ),
-    courseSetup: toCourseSetup(raw.courseSetup),
-    banned: raw.banned === true,
-    muted: raw.muted === true,
-  };
-}
-
-/** Takes the user's groups from the session status. */
-export function applyGroupStatus(
-  groups: RawGroup[],
-  landing: string | null,
-): void {
-  userGroups.value = groups.map(toUserGroup);
-  landingGroupId.value = landing;
-}
-
-/** Forgets every group once the session ends. */
+/** Forgets the groups this tab showed once the session ends. */
 export function clearGroups(): void {
-  userGroups.value = [];
-  landingGroupId.value = null;
   activeGroupId.value = null;
   recentGroupId.value = null;
   foreignGroup.value = null;
@@ -120,18 +52,31 @@ function findGroup(groupId: string | null): UserGroup | null {
   );
 }
 
+/** Changes the cached copy of one of the user's groups. */
+function updateGroup(groupId: string, change: Partial<UserGroup>): void {
+  queryClient.setQueryData<GroupStatusDto>(
+    sessionKey,
+    (status) =>
+      status && {
+        ...status,
+        groups: status.groups.map((group) =>
+          group.id === groupId ? { ...group, ...change } : group,
+        ),
+      },
+  );
+  if (foreignGroup.value?.id === groupId) {
+    foreignGroup.value = { ...foreignGroup.value, ...change };
+  }
+}
+
 /** Mirrors a ban the server reported on a request, e.g. one placed mid-session. */
 export function markGroupBanned(groupId: string): void {
-  const group = findGroup(groupId);
-  if (group) group.banned = true;
+  updateGroup(groupId, { banned: true });
 }
 
 /** Mirrors a mute the server reported on a request, which takes every permission. */
 export function markGroupMuted(groupId: string): void {
-  const group = findGroup(groupId);
-  if (!group) return;
-  group.muted = true;
-  group.effectivePermissions = [];
+  updateGroup(groupId, { muted: true, effectivePermissions: [] });
 }
 
 const activeGroup = computed(() => findGroup(activeGroupId.value));
@@ -191,8 +136,9 @@ export function useGroups() {
   async function canShowGroup(groupId: string): Promise<boolean> {
     if (findGroup(groupId)) return true;
     try {
-      const { data } = await api.get<RawGroup>(groupPath(groupId));
-      foreignGroup.value = toUserGroup(data);
+      foreignGroup.value = await queryClient.fetchQuery(
+        groupSummaryQuery(groupId),
+      );
       return true;
     } catch {
       return false;
@@ -201,8 +147,7 @@ export function useGroups() {
 
   /** Mirrors a course setup the server just saved or reset. */
   function setCourseSetup(groupId: string, courseSetup: CourseSetup): void {
-    const group = findGroup(groupId);
-    if (group) group.courseSetup = courseSetup;
+    updateGroup(groupId, { courseSetup });
   }
 
   /** Called once a navigation is confirmed, with the group its URL names. */
@@ -212,7 +157,11 @@ export function useGroups() {
     if (!groupId) return;
 
     recentGroupId.value = groupId;
-    api.post(groupPath(groupId, '/visit')).catch(() => {
+    unwrap(
+      api.POST('/groups/{group_id}/visit', {
+        params: { path: { group_id: groupId } },
+      }),
+    ).catch(() => {
       // Only the next sign-in's landing page depends on it.
     });
   }
@@ -225,12 +174,13 @@ export function useGroups() {
     daltonEnabled = false,
   ): Promise<{ ok: true; groupId: string } | { ok: false; error: string }> {
     try {
-      const { data } = await api.post<{ ok: boolean; groupId: string }>(
-        '/groups',
-        { groupName: name, avatarId, groupType, daltonEnabled },
+      const { id } = await unwrap(
+        api.POST('/groups', {
+          body: { groupName: name, avatarId, groupType, daltonEnabled },
+        }),
       );
       await useSession().checkAuthStatus();
-      return { ok: true, groupId: data.groupId };
+      return { ok: true, groupId: id };
     } catch (error: unknown) {
       return {
         ok: false,

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
 };
 
 /// A running announcement a user has yet to read.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemAnnouncementDto {
     pub id: Uuid,
@@ -18,7 +19,7 @@ pub struct SystemAnnouncementDto {
     pub published_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum SystemAnnouncementStatus {
     Scheduled,
@@ -37,7 +38,7 @@ impl SystemAnnouncementStatus {
 
 /// An announcement as superadmins manage it. Ended ones are never listed:
 /// they are gone for everyone, and the cleanup deletes them.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminSystemAnnouncementDto {
     pub id: Uuid,
@@ -51,7 +52,7 @@ pub struct AdminSystemAnnouncementDto {
 }
 
 /// The body for both posting and rescheduling an announcement.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveSystemAnnouncementDto {
     pub content: String,

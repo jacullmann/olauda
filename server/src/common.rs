@@ -1,5 +1,6 @@
 pub mod client;
 pub mod cloudinary;
+pub mod created;
 pub mod csrf;
 pub mod email;
 pub mod encryption;
@@ -17,7 +18,6 @@ pub mod password;
 pub mod patch;
 pub mod path_params;
 pub mod permission;
-pub mod personalization;
 pub mod rate_limit;
 pub mod role;
 pub mod school_week;

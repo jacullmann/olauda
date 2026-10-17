@@ -19,6 +19,14 @@ use axum::{
     http::StatusCode,
 };
 
+/// The group's announcements, newest first, each with whether the member
+/// read it.
+#[utoipa::path(
+    get,
+    path = "/announcements",
+    tag = "announcements",
+    responses((status = 200, body = Vec<AnnouncementDto>)),
+)]
 pub async fn list_announcements(
     State(s): State<AppState>,
     tc: TenantContext,
@@ -30,6 +38,13 @@ pub async fn list_announcements(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/announcements/read",
+    tag = "announcements",
+    request_body = MarkAnnouncementsReadDto,
+    responses((status = 204)),
+)]
 pub async fn mark_announcements_read(
     State(s): State<AppState>,
     tc: TenantContext,
@@ -42,6 +57,13 @@ pub async fn mark_announcements_read(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(
+    post,
+    path = "/admin/announcements",
+    tag = "announcements",
+    request_body = CreateAnnouncementDto,
+    responses((status = 201, body = AnnouncementDto)),
+)]
 pub async fn create_announcement(
     State(s): State<AppState>,
     tc: TenantContext,
@@ -57,6 +79,13 @@ pub async fn create_announcement(
     Ok((StatusCode::CREATED, Json(announcement)))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/admin/announcements/{id}",
+    tag = "announcements",
+    params(IdPath),
+    responses((status = 204)),
+)]
 pub async fn delete_announcement(
     State(s): State<AppState>,
     tc: TenantContext,

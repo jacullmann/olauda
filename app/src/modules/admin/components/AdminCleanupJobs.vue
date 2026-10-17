@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, useId } from 'vue';
+import { computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCleanupJobs } from '@/modules/admin/composables/useCleanupJobs';
 
@@ -27,8 +27,6 @@ const rows = computed(() =>
 const overdueJobCount = computed(
   () => rows.value.filter((row) => row.overdueCount > 0).length,
 );
-
-onMounted(loadJobs);
 </script>
 
 <template>

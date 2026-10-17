@@ -5,7 +5,7 @@ import { buildScheduleLayout, freeSlotRuns, lessonRowsOf } from './layout';
 const group = (slot: number, duration = 1): LessonGroup => ({
   key: `${slot}`,
   day: 1,
-  lessons: [{ id: `${slot}`, day: 1, slot, duration, room: null }],
+  lessons: [{ id: `${slot}`, day: 1, slot, duration, isDalton: false }],
 });
 
 describe('free slot runs', () => {
@@ -49,7 +49,7 @@ describe('week layout', () => {
     breaksBeforeSlot: () => Infinity,
   });
   const lesson = (day: number, slot: number) => [
-    { id: `${day}-${slot}`, day, slot, duration: 1, room: null },
+    { id: `${day}-${slot}`, day, slot, duration: 1, isDalton: false },
   ];
 
   it('gives a break any day has a row, shown on the days that have it', () => {

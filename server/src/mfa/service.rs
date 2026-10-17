@@ -1,10 +1,12 @@
 use super::{
+    dto::{MfaSetupDto, MfaStatusDto, RecoveryCodesDto},
     recovery_codes::{self, RecoveryCodeHasher},
     totp::Totp,
 };
 use crate::{
     auth::{
         security_notice,
+        service::security_changed,
         token::{MFA_CHANGE, TokenService},
     },
     common::{
@@ -14,10 +16,10 @@ use crate::{
         jwt::now_secs,
     },
     error::{AppError, AppResult, AuthFailure},
+    realtime::event::publish,
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
-use serde_json::{Value, json};
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
@@ -40,7 +42,7 @@ impl MfaService {
         }
     }
 
-    pub async fn get_status(&self, user_id: Uuid) -> AppResult<Value> {
+    pub async fn get_status(&self, user_id: Uuid) -> AppResult<MfaStatusDto> {
         let user = sqlx::query!(r#"SELECT mfa_enabled FROM users WHERE id = $1"#, user_id)
             .fetch_optional(&self.db)
             .await?
@@ -52,14 +54,13 @@ impl MfaService {
             None
         };
 
-        Ok(json!({
-            "ok": true,
-            "mfaEnabled": user.mfa_enabled,
-            "recoveryCodesLeft": recovery_codes_left,
-        }))
+        Ok(MfaStatusDto {
+            mfa_enabled: user.mfa_enabled,
+            recovery_codes_left,
+        })
     }
 
-    pub async fn setup(&self, user_id: Uuid) -> AppResult<Value> {
+    pub async fn setup(&self, user_id: Uuid) -> AppResult<MfaSetupDto> {
         let user = sqlx::query!(
             r#"SELECT email, mfa_enabled FROM users WHERE id = $1"#,
             user_id
@@ -106,9 +107,11 @@ impl MfaService {
             .execute(&self.db)
             .await?;
 
-        Ok(
-            json!({ "ok": true, "otpauthUrl": otpauth_url, "secret": secret_b32, "expiresAt": expires_at }),
-        )
+        Ok(MfaSetupDto {
+            otpauth_url,
+            secret: secret_b32,
+            expires_at,
+        })
     }
 
     /// Turns the factor on and hands out the recovery codes, which are shown
@@ -120,7 +123,7 @@ impl MfaService {
         session_id: Uuid,
         code: &str,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<RecoveryCodesDto> {
         let pending = sqlx::query!(
             r#"SELECT p.encrypted_secret, u.email
                FROM mfa_pending_secrets p
@@ -181,6 +184,9 @@ impl MfaService {
         self.tokens
             .revoke_all_for_user(user_id, MFA_CHANGE, Some(session_id))
             .await?;
+        // Only once the other sessions are revoked, so their open streams
+        // recheck them and end instead of seeing them still active.
+        publish(&self.db, [security_changed(user_id)]).await?;
         security_notice::notify(
             &self.db,
             &self.email,
@@ -188,7 +194,9 @@ impl MfaService {
             SecurityNotice::TwoFactorEnabled,
         );
 
-        Ok(json!({ "ok": true, "recoveryCodes": codes }))
+        Ok(RecoveryCodesDto {
+            recovery_codes: codes,
+        })
     }
 
     /// Replaces the recovery codes, e.g. once most are used up or the old ones
@@ -197,7 +205,7 @@ impl MfaService {
         &self,
         user_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<RecoveryCodesDto> {
         let mut tx = self.db.begin().await?;
 
         let enabled = sqlx::query_scalar!(
@@ -222,6 +230,7 @@ impl MfaService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
 
         security_notice::notify(
@@ -231,7 +240,9 @@ impl MfaService {
             SecurityNotice::RecoveryCodesRegenerated,
         );
 
-        Ok(json!({ "ok": true, "recoveryCodes": codes }))
+        Ok(RecoveryCodesDto {
+            recovery_codes: codes,
+        })
     }
 
     /// The caller has just confirmed who they are, which with the factor on
@@ -241,7 +252,7 @@ impl MfaService {
         user_id: Uuid,
         session_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         if !disable_mfa(&mut tx, user_id).await? {
@@ -260,6 +271,9 @@ impl MfaService {
         self.tokens
             .revoke_all_for_user(user_id, MFA_CHANGE, Some(session_id))
             .await?;
+        // Only once the other sessions are revoked, so their open streams
+        // recheck them and end instead of seeing them still active.
+        publish(&self.db, [security_changed(user_id)]).await?;
         security_notice::notify(
             &self.db,
             &self.email,
@@ -267,7 +281,7 @@ impl MfaService {
             SecurityNotice::TwoFactorDisabled,
         );
 
-        Ok(json!({ "ok": true, "message": "MFA deactivated successfully." }))
+        Ok(())
     }
 }
 

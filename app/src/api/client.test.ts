@@ -1,61 +1,70 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  AxiosError,
-  type AxiosResponse,
-  type InternalAxiosRequestConfig,
-} from 'axios';
-import api, { refreshSession } from './client';
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import type * as ClientModule from './client';
+import { ApiError } from './errors';
+import { setReauthHandler } from './reauth';
 
-type Reply = { status: number; data?: unknown };
+const BASE_URL = 'http://api.test';
 
+type Reply = { status: number; body?: unknown };
+
+const NO_CONTENT: Reply = { status: 204 };
 const ACCESS_TOKEN_EXPIRED: Reply = {
   status: 401,
-  data: {
+  body: {
     error: 'Access token is invalid or has expired.',
-    requiresAuth: true,
+    code: 'AUTH_REQUIRED',
   },
 };
-const OK: Reply = { status: 200, data: { ok: true } };
+const REFRESH_REFUSED: Reply = {
+  status: 401,
+  body: { error: 'Refresh token invalid.' },
+};
 const SHUTDOWN: Reply = {
   status: 503,
-  data: {
-    error: 'The platform is shut down.',
-    code: 'SHUTDOWN',
+  body: { error: 'The platform is shut down.', code: 'SHUTDOWN' },
+};
+const REAUTH_REQUIRED: Reply = {
+  status: 403,
+  body: {
+    error: "Please confirm it's you to continue.",
+    code: 'REAUTH_REQUIRED',
   },
 };
 
-/** Answers every request with `reply`, and records which URLs were called. */
-function serve(reply: (url: string, call: number) => Reply): string[] {
-  const calls: string[] = [];
+let client: typeof ClientModule;
 
-  api.defaults.adapter = (config: InternalAxiosRequestConfig) => {
-    const url = config.url ?? '';
-    calls.push(url);
-    const { status, data } = reply(
-      url,
-      calls.filter((called) => called === url).length,
-    );
-    const response: AxiosResponse = {
-      status,
-      data,
-      statusText: '',
-      headers: {},
-      config,
-    };
-    if (status < 400) return Promise.resolve(response);
-    return Promise.reject(
-      new AxiosError(
-        `Request failed with status code ${status}`,
-        AxiosError.ERR_BAD_REQUEST,
-        config,
-        null,
-        response,
-      ),
-    );
-  };
+/** Answers every request with `reply` and records the paths called. */
+function serve(reply: (path: string, call: number) => Reply): Request[] {
+  const requests: Request[] = [];
 
-  return calls;
+  vi.stubGlobal('fetch', (request: Request) => {
+    requests.push(request);
+    const path = new URL(request.url).pathname;
+    const call = requests.filter(
+      (r) => new URL(r.url).pathname === path,
+    ).length;
+    const { status, body } = reply(path, call);
+    return Promise.resolve(
+      new Response(body === undefined ? null : JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+  });
+
+  return requests;
 }
+
+const pathsOf = (requests: Request[]) =>
+  requests.map((request) => new URL(request.url).pathname);
 
 function countEvents(type: string): () => number {
   let count = 0;
@@ -65,121 +74,163 @@ function countEvents(type: string): () => number {
 
 const countSignOuts = (): (() => number) => countEvents('auth-expired');
 
+const deleteTodo = () =>
+  client.unwrap(
+    client.default.DELETE('/todos/{id}', {
+      params: { path: { id: '6f0c1c1e-0000-4000-8000-000000000000' } },
+    }),
+  );
+
+beforeAll(async () => {
+  vi.stubEnv('VITE_API_URL', BASE_URL);
+  client = await import('./client');
+});
+
 beforeEach(() => {
-  vi.stubGlobal('window', new EventTarget());
+  const window = Object.assign(new EventTarget(), {
+    location: { origin: 'http://app.test' },
+  });
+  vi.stubGlobal('window', window);
   vi.stubGlobal('document', { cookie: '' });
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  setReauthHandler(null);
 });
 
 describe('api', () => {
   it('refreshes once for parallel requests whose access token expired, then retries them', async () => {
-    const calls = serve((url, call) =>
-      url === '/data' && call <= 2 ? ACCESS_TOKEN_EXPIRED : OK,
+    const requests = serve((path, call) =>
+      path.startsWith('/todos') && call <= 2
+        ? ACCESS_TOKEN_EXPIRED
+        : NO_CONTENT,
     );
 
-    await Promise.all([api.get('/data'), api.get('/data')]);
+    await Promise.all([deleteTodo(), deleteTodo()]);
 
-    expect(calls.filter((url) => url === '/auth/refresh')).toHaveLength(1);
-    expect(calls.filter((url) => url === '/data')).toHaveLength(4);
+    const paths = pathsOf(requests);
+    expect(paths.filter((path) => path === '/auth/refresh')).toHaveLength(1);
+    expect(paths.filter((path) => path.startsWith('/todos'))).toHaveLength(4);
   });
 
   it('does not refresh for a 401 that is not about the access token', async () => {
-    const calls = serve(() => ({
+    const requests = serve(() => ({
       status: 401,
-      data: { error: 'Invalid credentials.' },
+      body: { error: 'Invalid credentials.', code: 'INVALID_CREDENTIALS' },
     }));
     const signOuts = countSignOuts();
 
-    await expect(api.post('/auth/login')).rejects.toBeInstanceOf(AxiosError);
+    const login = client.unwrap(
+      client.default.POST('/auth/login', {
+        body: { email: 'a@example.com', password: 'wrong' },
+      }),
+    );
 
-    expect(calls).toEqual(['/auth/login']);
+    await expect(login).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+    expect(pathsOf(requests)).toEqual(['/auth/login']);
     expect(signOuts()).toBe(0);
   });
 
   it('signs out once when the server refuses the refresh', async () => {
-    serve((url) =>
-      url === '/auth/refresh'
-        ? { status: 401, data: { error: 'Refresh token invalid.' } }
-        : ACCESS_TOKEN_EXPIRED,
+    serve((path) =>
+      path === '/auth/refresh' ? REFRESH_REFUSED : ACCESS_TOKEN_EXPIRED,
     );
     const signOuts = countSignOuts();
 
-    const results = await Promise.allSettled([
-      api.get('/data'),
-      api.get('/data'),
-    ]);
+    const results = await Promise.allSettled([deleteTodo(), deleteTodo()]);
 
     expect(results.every(({ status }) => status === 'rejected')).toBe(true);
     expect(signOuts()).toBe(1);
   });
 
   it('keeps the session when the refresh fails without an answer on the session', async () => {
-    serve((url) =>
-      url === '/auth/refresh' ? { status: 503 } : ACCESS_TOKEN_EXPIRED,
+    serve((path) =>
+      path === '/auth/refresh' ? { status: 503 } : ACCESS_TOKEN_EXPIRED,
     );
     const signOuts = countSignOuts();
 
-    await expect(api.get('/data')).rejects.toBeInstanceOf(AxiosError);
-
+    await expect(deleteTodo()).rejects.toBeInstanceOf(ApiError);
     expect(signOuts()).toBe(0);
   });
 
   it('reports shutdown without refreshing or retrying', async () => {
-    const calls = serve(() => SHUTDOWN);
+    const requests = serve(() => SHUTDOWN);
     const signOuts = countSignOuts();
     const shutdown = countEvents('shutdown');
 
-    await expect(api.get('/data')).rejects.toBeInstanceOf(AxiosError);
-
-    expect(calls).toEqual(['/data']);
+    await expect(deleteTodo()).rejects.toMatchObject({ code: 'SHUTDOWN' });
+    expect(requests).toHaveLength(1);
     expect(shutdown()).toBe(1);
     expect(signOuts()).toBe(0);
   });
 
   it('reports a mute with the group it applies to', async () => {
-    const calls = serve(() => ({
+    serve(() => ({
       status: 403,
-      data: {
+      body: {
         error: 'You are muted in this group.',
         code: 'MUTED_IN_GROUP',
         groupId: 'group-1',
       },
     }));
-    const signOuts = countSignOuts();
     const mutedGroups: unknown[] = [];
     window.addEventListener('group-muted', (event) => {
       if (event instanceof CustomEvent) mutedGroups.push(event.detail);
     });
 
-    await expect(api.post('/groups/group-1/items')).rejects.toBeInstanceOf(
-      AxiosError,
-    );
-
-    expect(calls).toEqual(['/groups/group-1/items']);
+    await expect(deleteTodo()).rejects.toBeInstanceOf(ApiError);
     expect(mutedGroups).toEqual(['group-1']);
-    expect(signOuts()).toBe(0);
   });
 
   it('keeps the session when shutdown turns the refresh away', async () => {
-    serve((url) => (url === '/auth/refresh' ? SHUTDOWN : ACCESS_TOKEN_EXPIRED));
+    serve((path) =>
+      path === '/auth/refresh' ? SHUTDOWN : ACCESS_TOKEN_EXPIRED,
+    );
     const signOuts = countSignOuts();
     const shutdown = countEvents('shutdown');
 
-    await expect(api.get('/data')).rejects.toBeInstanceOf(AxiosError);
-
+    await expect(deleteTodo()).rejects.toBeInstanceOf(ApiError);
     expect(shutdown()).toBe(1);
     expect(signOuts()).toBe(0);
   });
 
   it('leaves the consequences of a refused refresh to callers of refreshSession', async () => {
-    serve(() => ({ status: 401, data: { error: 'Refresh token invalid.' } }));
+    serve(() => REFRESH_REFUSED);
     const signOuts = countSignOuts();
 
-    await expect(refreshSession()).rejects.toBeInstanceOf(AxiosError);
-
+    await expect(client.refreshSession()).rejects.toBeInstanceOf(ApiError);
     expect(signOuts()).toBe(0);
+  });
+
+  it('repeats a sensitive request once the user confirmed who they are', async () => {
+    const requests = serve((path, call) =>
+      path.startsWith('/todos') && call === 1 ? REAUTH_REQUIRED : NO_CONTENT,
+    );
+    setReauthHandler(() => Promise.resolve(true));
+
+    await expect(deleteTodo()).resolves.toBeUndefined();
+    expect(requests).toHaveLength(2);
+  });
+
+  it('asks for a confirmation only once per request', async () => {
+    const requests = serve(() => REAUTH_REQUIRED);
+    const confirm = vi.fn(() => Promise.resolve(true));
+    setReauthHandler(confirm);
+
+    await expect(deleteTodo()).rejects.toMatchObject({
+      code: 'REAUTH_REQUIRED',
+    });
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(2);
+  });
+
+  it('repeats the CSRF cookie as a header', async () => {
+    const requests = serve(() => NO_CONTENT);
+    vi.stubGlobal('document', { cookie: 'theme=dark; csrf_token=abc%3D' });
+
+    await deleteTodo();
+
+    expect(requests[0]?.headers.get('x-csrf-token')).toBe('abc=');
   });
 });

@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT g.name AS \"name!\", g.schedule_config AS \"schedule_config!\",\n                      avatar.public_id AS \"avatar_public_id?\",\n                      g.group_type AS \"group_type!: GroupType\", g.dalton_enabled AS \"dalton_enabled!\",\n                      g.banned_at IS NOT NULL AS \"banned!\",\n                      COALESCE(ur.done_course_setup, false) AS \"done_course_setup!\",\n                      ur.user_id IS NOT NULL AND EXISTS (\n                          SELECT 1 FROM courses c\n                          JOIN subjects s ON s.id = c.subject_id\n                          WHERE s.tenant_id = g.id AND s.category <> 'core'\n                      ) AS \"offers_course_choice!\"\n               FROM groups g\n               LEFT JOIN assets avatar ON avatar.id = g.avatar_id\n               LEFT JOIN user_roles ur ON ur.tenant_id = g.id AND ur.user_id = $2\n               WHERE g.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "schedule_config!",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "schedule_config"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "avatar_public_id?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "assets",
+            "name": "public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "group_type!: GroupType",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "group_type"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "dalton_enabled!",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "groups",
+            "name": "dalton_enabled"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "banned!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "done_course_setup!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "offers_course_choice!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "06bc93b1621b2b9a7e9585925489f4aed775a6e31b88cc7361b96f42076932ac"
+}

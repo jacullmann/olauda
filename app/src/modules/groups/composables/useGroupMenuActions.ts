@@ -2,8 +2,9 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import { useInviteModal } from '@/modules/groups/stores/useInviteModal';
@@ -11,6 +12,7 @@ import { useToast } from '@/common/composables/useToast';
 import { useSession } from '@/modules/auth/composables/useSession';
 import { type UserGroup } from './useGroups';
 import { useInvite } from './useInvite';
+import { groupKeys } from '@/modules/groups/utils/groupQueries';
 
 /** The per-group actions offered by the header's group menu and the groups list. */
 export function useGroupMenuActions() {
@@ -22,6 +24,7 @@ export function useGroupMenuActions() {
   const { user } = storeToRefs(useUserStore());
   const { createInvite } = useInvite();
   const { checkAuthStatus } = useSession();
+  const queryClient = useQueryClient();
 
   const pending = ref(false);
 
@@ -72,12 +75,16 @@ export function useGroupMenuActions() {
 
     pending.value = true;
     try {
-      await api.delete(groupPath(group.id, '/leave'));
+      await unwrap(
+        api.DELETE('/groups/{group_id}/leave', {
+          params: { path: { group_id: group.id } },
+        }),
+      );
       await checkAuthStatus();
       await router.push({ name: 'groups' });
+      queryClient.removeQueries({ queryKey: groupKeys.group(group.id) });
     } catch (err) {
-      console.error('Failed to leave group:', err);
-      toast.error(t('groups.errors.leave'));
+      toast.error(apiErrorMessage(err, t('groups.errors.leave')));
     } finally {
       pending.value = false;
     }

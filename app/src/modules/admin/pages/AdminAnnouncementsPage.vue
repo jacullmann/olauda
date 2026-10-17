@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import AdminSystemAnnouncementFormModal from '@/modules/admin/components/AdminSystemAnnouncementFormModal.vue';
@@ -7,7 +7,7 @@ import { useAdminAnnouncements } from '@/modules/admin/composables/useAdminAnnou
 import { useAdminFormat } from '@/modules/admin/composables/useAdminFormat';
 import type { AdminSystemAnnouncement } from '@/modules/admin/types';
 
-const { active, scheduled, loading, load, remove } = useAdminAnnouncements();
+const { active, scheduled, loading, remove } = useAdminAnnouncements();
 const { fmtDateTime } = useAdminFormat();
 const { t } = useI18n();
 
@@ -50,12 +50,9 @@ function openForm(announcement: AdminSystemAnnouncement | null) {
   formOpen.value = true;
 }
 
-async function onSaved() {
+function onSaved() {
   formOpen.value = false;
-  await load();
 }
-
-onMounted(load);
 </script>
 
 <template>

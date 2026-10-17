@@ -1,30 +1,16 @@
 import type { StyleValue } from 'vue';
+import type { LessonDto, SubstitutionDto } from '@/api/schema';
 
-export interface Lesson {
-  id: string;
+/** A lesson as the server sends it, plus what the client works out for it. */
+export interface Lesson extends LessonDto {
+  /** On a copy split off per course, the id of the lesson the schedule holds. */
   _originalId?: string;
-  day: number;
-  slot: number;
-  duration: number;
-  room: string | null;
-  subjectId?: string | null;
-  courseId?: string | null;
-  subjects?: {
-    id: string;
-    name: string;
-  } | null;
-  courses?: {
-    id: string;
-    name: string;
-  } | null;
-  subjectAbbr?: string;
-  subject?: string;
-  courseName?: string;
+  /** The lesson before a change of its week was applied. */
   _original?: Lesson;
+  /** The subject a change gives the lesson for one week. */
+  subject?: string | null;
   cancelled?: boolean;
   isSubstitutedSubject?: boolean;
-  /** A Dalton lesson stands in for a subject and never carries one. */
-  isDalton?: boolean;
   /** Shown to the member although they take none of its courses. */
   outsideCourseSelection?: boolean;
   /** How many courses a lesson for a whole subject stands for. */
@@ -72,21 +58,7 @@ export interface ScheduleConfig {
   dayBreaks: Partial<Record<number, ScheduleBreaks>>;
 }
 
-export interface Substitution {
-  id: string;
-  lessonId: string;
-  /** The Monday of the one week the change applies to, as YYYY-MM-DD. */
-  weekStart: string;
-  courseId?: string | null;
-  day?: number;
-  slot?: number;
-  duration?: number;
-  subject?: string;
-  subjectAbbr?: string;
-  room?: string | null;
-  cancelled?: boolean;
-  createdAt?: string;
-}
+export type Substitution = SubstitutionDto;
 
 export type ScheduleRow =
   | {

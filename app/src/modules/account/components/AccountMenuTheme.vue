@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { usePreferences } from '@/modules/account/composables/usePreferences';
+import { isThemeMode } from '@/common/composables/useTheme';
 import { Sun, Moon, SunMoon } from '@lucide/vue';
 import BaseMenuSelect, {
   type MenuOption,
@@ -15,10 +16,10 @@ const themeOptions = computed<MenuOption[]>(() => [
   { value: 'light', label: t('common.theme.light'), icon: Sun },
 ]);
 
-const { currentTheme, setPreference } = usePreferences();
+const { currentTheme, setTheme } = usePreferences();
 
 function updateTheme(mode: string) {
-  setPreference('theme', mode);
+  if (isThemeMode(mode)) setTheme(mode);
 }
 </script>
 

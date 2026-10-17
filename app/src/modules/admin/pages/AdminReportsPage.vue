@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AdminReportCard from '@/modules/admin/components/AdminReportCard.vue';
 import { useAdminReports } from '@/modules/admin/composables/useAdminReports';
 
-const { reports, loadingReports, loadReports, deleteReport } =
-  useAdminReports();
+const { reports, loadingReports, deleteReport } = useAdminReports();
 const { t } = useI18n();
-
-onMounted(loadReports);
 </script>
 
 <template>

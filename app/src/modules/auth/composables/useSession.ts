@@ -1,43 +1,75 @@
-import { ref } from 'vue';
-import api, { ensureCsrf, refreshSession } from '@/api/client';
-import { isSessionRejected, isTransientFailure } from '@/api/errors';
+import { computed, ref } from 'vue';
+import { hashKey, useQuery } from '@tanstack/vue-query';
+import api, { ensureCsrf, unwrap } from '@/api/client';
+import { isTransientFailure } from '@/api/errors';
+import { appScope, queryClient } from '@/api/queryClient';
+import type { GroupStatusDto } from '@/api/schema';
+import { accountKeys } from '@/modules/account/utils/accountQueries';
 import {
-  applyGroupStatus,
-  clearGroups,
-  type RawGroup,
-} from '@/modules/groups/composables/useGroups';
+  sessionKey,
+  sessionStatusQuery,
+} from '@/modules/auth/utils/sessionQueries';
+import { clearGroups } from '@/modules/groups/composables/useGroups';
 
-const STATUS_ENDPOINT = '/groups/status';
 // Startup retries an unreachable API with backoff for about as long as a
 // deploy restarts it, then reports it unreachable instead of waiting forever.
 const INIT_RETRY_FIRST_DELAY_MS = 500;
 const INIT_RETRY_MAX_DELAY_MS = 8_000;
 const INIT_RETRY_DEADLINE_MS = 30_000;
 
-type StatusResponse = {
-  authenticated: boolean;
-  groups?: RawGroup[];
-  landingGroupId?: string | null;
+const SIGNED_OUT: GroupStatusDto = {
+  authenticated: false,
+  groups: [],
+  landingGroupId: null,
 };
 
-const isLoggedIn = ref(false);
 const isAuthReady = ref(false);
 /** Startup gave up on an API that never answered; the session is unknown. */
 const isApiUnreachable = ref(false);
 
+// Observed once startup resolved the session, so focus and live updates keep
+// the groups current from then on. A signed-out visitor is not asked again
+// on every focus: each ask would try a refresh the server refuses.
+const status = appScope.run(() =>
+  useQuery(
+    {
+      ...sessionStatusQuery(),
+      enabled: isAuthReady,
+      refetchOnWindowFocus: ({ state }) => state.data?.authenticated === true,
+    },
+    queryClient,
+  ),
+)!;
+
+/** The session as last loaded; `undefined` before startup resolved it. */
+export const sessionStatus = computed(() => status.data.value);
+
+const isLoggedIn = computed(() => sessionStatus.value?.authenticated === true);
+
 let initPromise: Promise<void> | null = null;
-let statusPromise: Promise<boolean> | null = null;
 let signedOutHandlersInstalled = false;
 
+/**
+ * Forgets everything loaded for the previous user, so nothing of theirs is
+ * shown to whoever signs in next. The session and the profile are observed
+ * app-wide, so they are emptied in place rather than removed.
+ */
 function clearSession(): void {
-  isLoggedIn.value = false;
+  // Cancelling reverts at once, so no answer still on its way for the
+  // previous user can land in the cache after it was cleared.
+  void queryClient.cancelQueries();
+  const observedAppWide = [hashKey(sessionKey), hashKey(accountKeys.me())];
+  queryClient.removeQueries({
+    predicate: ({ queryHash }) => !observedAppWide.includes(queryHash),
+  });
+  queryClient.setQueryData(sessionKey, SIGNED_OUT);
+  queryClient.setQueryData(accountKeys.me(), null);
+  // Whoever signs in next gets their own profile as soon as it is observed.
+  void queryClient.invalidateQueries({
+    queryKey: accountKeys.me(),
+    refetchType: 'none',
+  });
   clearGroups();
-  statusPromise = null;
-}
-
-function applyStatusData(data: StatusResponse): void {
-  isLoggedIn.value = data.authenticated;
-  applyGroupStatus(data.groups ?? [], data.landingGroupId ?? null);
 }
 
 function showSignedOut(): void {
@@ -55,39 +87,9 @@ function installSignedOutHandlersOnce(): void {
   window.addEventListener('shutdown', showSignedOut);
 }
 
-async function fetchStatus(): Promise<StatusResponse> {
-  const { data } = await api.get<StatusResponse>(STATUS_ENDPOINT);
-  return data;
-}
-
-/** Whether the refresh cookie still holds a session the server renewed. */
-async function renewSession(): Promise<boolean> {
-  try {
-    await refreshSession();
-    return true;
-  } catch (error) {
-    if (isSessionRejected(error)) return false;
-    throw error;
-  }
-}
-
-/**
- * The status only sees the access token, which lapses long before the
- * session does: "not authenticated" is final only once a refresh failed too,
- * so it is not applied before then.
- */
-async function loadSession(): Promise<boolean> {
-  let status = await fetchStatus();
-  if (!status.authenticated && (await renewSession())) {
-    status = await fetchStatus();
-  }
-  applyStatusData(status);
-  return status.authenticated;
-}
-
 async function resolveSession(): Promise<void> {
   await ensureCsrf();
-  await loadSession();
+  await queryClient.fetchQuery(sessionStatusQuery());
 }
 
 // An unreachable API (offline, or restarting during a deploy) says nothing
@@ -129,43 +131,29 @@ async function doInitAuth(): Promise<void> {
 export function useSession() {
   installSignedOutHandlersOnce();
 
+  /** Loads the session again, e.g. after signing in or joining a group. */
   async function checkAuthStatus(): Promise<boolean> {
-    if (statusPromise) return statusPromise;
-
-    statusPromise = (async () => {
-      try {
-        return await loadSession();
-      } catch {
-        // The status never rejects a session, so a failed check changes nothing.
-        return isLoggedIn.value;
-      } finally {
-        statusPromise = null;
-      }
-    })();
-
-    return statusPromise;
+    try {
+      const fresh = await queryClient.fetchQuery({
+        ...sessionStatusQuery(),
+        staleTime: 0,
+      });
+      return fresh.authenticated;
+    } catch {
+      // The status never rejects a session, so a failed check changes nothing.
+      return isLoggedIn.value;
+    }
   }
 
   async function initAuth(): Promise<void> {
     if (isAuthReady.value) return;
-    if (initPromise) return initPromise;
-    initPromise = doInitAuth();
+    initPromise ??= doInitAuth();
     return initPromise;
   }
 
-  async function logout(): Promise<void> {
+  async function endSession(path: '/auth/logout' | '/auth/logout-all') {
     try {
-      await api.post('/auth/logout');
-    } catch {
-      // Local state is cleared regardless of what the server replies.
-    } finally {
-      clearSession();
-    }
-  }
-
-  async function logoutAllDevices(): Promise<void> {
-    try {
-      await api.post('/auth/logout-all');
+      await unwrap(api.POST(path));
     } catch {
       // Local state is cleared regardless of what the server replies.
     } finally {
@@ -179,7 +167,7 @@ export function useSession() {
     isApiUnreachable,
     initAuth,
     checkAuthStatus,
-    logout,
-    logoutAllDevices,
+    logout: () => endSession('/auth/logout'),
+    logoutAllDevices: () => endSession('/auth/logout-all'),
   };
 }

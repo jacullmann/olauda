@@ -1,25 +1,18 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { useToast } from '@/common/composables/useToast';
-import type { AccountSecurity } from '@/modules/admin/types';
+import { useQuery } from '@tanstack/vue-query';
+import { apiErrorMessage } from '@/api/errors';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
+import { accountSecurityQuery } from '@/modules/admin/utils/adminQueries';
 
-/** How all accounts are secured and sign in, fetched whenever the overview opens. */
+/** How all accounts are secured and sign in. */
 export function useAccountSecurity() {
   const { t } = useI18n();
-  const toast = useToast();
-  const security = ref<AccountSecurity | null>(null);
+  const query = useQuery(accountSecurityQuery());
 
-  async function load() {
-    try {
-      const { data } = await api.get<AccountSecurity>(
-        '/admin/stats/account-security',
-      );
-      security.value = data;
-    } catch {
-      toast.error(t('admin.overview.errors.load'));
-    }
-  }
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t('admin.overview.errors.load')),
+  );
 
-  return { security, load };
+  return { security: computed(() => query.data.value ?? null) };
 }

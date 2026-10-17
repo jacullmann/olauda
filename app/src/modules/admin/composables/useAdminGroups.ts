@@ -1,11 +1,15 @@
 import { useI18n } from 'vue-i18n';
-import { useToast } from '@/common/composables/useToast';
+import { apiErrorMessage } from '@/api/errors';
 import type {
   GroupSort,
   GroupTypeFilter,
   SortOrder,
   AdminGroup,
 } from '@/modules/admin/types';
+import {
+  adminKeys,
+  adminGroupsQuery,
+} from '@/modules/admin/utils/adminQueries';
 import { useServerPagedList } from './useServerPagedList';
 
 export const GROUP_TYPE_FILTERS = [
@@ -24,19 +28,20 @@ const GROUP_SORTS = [
 const SORT_ORDERS = ['asc', 'desc'] as const satisfies readonly SortOrder[];
 
 export function useAdminGroups() {
-  const toast = useToast();
   const { t } = useI18n();
 
   return useServerPagedList<
-    AdminGroup,
     {
       search: string;
       type: GroupTypeFilter;
       sort: GroupSort;
       order: SortOrder;
-    }
+    },
+    AdminGroup,
+    ReturnType<typeof adminGroupsQuery>['queryKey']
   >({
-    endpoint: '/admin/groups',
+    query: adminGroupsQuery,
+    listKey: adminKeys.groupLists(),
     defaults: { search: '', type: 'all', sort: 'createdAt', order: 'desc' },
     rules: {
       type: GROUP_TYPE_FILTERS,
@@ -44,6 +49,7 @@ export function useAdminGroups() {
       order: SORT_ORDERS,
     },
     ascendingSorts: ['name'],
-    onError: () => toast.error(t('admin.groups.errors.load')),
+    loadErrorMessage: (error) =>
+      apiErrorMessage(error, t('admin.groups.errors.load')),
   });
 }

@@ -1,33 +1,41 @@
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
 import { useGroupPageId } from './useGroupPageId';
 import type { Announcement } from '@/modules/announcements/types';
+import { groupAnnouncementsQuery } from '@/modules/announcements/utils/announcementQueries';
+import { groupKeys } from '@/modules/groups/utils/groupQueries';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
-import { useAnnouncementStore } from '@/modules/announcements/stores/useAnnouncementStore';
 
 /** The group's announcements, as its admins manage them. */
 export function useGroupAnnouncementsAdmin() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const confirmModal = useConfirmModal();
-  const announcementStore = useAnnouncementStore();
 
-  const announcements = ref<Announcement[]>([]);
+  // Announcements are supplementary: a failed load keeps what was loaded.
+  const query = useQuery(groupAnnouncementsQuery(groupId));
+  const announcements = computed<Announcement[]>(() => query.data.value ?? []);
 
-  async function loadAnnouncements() {
-    try {
-      const { data } = await api.get<Announcement[]>(
-        groupPath(groupId, '/announcements'),
-      );
-      announcements.value = data;
-    } catch {
-      // Announcements are supplementary; keep the previously loaded list.
-    }
-  }
+  const removal = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        api.DELETE('/groups/{group_id}/admin/announcements/{id}', {
+          params: { path: { group_id: groupId, id } },
+        }),
+      ),
+    onError: (error) =>
+      toast.error(apiErrorMessage(error, t('announcements.errors.delete'))),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.topic(groupId, 'announcements'),
+      }),
+  });
 
   async function deleteAnnouncement(id: string) {
     const isConfirmed = await confirmModal.ask({
@@ -36,18 +44,8 @@ export function useGroupAnnouncementsAdmin() {
       submitText: t('common.buttons.delete'),
       danger: true,
     });
-    if (!isConfirmed) return;
-
-    try {
-      await api.delete(groupPath(groupId, `/admin/announcements/${id}`));
-      announcements.value = announcements.value.filter((a) => a.id !== id);
-      announcementStore.remove(id);
-    } catch {
-      toast.error(t('announcements.errors.delete'));
-    }
+    if (isConfirmed) removal.mutate(id);
   }
 
-  onMounted(loadAnnouncements);
-
-  return { announcements, loadAnnouncements, deleteAnnouncement };
+  return { announcements, deleteAnnouncement };
 }

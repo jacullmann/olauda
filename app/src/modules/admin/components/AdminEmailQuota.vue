@@ -30,7 +30,7 @@ const share = computed(() => {
       <span class="text-3xl font-bold leading-none">{{ n(quota.used) }}</span>
       <span class="text-base text-on-ghost-muted">
         {{
-          quota.limit === null
+          quota.limit == null
             ? t(`${I18N_BASE}.unlimited`)
             : t(`${I18N_BASE}.of_limit`, { limit: n(quota.limit) })
         }}

@@ -1,5 +1,4 @@
 import { computed } from 'vue';
-import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useAnnouncementStore } from '@/modules/announcements/stores/useAnnouncementStore';
 import { useSystemAnnouncementStore } from '@/modules/announcements/stores/useSystemAnnouncementStore';
 import type {
@@ -37,7 +36,6 @@ function fromSystemAnnouncement(a: SystemAnnouncement): FeedAnnouncement {
  * once read.
  */
 export function useAnnouncementFeed() {
-  const { activeGroupId } = useGroups();
   const groupStore = useAnnouncementStore();
   const systemStore = useSystemAnnouncementStore();
 
@@ -45,12 +43,8 @@ export function useAnnouncementFeed() {
     systemStore.announcements.map(fromSystemAnnouncement),
   );
 
-  // The store keeps the last group's announcements while a page without a
-  // group is on screen; they belong to that group, not to this page.
   const groupAnnouncements = computed(() =>
-    activeGroupId.value
-      ? groupStore.announcements.map(fromGroupAnnouncement)
-      : [],
+    groupStore.announcements.map(fromGroupAnnouncement),
   );
 
   const unread = computed(() => [
@@ -64,9 +58,7 @@ export function useAnnouncementFeed() {
   }
 
   async function acknowledgeAll() {
-    const pending = [systemStore.markAllRead()];
-    if (activeGroupId.value) pending.push(groupStore.markAllRead());
-    await Promise.all(pending);
+    await Promise.all([systemStore.markAllRead(), groupStore.markAllRead()]);
   }
 
   return {

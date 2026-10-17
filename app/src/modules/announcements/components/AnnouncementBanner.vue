@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  useElementSize,
-  useEventListener,
-  usePreferredReducedMotion,
-} from '@vueuse/core';
+import { useElementSize, usePreferredReducedMotion } from '@vueuse/core';
 import { Info, Megaphone } from '@lucide/vue';
-import { useGroups } from '@/modules/groups/composables/useGroups';
-import { useAnnouncementStore } from '@/modules/announcements/stores/useAnnouncementStore';
-import { useSystemAnnouncementStore } from '@/modules/announcements/stores/useSystemAnnouncementStore';
 import { useAnnouncementListModal } from '@/modules/announcements/stores/useAnnouncementListModal';
 import { morphOriginOf } from '@/common/utils/morph';
 import { SETTLE_EASING } from '@/common/utils/motion';
@@ -23,9 +16,6 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { activeGroupId } = useGroups();
-const groupStore = useAnnouncementStore();
-const systemStore = useSystemAnnouncementStore();
 const announcementsModal = useAnnouncementListModal();
 const { unread, acknowledge, acknowledgeAll } = useAnnouncementFeed();
 const reducedMotion = usePreferredReducedMotion();
@@ -65,22 +55,6 @@ const ackFitsBesideText = computed(() => {
   return textStart + textWidth.value + gap + ackWidth.value <= cardWidth.value;
 });
 
-watch(
-  activeGroupId,
-  (groupId) => {
-    if (groupId) void groupStore.load(groupId);
-  },
-  { immediate: true },
-);
-
-onMounted(() => void systemStore.load());
-
-useEventListener(document, 'visibilitychange', () => {
-  if (document.visibilityState !== 'visible') return;
-  void systemStore.load();
-  if (activeGroupId.value) void groupStore.load(activeGroupId.value);
-});
-
 function openList() {
   if (!current.value || !opensList.value) return;
   announcementsModal.show(morphOriginOf(card.value));
@@ -88,7 +62,7 @@ function openList() {
 }
 
 const { swipeStyle, isGone, reset } = useSwipeAway(card, {
-  onSwipedAway: acknowledgeSwipedAway,
+  onSwipedAway: () => void acknowledgeSwipedAway(),
 });
 
 async function acknowledgeSwipedAway() {

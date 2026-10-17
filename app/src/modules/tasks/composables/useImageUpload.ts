@@ -1,12 +1,14 @@
 import { ref, toValue, type MaybeRefOrGetter } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
-import { uploadTaskFile, type Attachment } from '@/api/files';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
+import { uploadTaskFile } from '@/api/files';
 import { processImageBeforeUpload } from '@/modules/tasks/utils/imageConversion';
 import { useToast } from '@/common/composables/useToast';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
-import type { Task, TaskFile } from '@/modules/tasks/types';
+import type { TaskFile, TaskType } from '@/modules/tasks/types';
+import { taskKeys } from '@/modules/tasks/utils/taskQueries';
 import {
   imageQuotaViolation,
   type HeldImages,
@@ -47,6 +49,43 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
   const { t } = useI18n();
   const toast = useToast();
   const userStore = useUserStore();
+  const queryClient = useQueryClient();
+
+  // Every view of a task shows its files, the list's cards included.
+  const reloadTasks = () =>
+    void queryClient.invalidateQueries({
+      queryKey: taskKeys.all(toValue(groupId)),
+    });
+
+  // A selection of several files is reloaded once, after the last of them.
+  const attachment = useMutation({
+    mutationFn: ({ itemId, assetId }: { itemId: string; assetId: string }) =>
+      unwrap(
+        api.POST('/groups/{group_id}/items/{id}/attachments', {
+          params: { path: { group_id: toValue(groupId), id: itemId } },
+          body: { assetId },
+        }),
+      ),
+  });
+
+  const attachmentRemoval = useMutation({
+    mutationFn: ({ itemId, fileId }: { itemId: string; fileId: string }) =>
+      unwrap(
+        api.DELETE(
+          '/groups/{group_id}/items/{id}/attachments/{attachment_id}',
+          {
+            params: {
+              path: {
+                group_id: toValue(groupId),
+                id: itemId,
+                attachment_id: fileId,
+              },
+            },
+          },
+        ),
+      ),
+    onSuccess: reloadTasks,
+  });
 
   function failUpload(message: string) {
     uploadError.value = message;
@@ -82,7 +121,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
 
   async function uploadFiles(
     files: File[],
-    itemType: Task['type'],
+    itemType: TaskType,
     itemId?: string,
   ) {
     if (files.length === 0) return;
@@ -146,11 +185,9 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
           return;
         }
 
-        const { data: attachment } = await api.post<Attachment>(
-          groupPath(toValue(groupId), `/items/${itemId}/attachments`),
-          { assetId: upload.id },
+        images.value.push(
+          await attachment.mutateAsync({ itemId, assetId: upload.id }),
         );
-        images.value.push(attachment);
       };
 
       const results = await Promise.allSettled(
@@ -160,6 +197,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
       );
 
       const uploaded = results.filter((r) => r.status === 'fulfilled').length;
+      if (itemId && uploaded > 0) reloadTasks();
 
       if (uploaded === preparedFiles.length) {
         uploadSuccess.value = true;
@@ -182,7 +220,7 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
     }
   }
 
-  function uploadImage(itemType: Task['type'], itemId?: string) {
+  function uploadImage(itemType: TaskType, itemId?: string) {
     uploading.value = true;
     uploadError.value = '';
     uploadSuccess.value = false;
@@ -204,24 +242,25 @@ export function useImageUpload(groupId: MaybeRefOrGetter<string>) {
     input.click();
   }
 
-  /** `parentId` names the task an attachment belongs to; without it the file
-   * is an upload of a task not created yet and only leaves the form. */
+  /**
+   * `parentId` names the task an attachment belongs to; without it the file
+   * is an upload of a task not created yet and only leaves the form.
+   * Resolves to whether the file is gone.
+   */
   async function removeImg(file: TaskFile, parentId?: string) {
     if (parentId) {
       try {
-        await api.delete(
-          groupPath(
-            toValue(groupId),
-            `/items/${parentId}/attachments/${file.id}`,
-          ),
-        );
-        images.value = images.value.filter((i) => i.id !== file.id);
-      } catch {
-        uploadError.value = t('tasks.images.errors.delete');
+        await attachmentRemoval.mutateAsync({
+          itemId: parentId,
+          fileId: file.id,
+        });
+      } catch (e) {
+        uploadError.value = apiErrorMessage(e, t('tasks.images.errors.delete'));
+        return false;
       }
-    } else {
-      images.value = images.value.filter((i) => i.id !== file.id);
     }
+    images.value = images.value.filter((i) => i.id !== file.id);
+    return true;
   }
 
   return {

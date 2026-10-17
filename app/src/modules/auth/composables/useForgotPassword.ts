@@ -1,6 +1,6 @@
 import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorMessage, apiErrorStatus } from '@/api/errors';
 import { useCooldown } from './useCooldown';
 import type { ForgotPasswordErrors } from '@/modules/auth/types';
@@ -14,10 +14,6 @@ const BAD_REQUEST = 400;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type ForgotPasswordStep = 'email' | 'code' | 'password';
-
-interface VerifyResetCodeResponse {
-  resetToken: string;
-}
 
 export function useForgotPassword(
   initialEmail: string,
@@ -80,7 +76,9 @@ export function useForgotPassword(
     }
     if (cooldownSeconds.value > 0) return;
     try {
-      await api.post('/auth/forgot', { email: normalizedEmail.value });
+      await unwrap(
+        api.POST('/auth/forgot', { body: { email: normalizedEmail.value } }),
+      );
       cooldownEmail.value = normalizedEmail.value;
       cooldown.start();
       code.value = '';
@@ -96,11 +94,11 @@ export function useForgotPassword(
       return;
     }
     try {
-      const { data } = await api.post<VerifyResetCodeResponse>(
-        '/auth/reset/verify',
-        { email: normalizedEmail.value, code: code.value },
-      );
-      resetToken = data.resetToken;
+      ({ resetToken } = await unwrap(
+        api.POST('/auth/reset/verify', {
+          body: { email: normalizedEmail.value, code: code.value },
+        }),
+      ));
       step.value = 'password';
     } catch (e: unknown) {
       error.value = apiErrorMessage(e, t('auth.errors.code_invalid'));
@@ -131,7 +129,11 @@ export function useForgotPassword(
       return;
     }
     try {
-      await api.post('/auth/reset', { resetToken, password: password.value });
+      await unwrap(
+        api.POST('/auth/reset', {
+          body: { resetToken, password: password.value },
+        }),
+      );
     } catch (e: unknown) {
       // The password passed the same checks as on the server, so a refusal
       // means the reset token ran out.

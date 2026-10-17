@@ -5,14 +5,9 @@
 //! signing in at the start of a lesson looks like a single client. The burst
 //! therefore covers a class, while the refill still caps sustained guessing.
 
-use axum::{
-    Json,
-    body::Body,
-    http::{Request, StatusCode, header},
-    response::{IntoResponse, Response},
-};
+use crate::error::{ErrorCode, too_many_requests};
+use axum::{body::Body, http::Request, response::Response};
 use governor::{clock::QuantaInstant, middleware::NoOpMiddleware};
-use serde_json::json;
 use std::{
     net::{IpAddr, Ipv6Addr},
     sync::Arc,
@@ -83,16 +78,11 @@ pub fn per_client(burst: u32, replenish_every: Duration) -> ClientRateLimit {
 /// tell the user in their language to wait instead of showing a raw string.
 fn json_error(error: GovernorError) -> Response {
     match error {
-        GovernorError::TooManyRequests { wait_time, .. } => (
-            StatusCode::TOO_MANY_REQUESTS,
-            [(header::RETRY_AFTER, wait_time.to_string())],
-            Json(json!({
-                "error": "Too many requests. Please try again later.",
-                "code": "RATE_LIMITED",
-                "retryAfter": wait_time,
-            })),
-        )
-            .into_response(),
+        GovernorError::TooManyRequests { wait_time, .. } => too_many_requests(
+            "Too many requests. Please try again later.".to_owned(),
+            ErrorCode::RateLimited,
+            i64::try_from(wait_time).unwrap_or(i64::MAX),
+        ),
         other => other.into(),
     }
 }

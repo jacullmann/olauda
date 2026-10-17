@@ -24,7 +24,7 @@ impl SignInMethod {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SignInMethods {
     pub password: bool,

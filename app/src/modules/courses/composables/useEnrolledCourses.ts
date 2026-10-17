@@ -21,7 +21,7 @@ export function useEnrolledCourses() {
     for (const { subjectId, courseId } of userStore.user?.courses ?? []) {
       const course = subjectStore.subjects
         .find((s) => s.id === subjectId)
-        ?.courses?.find((c) => c.id === courseId);
+        ?.courses.find((c) => c.id === courseId);
 
       if (course) bySubject.set(subjectId, course);
     }

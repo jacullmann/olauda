@@ -1,49 +1,31 @@
-import { ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import axios from 'axios';
-import api from '@/api/client';
+import { computed, toValue, type MaybeRefOrGetter } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
 import { apiErrorStatus } from '@/api/errors';
-import type { AdminGroup } from '@/modules/admin/types';
+import { adminGroupQuery } from '@/modules/admin/utils/adminQueries';
 
 const NOT_FOUND = 404;
 
 export type GroupDetailsState = 'loading' | 'ready' | 'not-found' | 'failed';
 
-/** A group as its admin page shows it. */
+/**
+ * A group as its admin page shows it. Another group's details never show,
+ * not even dimmed while loading, as each group has its own query.
+ */
 export function useAdminGroup(groupId: MaybeRefOrGetter<string>) {
-  const group = ref<AdminGroup | null>(null);
-  const state = ref<GroupDetailsState>('loading');
+  const query = useQuery(computed(() => adminGroupQuery(toValue(groupId))));
+  const group = computed(() => query.data.value ?? null);
 
-  let controller: AbortController | null = null;
+  const state = computed<GroupDetailsState>(() => {
+    if (group.value) return 'ready';
+    if (query.isFetching.value || !query.error.value) return 'loading';
+    return apiErrorStatus(query.error.value) === NOT_FOUND
+      ? 'not-found'
+      : 'failed';
+  });
 
-  async function load() {
-    controller?.abort();
-    const current = new AbortController();
-    controller = current;
-    state.value = 'loading';
-
-    try {
-      const { data } = await api.get<AdminGroup>(
-        `/admin/groups/${toValue(groupId)}`,
-        { signal: current.signal },
-      );
-      group.value = data;
-      state.value = 'ready';
-    } catch (error) {
-      if (axios.isCancel(error)) return;
-      state.value =
-        apiErrorStatus(error) === NOT_FOUND ? 'not-found' : 'failed';
-    }
+  function reload() {
+    void query.refetch();
   }
 
-  // Another group's details must never show, not even dimmed while loading.
-  watch(
-    () => toValue(groupId),
-    () => {
-      group.value = null;
-      void load();
-    },
-    { immediate: true },
-  );
-
-  return { group, state, reload: load };
+  return { group, state, reload };
 }

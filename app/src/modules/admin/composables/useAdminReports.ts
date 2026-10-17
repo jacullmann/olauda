@@ -1,31 +1,36 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
-import type { AdminReport } from '@/modules/admin/types';
-import { useAdminStats } from './useAdminStats';
+import { adminKeys, reportsQuery } from '@/modules/admin/utils/adminQueries';
 
 export function useAdminReports() {
   const toast = useToast();
   const confirmModal = useConfirmModal();
+  const queryClient = useQueryClient();
   const { t } = useI18n();
-  const { loadStats } = useAdminStats();
 
-  const reports = ref<AdminReport[]>([]);
-  const loadingReports = ref(false);
+  const query = useQuery(reportsQuery());
 
-  async function loadReports() {
-    loadingReports.value = true;
-    try {
-      const { data } = await api.get<AdminReport[]>('/admin/reports');
-      reports.value = data;
-    } catch {
-      toast.error(t('admin.reports.errors.load'));
-    } finally {
-      loadingReports.value = false;
-    }
-  }
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t('admin.reports.errors.load')),
+  );
+
+  const deletion = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.DELETE('/admin/reports/{id}', { params: { path: { id } } })),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.reports() }),
+        queryClient.invalidateQueries({ queryKey: adminKeys.statsSummary() }),
+      ]),
+    onError: (error) =>
+      toast.error(apiErrorMessage(error, t('admin.reports.errors.delete'))),
+  });
 
   async function deleteReport(id: string) {
     const confirmed = await confirmModal.ask({
@@ -34,16 +39,12 @@ export function useAdminReports() {
       submitText: t('common.buttons.delete'),
       danger: true,
     });
-    if (!confirmed) return;
-
-    try {
-      await api.delete(`/admin/reports/${id}`);
-      reports.value = reports.value.filter((r) => r.id !== id);
-      await loadStats();
-    } catch {
-      toast.error(t('admin.reports.errors.delete'));
-    }
+    if (confirmed) deletion.mutate(id);
   }
 
-  return { reports, loadingReports, loadReports, deleteReport };
+  return {
+    reports: computed(() => query.data.value ?? []),
+    loadingReports: query.isPending,
+    deleteReport,
+  };
 }

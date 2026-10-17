@@ -6,7 +6,7 @@ const isSet = <T>(value: T | null | undefined | ''): value is T =>
 /** The lesson as its change turns it out, keeping the original to compare. */
 export function applySubstitution(original: Lesson, sub: Substitution): Lesson {
   const merged: Lesson = { ...original, _original: original };
-  if (isSet(sub.day)) merged.day = Number(sub.day);
+  if (isSet(sub.day)) merged.day = sub.day;
   if (isSet(sub.slot)) merged.slot = sub.slot;
   if (isSet(sub.duration)) merged.duration = sub.duration;
   if (isSet(sub.room)) merged.room = sub.room;
@@ -15,7 +15,6 @@ export function applySubstitution(original: Lesson, sub: Substitution): Lesson {
     merged.subject = sub.subject;
     merged.isSubstitutedSubject = true;
   }
-  if (isSet(sub.subjectAbbr)) merged.subjectAbbr = sub.subjectAbbr;
   return merged;
 }
 
@@ -29,7 +28,7 @@ function latestSubstitutionByLesson(
   const byLesson = new Map<string, Substitution>();
   subs.forEach((sub) => {
     const current = byLesson.get(sub.lessonId);
-    if (!current || (sub.createdAt ?? '') >= (current.createdAt ?? '')) {
+    if (!current || sub.createdAt >= current.createdAt) {
       byLesson.set(sub.lessonId, sub);
     }
   });

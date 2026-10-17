@@ -16,7 +16,7 @@ function group(key: string, day: number, slot: number): LessonGroup {
   return {
     key,
     day,
-    lessons: [{ id: key, day, slot, duration: 1, room: null }],
+    lessons: [{ id: key, day, slot, duration: 1, isDalton: false }],
   };
 }
 

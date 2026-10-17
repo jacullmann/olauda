@@ -1,12 +1,12 @@
 use super::handlers::*;
 use crate::{common::rate_limit, state::AppState};
-use axum::{Router, routing::get};
 use std::time::Duration;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub fn router() -> Router<AppState> {
+pub fn router() -> OpenApiRouter<AppState> {
     // Each export reads every table holding the user's data; the limit keeps
     // repeated clicks from turning that into load.
-    Router::new()
-        .route("/user/data-export", get(export_data))
+    OpenApiRouter::new()
+        .routes(routes!(export_data))
         .layer(rate_limit::per_client(10, Duration::from_secs(30)))
 }

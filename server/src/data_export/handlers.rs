@@ -1,4 +1,4 @@
-use super::{archive, service::DataExportService};
+use super::{archive, dto::DataArchive, service::DataExportService};
 use crate::{
     common::{client::ClientInfo, extractors::RecentAuth},
     error::AppResult,
@@ -10,8 +10,19 @@ use axum::{
     response::IntoResponse,
 };
 
-/// The archive holds everything about the account, so it needs a recent
-/// sign-in, as a stolen session must not be enough to take it.
+/// A ZIP of everything stored about the account. It needs a recent sign-in,
+/// as a stolen session must not be enough to take it.
+#[utoipa::path(
+    get,
+    path = "/user/data-export",
+    tag = "user",
+    responses((
+        status = 200,
+        description = "The archive",
+        content_type = "application/zip",
+        body = DataArchive,
+    )),
+)]
 pub async fn export_data(
     State(s): State<AppState>,
     RecentAuth(user): RecentAuth,

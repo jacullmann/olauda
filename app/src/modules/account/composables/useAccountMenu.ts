@@ -3,11 +3,9 @@ import { useRouter } from 'vue-router';
 import { useEventListener, useElementBounding } from '@vueuse/core';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/vue';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
-import type { UserData } from '@/modules/account/stores/useUserStore';
 
 export function useAccountMenu(
-  props: { email: string; userData: UserData | null },
-  emit: (event: any, ...args: any[]) => void,
+  emit: (event: 'logout') => void,
   refs: {
     root: Ref<HTMLElement | null>;
     popupInner: Ref<HTMLElement | null>;
@@ -16,15 +14,6 @@ export function useAccountMenu(
   },
 ) {
   const router = useRouter();
-
-  const personalizationSetting = computed({
-    get: () => props.userData?.personalized ?? true,
-    set: () => {},
-  });
-
-  function onPersonalizationChange(value: boolean) {
-    emit('personalizationChanged', value);
-  }
 
   const open = ref(false);
 
@@ -115,8 +104,6 @@ export function useAccountMenu(
 
   return {
     isMobile,
-    personalizationSetting,
-    onPersonalizationChange,
     open,
     popupStyle,
     handleLogout,

@@ -67,13 +67,9 @@ const originalName = computed(() => {
   return name === props.getDisplayName(props.lesson) ? undefined : name;
 });
 
-const courseName = computed(
-  () => props.lesson.courses?.name || props.lesson.courseName,
-);
-
 const courseIsImplied = useImpliedCourse(() => ({
-  subjectId: props.lesson.subjectId ?? props.lesson.subjects?.id,
-  courseId: props.lesson.courseId ?? props.lesson.courses?.id,
+  subjectId: props.lesson.subjectId,
+  courseId: props.lesson.courseId,
 }));
 
 const roomChanged = computed(
@@ -140,11 +136,11 @@ const showsRoom = computed(
           {{ lesson.courseCount }}
         </span>
         <span
-          v-else-if="courseName && !courseIsImplied"
+          v-else-if="lesson.courseName && !courseIsImplied"
           class="font-normal truncate ml-1 min-w-0 max-w-[55%]"
           :class="mutedText"
         >
-          {{ courseName }}
+          {{ lesson.courseName }}
         </span>
       </div>
 

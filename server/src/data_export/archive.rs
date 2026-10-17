@@ -18,10 +18,7 @@ const NOTICE_EN: &str = include_str!("notice_en.txt");
 const DATA_FILE: &str = "data.json";
 
 pub fn file_name(exported_at: DateTime<Utc>) -> String {
-    format!(
-        "olauda-export-{}.zip",
-        exported_at.format("%Y-%m-%d")
-    )
+    format!("olauda-export-{}.zip", exported_at.format("%Y-%m-%d"))
 }
 
 /// Serializing and compressing are CPU-bound, so they run off the executor.

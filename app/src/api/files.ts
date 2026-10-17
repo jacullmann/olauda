@@ -1,5 +1,10 @@
-import api from './client';
-import { groupPath } from './groupPath';
+import api, { unwrap } from './client';
+import type {
+  AttachmentDto,
+  FileDto,
+  GroupAvatarUploadDto,
+  UploadDto,
+} from './schema';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
 // Lets development point delivery at the mock server's Cloudinary stand-in.
@@ -9,66 +14,41 @@ const DELIVERY_BASE =
 const PREVIEW_TRANSFORM = 'f_auto,q_auto,w_256,h_256,c_fill';
 const FULL_IMAGE_TRANSFORM = 'f_auto,q_auto';
 
-/** Images (and PDFs) can be transformed on delivery; raw files cannot. */
-export type ResourceType = 'image' | 'raw';
-
 /** A file the server verified and stored, as the API describes it. */
-export interface StoredFile {
-  publicId: string;
-  resourceType: ResourceType;
-  /** Lower-case file extension, e.g. `jpg`, `pdf` or `docx`. */
-  format: string;
-  width: number | null;
-  height: number | null;
-  /** The name the file had on the uploader's device. */
-  name: string | null;
-  /** The preview image an office document carries. */
-  thumbnailPublicId: string | null;
-}
+export type StoredFile = FileDto;
 
 /** A file that is not attached yet; its `id` attaches it to a task. */
-export interface Upload extends StoredFile {
-  id: string;
-}
+export type Upload = UploadDto;
 
-export interface Attachment extends StoredFile {
-  id: string;
-  createdBy: string | null;
-}
+export type Attachment = AttachmentDto;
 
-export interface GroupAvatarUpload {
-  id: string;
-  url: string;
-}
+export type GroupAvatarUpload = GroupAvatarUploadDto;
 
-const FILE_FIELD = 'file';
-
-function fileForm(file: Blob, name?: string): FormData {
+/** Sends the file as the multipart form every upload endpoint reads. */
+function fileForm({ file }: { file: Blob }, name?: string): FormData {
   const form = new FormData();
-  form.append(FILE_FIELD, file, name);
+  form.append('file', file, name);
   return form;
 }
 
 /** Uploads a file for a task of the group; attach it by its `id` afterwards. */
-export async function uploadTaskFile(
-  groupId: string,
-  file: File,
-): Promise<Upload> {
-  const { data } = await api.post<Upload>(
-    groupPath(groupId, '/items/uploads'),
-    fileForm(file, file.name),
+export function uploadTaskFile(groupId: string, file: File): Promise<Upload> {
+  return unwrap(
+    api.POST('/groups/{group_id}/items/uploads', {
+      params: { path: { group_id: groupId } },
+      body: { file },
+      bodySerializer: (body) => fileForm(body, file.name),
+    }),
   );
-  return data;
 }
 
-export async function uploadGroupAvatar(
-  image: Blob,
-): Promise<GroupAvatarUpload> {
-  const { data } = await api.post<GroupAvatarUpload>(
-    '/uploads/group-avatar',
-    fileForm(image, 'avatar'),
+export function uploadGroupAvatar(image: Blob): Promise<GroupAvatarUpload> {
+  return unwrap(
+    api.POST('/uploads/group-avatar', {
+      body: { file: image },
+      bodySerializer: (body) => fileForm(body, 'avatar'),
+    }),
   );
-  return data;
 }
 
 export const isPdf = (file: StoredFile) => file.format === 'pdf';

@@ -1,12 +1,13 @@
-use super::dto::TodoContent;
+use super::dto::{TodoContent, TodoDto, TodoMovedDto, TodoToggledDto};
 use crate::{
-    common::encryption::EncryptionService,
+    common::encryption::{EncryptedPayload, EncryptionService},
     error::{AppError, AppResult},
+    realtime::event::{AccountTopic, Notice, publish},
     state::AppState,
 };
 use fractional_index::FractionalIndex;
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -32,7 +33,7 @@ impl TodoService {
         }
     }
 
-    pub async fn get_todos(&self, user_id: Uuid) -> AppResult<Vec<Value>> {
+    pub async fn get_todos(&self, user_id: Uuid) -> AppResult<Vec<TodoDto>> {
         let todos = sqlx::query!(
             r#"SELECT id, encrypted_title, encrypted_description, completed, position, created_at, updated_at
                FROM encrypted_todos WHERE user_id = $1
@@ -47,41 +48,36 @@ impl TodoService {
         let mut result = Vec::with_capacity(todos.len());
 
         for t in todos {
-            let title_payload: crate::common::encryption::EncryptedPayload =
-                serde_json::from_value(t.encrypted_title)
-                    .map_err(|_| AppError::internal("Invalid encrypted title"))?;
+            let title_payload: EncryptedPayload = serde_json::from_value(t.encrypted_title)
+                .map_err(|_| AppError::internal("Invalid encrypted title"))?;
 
             let title = self.enc.decrypt(&title_payload, &uid).await?;
 
             let description = match t.encrypted_description {
-                Some(desc_val) => {
-                    match serde_json::from_value::<crate::common::encryption::EncryptedPayload>(
-                        desc_val,
-                    ) {
-                        Ok(p) if !p.data.is_empty() => {
-                            self.enc.decrypt(&p, &uid).await.unwrap_or_default()
-                        }
-                        _ => String::new(),
+                Some(desc_val) => match serde_json::from_value::<EncryptedPayload>(desc_val) {
+                    Ok(p) if !p.data.is_empty() => {
+                        self.enc.decrypt(&p, &uid).await.unwrap_or_default()
                     }
-                }
+                    _ => String::new(),
+                },
                 None => String::new(),
             };
 
-            result.push(json!({
-                "id": t.id,
-                "title": title,
-                "description": description,
-                "completed": t.completed,
-                "position": t.position.unwrap_or_default(),
-                "createdAt": t.created_at,
-                "updatedAt": t.updated_at,
-            }));
+            result.push(TodoDto {
+                id: t.id,
+                title,
+                description,
+                completed: t.completed,
+                position: t.position.unwrap_or_default(),
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+            });
         }
 
         Ok(result)
     }
 
-    pub async fn create_todo(&self, user_id: Uuid, content: &TodoContent) -> AppResult<Value> {
+    pub async fn create_todo(&self, user_id: Uuid, content: &TodoContent) -> AppResult<TodoDto> {
         let uid = user_id.to_string();
 
         let first = sqlx::query!(
@@ -129,15 +125,17 @@ impl TodoService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": todo.id,
-            "title": content.title(),
-            "description": content.description(),
-            "completed": todo.completed,
-            "position": todo.position.unwrap_or_default(),
-            "createdAt": todo.created_at,
-            "updatedAt": todo.updated_at,
-        }))
+        publish(&self.db, [todos_changed(user_id)]).await?;
+
+        Ok(TodoDto {
+            id: todo.id,
+            title: content.title().to_owned(),
+            description: content.description().to_owned(),
+            completed: todo.completed,
+            position: todo.position.unwrap_or_default(),
+            created_at: todo.created_at,
+            updated_at: todo.updated_at,
+        })
     }
 
     pub async fn update_todo(
@@ -145,7 +143,7 @@ impl TodoService {
         user_id: Uuid,
         id: Uuid,
         content: &TodoContent,
-    ) -> AppResult<Value> {
+    ) -> AppResult<TodoDto> {
         let uid = user_id.to_string();
 
         sqlx::query!(
@@ -181,22 +179,24 @@ impl TodoService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": updated.id,
-            "title": content.title(),
-            "description": content.description(),
-            "completed": updated.completed,
-            "position": updated.position.unwrap_or_default(),
-            "createdAt": updated.created_at,
-            "updatedAt": updated.updated_at,
-        }))
+        publish(&self.db, [todos_changed(user_id)]).await?;
+
+        Ok(TodoDto {
+            id: updated.id,
+            title: content.title().to_owned(),
+            description: content.description().to_owned(),
+            completed: updated.completed,
+            position: updated.position.unwrap_or_default(),
+            created_at: updated.created_at,
+            updated_at: updated.updated_at,
+        })
     }
 
-    pub async fn toggle_todo(&self, user_id: Uuid, id: Uuid) -> AppResult<Value> {
+    pub async fn toggle_todo(&self, user_id: Uuid, id: Uuid) -> AppResult<TodoToggledDto> {
         let updated = sqlx::query!(
             r#"UPDATE encrypted_todos SET completed = NOT completed
                WHERE id = $1 AND user_id = $2
-               RETURNING id, completed, position, updated_at"#,
+               RETURNING id, completed, updated_at"#,
             id,
             user_id
         )
@@ -214,12 +214,13 @@ impl TodoService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": updated.id,
-            "completed": new_completed,
-            "position": updated.position.unwrap_or_default(),
-            "updatedAt": updated.updated_at,
-        }))
+        publish(&self.db, [todos_changed(user_id)]).await?;
+
+        Ok(TodoToggledDto {
+            id: updated.id,
+            completed: new_completed,
+            updated_at: updated.updated_at,
+        })
     }
 
     pub async fn reorder_todo(
@@ -228,7 +229,7 @@ impl TodoService {
         id: Uuid,
         prev: Option<&str>,
         next: Option<&str>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<TodoMovedDto> {
         sqlx::query!(
             r#"SELECT id FROM encrypted_todos WHERE id = $1 AND user_id = $2"#,
             id,
@@ -257,14 +258,16 @@ impl TodoService {
         .fetch_one(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": updated.id,
-            "position": new_pos_str,
-            "updatedAt": updated.updated_at,
-        }))
+        publish(&self.db, [todos_changed(user_id)]).await?;
+
+        Ok(TodoMovedDto {
+            id: updated.id,
+            position: new_pos_str,
+            updated_at: updated.updated_at,
+        })
     }
 
-    pub async fn delete_todo(&self, user_id: Uuid, id: Uuid) -> AppResult<Value> {
+    pub async fn delete_todo(&self, user_id: Uuid, id: Uuid) -> AppResult<()> {
         sqlx::query!(
             r#"SELECT id FROM encrypted_todos WHERE id = $1 AND user_id = $2"#,
             id,
@@ -286,8 +289,15 @@ impl TodoService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [todos_changed(user_id)]).await?;
+
+        Ok(())
     }
+}
+
+/// Private tasks are the owner's alone; their other sessions follow along.
+const fn todos_changed(user_id: Uuid) -> Notice {
+    Notice::account(user_id, AccountTopic::Todos)
 }
 
 #[cfg(test)]

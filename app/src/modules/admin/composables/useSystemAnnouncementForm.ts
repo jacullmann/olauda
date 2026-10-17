@@ -1,6 +1,7 @@
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
 import { apiErrorMessage } from '@/api/errors';
 import { ANNOUNCEMENT_MAX_CHARS } from '@/modules/announcements/types';
 import {
@@ -8,20 +9,35 @@ import {
   toSaveRequest,
   type DraftField,
 } from '@/modules/admin/utils/systemAnnouncementDraft';
-import type { AdminSystemAnnouncement } from '@/modules/admin/types';
-
-const ENDPOINT = '/admin/system-announcements';
+import type {
+  AdminSystemAnnouncement,
+  SaveSystemAnnouncementRequest,
+} from '@/modules/admin/types';
+import { invalidateSystemAnnouncements } from '@/modules/admin/utils/adminQueries';
 
 /** Posts a new announcement, or reschedules `announcement` when given. */
 export function useSystemAnnouncementForm(
   announcement: AdminSystemAnnouncement | null,
 ) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
 
   const draft = reactive(draftFrom(announcement, new Date()));
   const fieldErrors = ref<Partial<Record<DraftField, string>>>({});
   const submitError = ref('');
-  const submitting = ref(false);
+
+  const save = useMutation({
+    mutationFn: (body: SaveSystemAnnouncementRequest) =>
+      announcement
+        ? unwrap(
+            api.PUT('/admin/system-announcements/{id}', {
+              params: { path: { id: announcement.id } },
+              body,
+            }),
+          )
+        : unwrap(api.POST('/admin/system-announcements', { body })),
+    onSuccess: () => invalidateSystemAnnouncements(queryClient),
+  });
 
   /** Resolves whether the announcement was saved. */
   async function submit(): Promise<boolean> {
@@ -38,13 +54,8 @@ export function useSystemAnnouncementForm(
       return false;
     }
 
-    submitting.value = true;
     try {
-      if (announcement) {
-        await api.put(`${ENDPOINT}/${announcement.id}`, result.request);
-      } else {
-        await api.post(ENDPOINT, result.request);
-      }
+      await save.mutateAsync(result.request);
       return true;
     } catch (e) {
       submitError.value = apiErrorMessage(
@@ -52,10 +63,14 @@ export function useSystemAnnouncementForm(
         t('admin.announcements.errors.save'),
       );
       return false;
-    } finally {
-      submitting.value = false;
     }
   }
 
-  return { draft, fieldErrors, submitError, submitting, submit };
+  return {
+    draft,
+    fieldErrors,
+    submitError,
+    submitting: save.isPending,
+    submit,
+  };
 }

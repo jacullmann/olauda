@@ -4,13 +4,18 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { usePreferences } from '@/modules/account/composables/usePreferences';
+import { isSupportedLocale } from '@/i18n';
 import { usePersonalization } from '@/modules/account/composables/usePersonalization';
 import type { UnitOption } from '@/common/components/BaseSelect.vue';
 
 const { t } = useI18n();
 const { user } = storeToRefs(useUserStore());
 const { setPersonalization } = usePersonalization();
-const { currentLanguage, setPreference } = usePreferences();
+const { currentLanguage, setLanguage } = usePreferences();
+
+function changeLanguage(language: string) {
+  if (isSupportedLocale(language)) setLanguage(language);
+}
 
 const personalizationOptions = computed<UnitOption[]>(() => [
   { value: 'yes', label: t('auth.settings.personalization_options.mine') },
@@ -67,7 +72,7 @@ function updatePersonalization(value: string) {
           :model-value="currentLanguage"
           :options="localeOptions"
           :title="t('common.language')"
-          @update:model-value="setPreference('language', $event)"
+          @update:model-value="changeLanguage"
         >
           <template #label>
             {{ t('common.language') }}

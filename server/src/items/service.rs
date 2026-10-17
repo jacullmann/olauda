@@ -6,31 +6,17 @@ use crate::{
     error::{AppError, AppResult},
     items::{
         attachments::{self, AttachmentDto},
-        dto::{CreateItemDto, ItemSubjectDto, UpdateItemDto},
+        dto::{CreateItemDto, ItemDto, ItemListDto, ItemSubjectDto, TimeColor, UpdateItemDto},
         item_type::ItemType,
         policy::ItemActor,
     },
+    realtime::event::{GroupTopic, Notice, publish},
     state::AppState,
 };
-use chrono::Utc;
-use serde_json::{Value, json};
+use chrono::{DateTime, Utc};
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
-
-fn time_left_color(due: &chrono::DateTime<Utc>) -> &'static str {
-    let diff = (*due - Utc::now()).num_seconds() as f64 / 86400.0;
-    if diff < 0.0 {
-        "expired"
-    } else if diff < 1.0 {
-        "danger"
-    } else if diff < 2.0 {
-        "warn"
-    } else if diff < 3.0 {
-        "normal"
-    } else {
-        "ok"
-    }
-}
 
 const TITLE_MAX_CHARS: usize = 60;
 
@@ -67,17 +53,58 @@ impl ItemSubject {
 }
 
 #[derive(Default)]
-pub struct GetItemsFilter<'a> {
-    pub item_type: Option<&'a str>,
-    pub filter: Option<&'a str>,
+pub struct GetItemsFilter {
+    pub item_type: Option<ItemType>,
+    pub archived: bool,
     pub subject_id: Option<Uuid>,
     pub hide_checked: bool,
     pub personalized: bool,
 }
 
-pub struct ItemList {
-    pub items: Vec<Value>,
-    pub hidden_by_courses: usize,
+/// The columns both task queries read.
+struct ItemRow {
+    id: Uuid,
+    r#type: ItemType,
+    title: String,
+    subject_id: Option<Uuid>,
+    course_id: Option<Uuid>,
+    subject_name: String,
+    course_name: Option<String>,
+    description: String,
+    due_date: DateTime<Utc>,
+    created_by: Option<Uuid>,
+    editor_note: String,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+    creator_email: Option<String>,
+    takes_course: bool,
+}
+
+impl ItemRow {
+    fn into_dto(self, attachments: Vec<AttachmentDto>, include_creator_email: bool) -> ItemDto {
+        ItemDto {
+            id: self.id,
+            r#type: self.r#type,
+            title: self.title,
+            subject_id: self.subject_id,
+            course_id: self.course_id,
+            subject_name: self.subject_name,
+            course_name: self.course_name,
+            takes_course: self.takes_course,
+            description: self.description,
+            attachments,
+            due_date: self.due_date,
+            created_by: self.created_by,
+            created_by_name: self
+                .created_by
+                .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string())),
+            created_by_email: self.creator_email.filter(|_| include_creator_email),
+            time_color: TimeColor::until(self.due_date, Utc::now()),
+            editor_note: self.editor_note,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
 }
 
 pub struct ItemsService {
@@ -153,11 +180,9 @@ impl ItemsService {
         &self,
         tenant_id: Uuid,
         user_id: Uuid,
-        f: GetItemsFilter<'_>,
+        f: GetItemsFilter,
         include_creator_email: bool,
-    ) -> AppResult<ItemList> {
-        let old_filter = f.filter == Some("old");
-
+    ) -> AppResult<ItemListDto> {
         // A task for a single course reaches that course's members; one for the
         // whole subject reaches everybody taking any of its courses.
         // Unpinned tasks drop into the archive once checked, by default on or
@@ -165,10 +190,11 @@ impl ItemsService {
         // to a course the member does not take, since nobody expects them to
         // tick those off. The member's task settings can change both.
         let mut rows = sqlx::query!(
-            r#"SELECT i.id, i.type, i.title, i.subject_id, i.course_id,
+            r#"SELECT i.id, i.type AS "type: ItemType", i.title, i.subject_id, i.course_id,
                       COALESCE(s.name, i.custom_subject) as "subject_name!", c.name as "course_name?",
-                      i.description, i.due_date,
-                      i.created_by as "created_by?: Uuid", i.editor_note, i.created_at, i.updated_at,
+                      COALESCE(i.description, '') AS "description!", i.due_date,
+                      i.created_by as "created_by?: Uuid", COALESCE(i.editor_note, '') AS "editor_note!",
+                      i.created_at, i.updated_at,
                       u.email as "creator_email?: String",
                       m.takes_course as "takes_course!",
                       (
@@ -215,7 +241,7 @@ impl ItemsService {
                    ) AS naturally_old
                ) o
                WHERE i.tenant_id = $1
-                 AND ($3::text IS NULL OR $3 = 'all' OR i.type = $3)
+                 AND ($3::text IS NULL OR i.type = $3)
                  AND (
                      ($4::boolean AND (v.status = 'archived' OR o.naturally_old) AND v.status IS DISTINCT FROM 'kept')
                      OR
@@ -233,8 +259,8 @@ impl ItemsService {
                ORDER BY i.due_date ASC"#,
             tenant_id,
             user_id,
-            f.item_type,
-            old_filter,
+            f.item_type.map(ItemType::as_str),
+            f.archived,
             f.hide_checked,
             f.subject_id
         )
@@ -249,44 +275,39 @@ impl ItemsService {
         }
         let hidden_by_courses = row_count - rows.len();
 
-        if old_filter {
+        if f.archived {
             rows.sort_by_key(|row| std::cmp::Reverse(row.due_date));
         }
 
         let item_ids: Vec<Uuid> = rows.iter().map(|r| r.id).collect();
         let mut attachments = attachments::of_items(&self.db, &item_ids).await?;
 
-        let items: Vec<Value> = rows
+        let items = rows
             .into_iter()
             .map(|r| {
                 let item_attachments = attachments.remove(&r.id).unwrap_or_default();
-                let creator_deleted = r.created_by.is_none();
-                let created_by_name = r.created_by.map(|uid| {
-                    crate::common::name_generator::generate_user_name(&uid.to_string())
-                });
-                let created_by_email = if include_creator_email {
-                    r.creator_email.unwrap_or_else(|| "Gelöschter Nutzer".into())
-                } else {
-                    String::new()
-                };
-                json!({
-                    "id": r.id, "type": r.r#type, "title": r.title,
-                    "subjectId": r.subject_id, "courseId": r.course_id,
-                    "subjectName": r.subject_name, "courseName": r.course_name,
-                    "takesCourse": r.takes_course,
-                    "description": r.description,
-                    "attachments": item_attachments, "dueDate": r.due_date,
-                    "createdBy": r.created_by,
-                    "createdByName": created_by_name,
-                    "createdByEmail": created_by_email,
-                    "creatorDeleted": creator_deleted,
-                    "timeColor": time_left_color(&r.due_date),
-                    "editorNote": r.editor_note, "createdAt": r.created_at, "updatedAt": r.updated_at,
-                })
+                ItemRow {
+                    id: r.id,
+                    r#type: r.r#type,
+                    title: r.title,
+                    subject_id: r.subject_id,
+                    course_id: r.course_id,
+                    subject_name: r.subject_name,
+                    course_name: r.course_name,
+                    description: r.description,
+                    due_date: r.due_date,
+                    created_by: r.created_by,
+                    editor_note: r.editor_note,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                    creator_email: r.creator_email,
+                    takes_course: r.takes_course,
+                }
+                .into_dto(item_attachments, include_creator_email)
             })
             .collect();
 
-        Ok(ItemList {
+        Ok(ItemListDto {
             items,
             hidden_by_courses,
         })
@@ -298,12 +319,14 @@ impl ItemsService {
         user_id: Uuid,
         id: Uuid,
         include_creator_email: bool,
-    ) -> AppResult<Value> {
-        let row = sqlx::query!(
-            r#"SELECT i.id, i.type, i.title, i.subject_id, i.course_id,
+    ) -> AppResult<ItemDto> {
+        let row = sqlx::query_as!(
+            ItemRow,
+            r#"SELECT i.id, i.type AS "type: ItemType", i.title, i.subject_id, i.course_id,
                       COALESCE(s.name, i.custom_subject) as "subject_name!", c.name as "course_name?",
-                      i.description, i.due_date as "due_date!",
-                      i.created_by as "created_by?: Uuid", i.editor_note, i.created_at, i.updated_at,
+                      COALESCE(i.description, '') AS "description!", i.due_date AS "due_date!",
+                      i.created_by AS "created_by?: Uuid", COALESCE(i.editor_note, '') AS "editor_note!",
+                      i.created_at, i.updated_at,
                       u.email as "creator_email?: String",
                       (
                           i.subject_id IS NULL
@@ -325,35 +348,12 @@ impl ItemsService {
             tenant_id,
             user_id
         )
-            .fetch_optional(&self.db)
-            .await?
-            .ok_or_else(|| AppError::not_found("Item not found."))?;
+        .fetch_optional(&self.db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Item not found."))?;
 
         let item_attachments = attachments::of_item(&self.db, row.id).await?;
-        let creator_deleted = row.created_by.is_none();
-        let created_by_name = row
-            .created_by
-            .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string()));
-        let created_by_email = if include_creator_email {
-            row.creator_email
-                .unwrap_or_else(|| "Gelöschter Nutzer".into())
-        } else {
-            String::new()
-        };
-        Ok(json!({
-            "id": row.id, "type": row.r#type, "title": row.title,
-            "subjectId": row.subject_id, "courseId": row.course_id,
-            "subjectName": row.subject_name, "courseName": row.course_name,
-            "takesCourse": row.takes_course,
-            "description": row.description,
-            "attachments": item_attachments, "dueDate": row.due_date,
-            "createdBy": row.created_by,
-            "createdByName": created_by_name,
-            "createdByEmail": created_by_email,
-            "creatorDeleted": creator_deleted,
-            "timeColor": time_left_color(&row.due_date),
-            "editorNote": row.editor_note, "createdAt": row.created_at, "updatedAt": row.updated_at,
-        }))
+        Ok(row.into_dto(item_attachments, include_creator_email))
     }
 
     pub async fn create_item(
@@ -361,12 +361,9 @@ impl ItemsService {
         tenant_id: Uuid,
         actor: ItemActor,
         dto: &CreateItemDto,
-    ) -> AppResult<Value> {
+    ) -> AppResult<Uuid> {
         let title = DisplayName::parse(&dto.title, TITLE_MAX_CHARS, "title")?;
-        let due_date = dto
-            .due_date
-            .parse::<chrono::DateTime<Utc>>()
-            .map_err(|_| AppError::bad_request("Invalid due_date format"))?;
+        let due_date = dto.due_date;
 
         let attachment_ids = dto.attachment_ids.as_slice();
         if !attachment_ids.is_empty() && !actor.can_attach_files {
@@ -396,15 +393,9 @@ impl ItemsService {
 
         let subject = self.resolve_subject(tenant_id, &dto.subject).await?;
 
-        if !dto.confirm_double_task.unwrap_or(false) {
-            let duplicate = sqlx::query!(
-                r#"SELECT i.id, i.type, i.title, i.subject_id, i.course_id,
-                          COALESCE(s.name, i.custom_subject) as "subject_name!", c.name as "course_name?",
-                          i.description, i.due_date,
-                          i.created_by, i.editor_note, i.created_at, i.updated_at
-                   FROM items i
-                   LEFT JOIN subjects s ON s.id = i.subject_id
-                   LEFT JOIN courses c ON c.id = i.course_id
+        if !dto.confirm_duplicate {
+            let duplicate = sqlx::query_scalar!(
+                r#"SELECT i.id FROM items i
                    WHERE i.tenant_id = $1
                      AND i.type = $2
                      AND i.subject_id IS NOT DISTINCT FROM $3
@@ -419,36 +410,14 @@ impl ItemsService {
                 subject.custom_name(),
                 due_date
             )
-                .fetch_optional(&self.db)
-                .await?;
+            .fetch_optional(&self.db)
+            .await?;
 
-            if let Some(row) = duplicate {
-                let created_by_name = row
-                    .created_by
-                    .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string()));
-                let duplicate_val = json!({
-                    "id": row.id,
-                    "type": row.r#type,
-                    "title": row.title,
-                    "subjectId": row.subject_id,
-                    "courseId": row.course_id,
-                    "subjectName": row.subject_name,
-                    "courseName": row.course_name,
-                    "description": row.description,
-                    "attachments": attachments::of_item(&self.db, row.id).await?,
-                    "dueDate": row.due_date,
-                    "createdBy": row.created_by,
-                    "createdByName": created_by_name,
-                    "createdByEmail": "",
-                    "timeColor": time_left_color(&row.due_date),
-                    "editorNote": row.editor_note,
-                    "createdAt": row.created_at,
-                    "updatedAt": row.updated_at,
-                });
-                return Err(AppError::Conflict(
-                    "Duplicate task found".to_string(),
-                    duplicate_val,
-                ));
+            if let Some(duplicate_id) = duplicate {
+                let duplicate = self
+                    .get_item_by_id(tenant_id, actor.user_id, duplicate_id, false)
+                    .await?;
+                return Err(AppError::DuplicateItem(Box::new(duplicate)));
             }
         }
 
@@ -476,9 +445,10 @@ impl ItemsService {
         .execute(&mut *tx)
         .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "id": row.id }))
+        Ok(row.id)
     }
 
     pub async fn update_item(
@@ -487,7 +457,7 @@ impl ItemsService {
         id: Uuid,
         actor: ItemActor,
         dto: &UpdateItemDto,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let title = dto
             .title
             .as_deref()
@@ -546,14 +516,10 @@ impl ItemsService {
             .await?;
         }
 
-        if let Some(ref due) = dto.due_date {
-            let parsed = due
-                .parse::<chrono::DateTime<Utc>>()
-                .map_err(|_| AppError::bad_request("Invalid due_date"))?;
-
+        if let Some(due_date) = dto.due_date {
             sqlx::query!(
                 r#"UPDATE items SET due_date = $1 WHERE id = $2"#,
-                parsed,
+                due_date,
                 id
             )
             .execute(&mut *tx)
@@ -572,9 +538,10 @@ impl ItemsService {
         .execute(&mut *tx)
         .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     pub async fn add_attachment(
@@ -589,16 +556,13 @@ impl ItemsService {
         // The row lock serialises concurrent uploads, so parallel requests
         // cannot each see room for one more attachment and overshoot the quota.
         let item_type = sqlx::query_scalar!(
-            r#"SELECT type FROM items WHERE id = $1 AND tenant_id = $2 FOR UPDATE"#,
+            r#"SELECT type AS "type: ItemType" FROM items WHERE id = $1 AND tenant_id = $2 FOR UPDATE"#,
             item_id,
             tenant_id
         )
         .fetch_optional(&mut *tx)
         .await?
         .ok_or_else(|| AppError::not_found("Item not found."))?;
-
-        let item_type = ItemType::from_str(&item_type)
-            .ok_or_else(|| AppError::internal(format!("Unknown item type {item_type}")))?;
 
         let held = attachments::count(&mut *tx, item_id, user_id).await?;
         item_type
@@ -634,6 +598,7 @@ impl ItemsService {
             .find(|attachment| attachment.id == attachment_id)
             .ok_or_else(|| AppError::internal("Attachment vanished within its transaction"))?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
         tx.commit().await?;
 
         Ok(attachment)
@@ -682,17 +647,13 @@ impl ItemsService {
         .execute(&mut *tx)
         .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
         tx.commit().await?;
 
         Ok(())
     }
 
-    pub async fn delete_item(
-        &self,
-        tenant_id: Uuid,
-        id: Uuid,
-        actor: ItemActor,
-    ) -> AppResult<Value> {
+    pub async fn delete_item(&self, tenant_id: Uuid, id: Uuid, actor: ItemActor) -> AppResult<()> {
         let item = sqlx::query!(
             r#"SELECT id, created_by as "created_by?: Uuid" FROM items WHERE id = $1 AND tenant_id = $2"#,
             id,
@@ -722,7 +683,9 @@ impl ItemsService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+
+        Ok(())
     }
 
     pub async fn update_item_note(
@@ -731,7 +694,7 @@ impl ItemsService {
         id: Uuid,
         user_id: Uuid,
         note: Option<&DisplayText>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<String> {
         sqlx::query!(
             r#"SELECT id FROM items WHERE id = $1 AND tenant_id = $2"#,
             id,
@@ -760,6 +723,8 @@ impl ItemsService {
             .execute(&self.db)
             .await?;
 
-        Ok(json!({ "ok": true, "editorNote": note }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Tasks)]).await?;
+
+        Ok(note.to_owned())
     }
 }

@@ -15,12 +15,8 @@ export function useEnterApp() {
   const { homeRoute } = useGroups();
 
   return async function enterApp() {
-    try {
-      await checkAuthStatus();
-      await userStore.fetchUser();
-    } catch {
-      // Signed in; navigate anyway and let the route guard re-sync.
-    }
+    await checkAuthStatus();
+    await userStore.fetchUser();
     await router.push(consumeLoginReturn() ?? homeRoute.value);
   };
 }

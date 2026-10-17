@@ -1,33 +1,31 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { useToast } from '@/common/composables/useToast';
-import type { CleanupJob } from '@/modules/admin/types';
+import { useQuery } from '@tanstack/vue-query';
+import { apiErrorMessage } from '@/api/errors';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
+import { cleanupJobsQuery } from '@/modules/admin/utils/adminQueries';
 
-/**
- * The health of the scheduled cleanups. Fetched fresh whenever the overview
- * opens, since a stalled job is exactly what an admin looks there to spot.
- */
+/** The health of the scheduled cleanups. */
 export function useCleanupJobs() {
   const { t } = useI18n();
-  const toast = useToast();
-  const jobs = ref<CleanupJob[]>([]);
-  const loading = ref(false);
-  const failed = ref(false);
+  const query = useQuery(cleanupJobsQuery());
 
-  async function loadJobs() {
-    loading.value = true;
-    failed.value = false;
-    try {
-      const { data } = await api.get<CleanupJob[]>('/admin/cleanup-jobs');
-      jobs.value = data;
-    } catch {
-      failed.value = true;
-      toast.error(t('admin.overview.cleanup_jobs.errors.load'));
-    } finally {
-      loading.value = false;
-    }
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t('admin.overview.cleanup_jobs.errors.load')),
+  );
+
+  const hasJobs = computed(() => query.data.value !== undefined);
+
+  function loadJobs() {
+    void query.refetch();
   }
 
-  return { jobs, loading, failed, loadJobs };
+  return {
+    jobs: computed(() => query.data.value ?? []),
+    loading: computed(() => !hasJobs.value && query.isFetching.value),
+    failed: computed(
+      () => !hasJobs.value && query.isError.value && !query.isFetching.value,
+    ),
+    loadJobs,
+  };
 }

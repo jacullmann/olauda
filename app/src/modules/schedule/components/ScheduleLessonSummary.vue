@@ -30,10 +30,6 @@ const originalName = computed(() => {
   return name === props.getDisplayName(props.lesson) ? undefined : name;
 });
 
-const courseName = computed(
-  () => props.lesson.courses?.name || props.lesson.courseName,
-);
-
 const courseIsImplied = useImpliedCourse(() => ({
   subjectId: lessonSubjectId(props.lesson),
   courseId: lessonCourseId(props.lesson),
@@ -68,10 +64,10 @@ const periodLabel = computed(() => {
           {{ getDisplayName(lesson) }}
         </h1>
         <span
-          v-if="courseName && !courseIsImplied"
+          v-if="lesson.courseName && !courseIsImplied"
           class="text-xl text-on-ghost-muted"
         >
-          {{ courseName }}
+          {{ lesson.courseName }}
         </span>
       </div>
 

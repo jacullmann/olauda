@@ -1,13 +1,10 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorCode, apiErrorStatus } from '@/api/errors';
 import { useCooldown } from './useCooldown';
 import { useToast } from '@/common/composables/useToast';
-import {
-  AuthErrorCode,
-  authErrorMessage,
-} from '@/modules/auth/utils/authErrors';
+import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import {
   EMAIL_CODE_LENGTH,
   RESEND_COOLDOWN_MS,
@@ -48,7 +45,7 @@ export function useConfirmSignUp(
 
   function confirmError(e: unknown): string {
     const errorCode = apiErrorCode(e);
-    if (errorCode === AuthErrorCode.IncorrectPassword) {
+    if (errorCode === 'INCORRECT_PASSWORD') {
       return t('auth.verify_email.errors.incorrect_password');
     }
     if (!errorCode && apiErrorStatus(e) === BAD_REQUEST) {
@@ -67,7 +64,11 @@ export function useConfirmSignUp(
 
     submitting.value = true;
     try {
-      await api.post('/auth/verify', { ...credentials, code: code.value });
+      await unwrap(
+        api.POST('/auth/verify', {
+          body: { ...credentials, code: code.value },
+        }),
+      );
       await onSignedIn();
     } catch (e: unknown) {
       error.value = confirmError(e);
@@ -83,7 +84,9 @@ export function useConfirmSignUp(
 
     resending.value = true;
     try {
-      await api.post('/auth/verify/resend', { email: credentials.email });
+      await unwrap(
+        api.POST('/auth/verify/resend', { body: { email: credentials.email } }),
+      );
       cooldown.start();
       code.value = '';
       toast.success(t('auth.verify_email.success.resend_code'));

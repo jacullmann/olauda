@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import type { TodoContentDto } from '@/api/schema';
 import type { Todo } from '@/modules/todos/types';
 import { apiErrorMessage } from '@/api/errors';
+import { todoKeys } from '@/modules/todos/utils/todoQueries';
 
 const props = defineProps<{
   initial?: Todo;
@@ -17,26 +20,41 @@ const emit = defineEmits<{
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 2000;
 
-const { t, tm, rt } = useI18n();
+const i18n = useI18n();
+const { t } = i18n;
 
 type PlaceholderMessage = { title: string; description: string };
 
 // Pick one title/description pair per form instance so both fields match.
-const placeholders = computed(
-  () => tm('tasks.private_tasks.form_placeholders') as PlaceholderMessage[],
+const placeholders = computed<PlaceholderMessage[]>(() =>
+  i18n.tm('tasks.private_tasks.form_placeholders'),
 );
 const placeholderIndex = Math.floor(Math.random() * placeholders.value.length);
 const placeholder = computed(() => {
   const entry = placeholders.value[placeholderIndex];
   return entry
-    ? { title: rt(entry.title), description: rt(entry.description) }
+    ? { title: i18n.rt(entry.title), description: i18n.rt(entry.description) }
     : { title: '', description: '' };
 });
 
 const title = ref(props.initial?.title || '');
 const description = ref(props.initial?.description || '');
 
-const submitting = ref(false);
+const queryClient = useQueryClient();
+const save = useMutation({
+  mutationFn: (content: TodoContentDto) =>
+    unwrap(
+      props.initial
+        ? api.PUT('/todos/{id}', {
+            params: { path: { id: props.initial.id } },
+            body: content,
+          })
+        : api.POST('/todos', { body: content }),
+    ),
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: todoKeys.all }),
+});
+const submitting = save.isPending;
+
 const titleError = ref('');
 const descriptionError = ref('');
 const submitError = ref('');
@@ -68,28 +86,14 @@ async function submit() {
     return;
   }
 
-  submitting.value = true;
-
   try {
-    const payload = {
+    const saved = await save.mutateAsync({
       title: title.value.trim(),
       description: description.value.trim(),
-    };
-
-    let responseData: Todo;
-    if (props.initial) {
-      const { data } = await api.put(`/todos/${props.initial.id}`, payload);
-      responseData = data;
-    } else {
-      const { data } = await api.post('/todos', payload);
-      responseData = data;
-    }
-
-    emit('success', responseData);
+    });
+    emit('success', saved);
   } catch (e: unknown) {
     submitError.value = apiErrorMessage(e, t('tasks.errors.save'));
-  } finally {
-    submitting.value = false;
   }
 }
 </script>

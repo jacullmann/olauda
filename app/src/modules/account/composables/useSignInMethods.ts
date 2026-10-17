@@ -1,19 +1,22 @@
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import type { SignInMethods } from '@/modules/auth/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
-import { useUserStore } from '@/modules/account/stores/useUserStore';
+import {
+  accountKeys,
+  signInMethodsQuery,
+} from '@/modules/account/utils/accountQueries';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
 /** The ways the account signs in, and removing its password. */
 export function useSignInMethods() {
   const { t } = useI18n();
-  const userStore = useUserStore();
+  const queryClient = useQueryClient();
 
-  const methods = ref<SignInMethods | null>(null);
-  const removing = ref(false);
+  // Without the methods the removal is simply not offered.
+  const { data: methods } = useQuery(signInMethodsQuery());
 
   /** The password can go once a passkey or Google signs the user in. */
   const canRemovePassword = computed(
@@ -22,32 +25,28 @@ export function useSignInMethods() {
       (methods.value.passkeys > 0 || methods.value.google),
   );
 
-  async function fetchMethods(): Promise<void> {
-    try {
-      const { data } = await api.get<SignInMethods>('/auth/sign-in-methods');
-      methods.value = data;
-    } catch {
-      // Without the methods the removal is simply not offered.
-      methods.value = null;
-    }
-  }
+  const remove = useMutation({
+    mutationFn: () => unwrap(api.DELETE('/auth/password')),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: accountKeys.all }),
+  });
 
   async function removePassword(): Promise<ActionResult> {
-    removing.value = true;
     try {
-      await api.delete('/auth/password');
-      if (methods.value) methods.value = { ...methods.value, password: false };
-      userStore.updateUser({ hasPassword: false });
+      await remove.mutateAsync();
       return { ok: true };
     } catch (err: unknown) {
       return {
         ok: false,
         error: authErrorMessage(err, t('auth.remove_password.errors.remove')),
       };
-    } finally {
-      removing.value = false;
     }
   }
 
-  return { methods, removing, canRemovePassword, fetchMethods, removePassword };
+  return {
+    methods,
+    removing: remove.isPending,
+    canRemovePassword,
+    removePassword,
+  };
 }

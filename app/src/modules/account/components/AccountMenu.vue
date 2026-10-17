@@ -10,7 +10,7 @@ import type { UserData } from '@/modules/account/stores/useUserStore';
 
 const { t } = useI18n();
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     email: string;
     userData: UserData | null;
@@ -27,7 +27,6 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'logout'): void;
-  (e: 'personalizationChanged', value: boolean): void;
 }>();
 
 const root = ref<HTMLElement | null>(null);
@@ -38,21 +37,13 @@ const baseMenuRef = ref<{
   menuEl: HTMLElement | null;
 } | null>(null);
 
-const {
-  personalizationSetting,
-  onPersonalizationChange,
-  open,
-  popupStyle,
-  handleLogout,
-  openAccountSettings,
-  toggle,
-  cancel,
-} = useAccountMenu(props, emit, {
-  root,
-  popupInner,
-  firstMenuBtnRef,
-  baseMenu: baseMenuRef,
-});
+const { open, popupStyle, handleLogout, openAccountSettings, toggle, cancel } =
+  useAccountMenu(emit, {
+    root,
+    popupInner,
+    firstMenuBtnRef,
+    baseMenu: baseMenuRef,
+  });
 </script>
 
 <template>
@@ -124,10 +115,7 @@ const {
         {{ t('auth.account_settings.title') }}
       </BaseMenuButton>
 
-      <AccountMenuPersonalization
-        v-model="personalizationSetting"
-        @change="onPersonalizationChange"
-      />
+      <AccountMenuPersonalization />
 
       <BaseMenuDivider />
 

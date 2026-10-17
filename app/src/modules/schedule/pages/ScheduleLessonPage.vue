@@ -30,7 +30,7 @@ const {
   weekStart,
   loading,
   loadError,
-  loadSchedule,
+  retrySchedule,
   changesFailed,
   retrySubstitutions,
   getDisplayName,
@@ -43,7 +43,6 @@ const {
   scheduledDayHeading,
   existingChange,
   changesLoaded,
-  reloadChanges,
 } = useScheduleLesson(date, lessonId);
 
 /** The top bar, then the lesson, then its tasks. */
@@ -82,11 +81,6 @@ const canManageScheduleChanges = computed(() =>
 );
 
 const isChanging = ref(false);
-
-function onChangeSaved() {
-  isChanging.value = false;
-  void reloadChanges();
-}
 
 // Every navigation resets the title, also one that only moves the lesson.
 watch(
@@ -156,7 +150,7 @@ onMounted(() => {
       <BaseLoadError
         v-else-if="loadError"
         class="animate-enter"
-        @retry="loadSchedule()"
+        @retry="retrySchedule"
       >
         {{ t('schedule.errors.load') }}
       </BaseLoadError>
@@ -195,7 +189,7 @@ onMounted(() => {
       :week-start="weekStart"
       :day-label="scheduledDayHeading"
       @close="isChanging = false"
-      @saved="onChangeSaved"
+      @saved="isChanging = false"
     />
   </div>
 </template>

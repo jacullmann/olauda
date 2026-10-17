@@ -1,11 +1,11 @@
 import { computed, ref, shallowRef, watch } from 'vue';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useQuery } from '@tanstack/vue-query';
 import { useSubjectStore } from '@/modules/courses/stores/useSubjectStore';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 import type { Enrollment } from './useCourseSelection';
 import type { Lesson } from '@/modules/schedule/types';
 import { scheduleConfigOrDefault } from '@/modules/schedule/utils/slotTimes';
+import { timetableQuery } from '@/modules/schedule/utils/scheduleQueries';
 import {
   courseLevelsOf,
   coursesAtLevel,
@@ -81,30 +81,27 @@ export function useCourseSetup(groupId: string) {
     [...candidates.value.values()].some((courseIds) => courseIds.length > 1),
   );
 
-  const lessons = shallowRef<Lesson[]>([]);
-  const loadingLessons = ref(false);
-  let lessonsRequest: Promise<void> | null = null;
-
-  /**
-   * The whole timetable: the member's own one hides courses not yet taken.
-   * Callers share one request, and a failed one can be retried.
+  /*
+   * The whole timetable, since the member's own one hides the courses not yet
+   * taken. Only an Abitur group picks courses in it.
    */
-  function loadLessons(): Promise<void> {
-    lessonsRequest ??= (async () => {
-      loadingLessons.value = true;
-      try {
-        const { data } = await api.get<Lesson[]>(
-          groupPath(groupId, '/admin/schedule'),
-        );
-        lessons.value = data ?? [];
-      } catch (e) {
-        lessonsRequest = null;
-        throw e;
-      } finally {
-        loadingLessons.value = false;
-      }
-    })();
-    return lessonsRequest;
+  const timetable = useQuery(
+    computed(() => ({
+      ...timetableQuery(groupId),
+      enabled: findGroup(groupId)?.groupType === 'abitur',
+    })),
+  );
+  const lessons = computed<Lesson[]>(() => timetable.data.value?.lessons ?? []);
+  const loadingLessons = computed(
+    () => timetable.isFetching.value && !timetable.data.value,
+  );
+  /** Why the timetable is missing, until it loads. */
+  const lessonsError = computed(() =>
+    timetable.data.value ? null : timetable.error.value,
+  );
+
+  function retryLessons() {
+    void timetable.refetch();
   }
 
   const scheduleConfig = computed(() =>
@@ -143,13 +140,10 @@ export function useCourseSetup(groupId: string) {
     const courseSubjectIds = new Set(
       subjects.value.map((subject) => subject.id),
     );
-    return lessons.value.filter((lesson) => {
-      if (lesson.courseId && resolver.value.subjectOf.has(lesson.courseId)) {
-        return true;
-      }
-      const subjectId = lesson.subjectId ?? lesson.subjects?.id;
+    return lessons.value.filter(({ subjectId, courseId }) => {
+      if (courseId && resolver.value.subjectOf.has(courseId)) return true;
       if (!subjectId || !courseSubjectIds.has(subjectId)) return true;
-      return !lesson.courseId && candidates.value.has(subjectId);
+      return !courseId && candidates.value.has(subjectId);
     });
   });
 
@@ -183,7 +177,8 @@ export function useCourseSetup(groupId: string) {
     hasAllLevels,
     needsLessonChoice,
     loadingLessons,
-    loadLessons,
+    lessonsError,
+    retryLessons,
     scheduleConfig,
     setupLessons,
     resolution,

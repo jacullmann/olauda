@@ -1,34 +1,13 @@
 import type { Attachment, StoredFile, Upload } from '@/api/files';
+import type { ArchiveCheckedTasks, ItemDto } from '@/api/schema';
 
-export interface Task {
-  id: string;
-  type: 'homework' | 'dalton' | 'exam';
-  title: string;
-  /** Null when the subject was typed in by hand instead of picked. */
-  subjectId: string | null;
-  courseId: string | null;
-  /** A `common.subjects.*` key or the name the group owner typed. */
-  subjectName: string;
-  courseName: string | null;
-  /** Absent on tasks returned from creating or editing them. */
-  takesCourse?: boolean;
-  description: string;
-  attachments: Attachment[];
-  dueDate: string;
-  createdBy: string;
-  createdByEmail?: string;
-  createdByName?: string;
-  timeColor: string;
-  editorNote: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+/** A task of a group, as the API describes it. */
+export type Task = ItemDto;
 
-/** How a task names its subject when it is created or edited. */
-export type ItemSubjectPayload =
-  { subjectId: string; courseId: string | null } | { customName: string };
+export type TaskType = ItemDto['type'];
 
-export type ItemType = 'homework' | 'dalton' | 'exam' | 'all';
+/** A task type, or `all` for the list that shows every type. */
+export type ItemType = TaskType | 'all';
 
 /** What a new task's form starts out with, such as the lesson it is due in. */
 export interface TaskPrefill {
@@ -38,7 +17,7 @@ export interface TaskPrefill {
   dueDate?: string;
 }
 
-export type ArchiveCheckedTasks = 'always' | 'afterDueDate' | 'never';
+export type { ArchiveCheckedTasks };
 
 export interface TaskPreferences {
   archiveChecked: ArchiveCheckedTasks;

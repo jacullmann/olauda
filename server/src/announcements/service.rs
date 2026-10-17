@@ -2,6 +2,7 @@ use super::dto::AnnouncementDto;
 use crate::{
     common::text::DisplayText,
     error::{AppError, AppResult},
+    realtime::event::{GroupTopic, Notice, publish},
     state::AppState,
 };
 use sqlx::PgPool;
@@ -67,6 +68,16 @@ impl AnnouncementService {
         .execute(&self.db)
         .await?;
 
+        publish(
+            &self.db,
+            [Notice::member(
+                user_id,
+                tenant_id,
+                GroupTopic::Announcements,
+            )],
+        )
+        .await?;
+
         Ok(())
     }
 
@@ -91,6 +102,12 @@ impl AnnouncementService {
         .fetch_one(&self.db)
         .await?;
 
+        publish(
+            &self.db,
+            [Notice::group(tenant_id, GroupTopic::Announcements)],
+        )
+        .await?;
+
         Ok(announcement)
     }
 
@@ -107,6 +124,12 @@ impl AnnouncementService {
         if deleted == 0 {
             return Err(AppError::not_found("Announcement not found."));
         }
+
+        publish(
+            &self.db,
+            [Notice::group(tenant_id, GroupTopic::Announcements)],
+        )
+        .await?;
 
         Ok(())
     }

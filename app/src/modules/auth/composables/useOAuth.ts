@@ -1,18 +1,13 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import api from '@/api/client';
+import api, { API_BASE_URL, unwrap } from '@/api/client';
 import { useToast } from '@/common/composables/useToast';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { consumeReauthReturn } from '@/modules/auth/utils/reauthReturn';
 import { useReauthModal } from '@/modules/auth/stores/useReauthModal';
 
 const showSignUpModal = ref(false);
-
-interface LinkedProvider {
-  provider: string;
-  email: string;
-}
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -42,11 +37,7 @@ export function useOAuth() {
 
   // A full navigation: the API answers with a redirect to Google.
   function navigateToApi(path: string): void {
-    const base =
-      typeof import.meta !== 'undefined' && import.meta.env
-        ? (import.meta.env.VITE_API_URL ?? '')
-        : '';
-    window.location.href = `${base}${path}`;
+    window.location.href = `${API_BASE_URL}${path}`;
   }
 
   // Signs in and signs up alike: an account with the Google email is linked
@@ -60,10 +51,8 @@ export function useOAuth() {
   // opened, so the Google account may use a different email address.
   async function initiateGoogleLink(): Promise<ActionResult> {
     try {
-      const { data } = await api.post<{ url: string }>(
-        '/auth/google/link/start',
-      );
-      window.location.assign(data.url);
+      const { url } = await unwrap(api.POST('/auth/google/link/start'));
+      window.location.assign(url);
       return { ok: true };
     } catch (err: unknown) {
       return {
@@ -179,7 +168,9 @@ export function useOAuth() {
   // the Google identity the callback verified.
   async function signUpWithGoogle(): Promise<ActionResult> {
     try {
-      await api.post('/auth/google/signup', { acceptedTerms: true });
+      await unwrap(
+        api.POST('/auth/google/signup', { body: { acceptedTerms: true } }),
+      );
       showSignUpModal.value = false;
       return { ok: true };
     } catch (err: unknown) {
@@ -192,7 +183,7 @@ export function useOAuth() {
 
   async function unlinkGoogleAccount(): Promise<ActionResult> {
     try {
-      await api.delete('/auth/google/unlink');
+      await unwrap(api.DELETE('/auth/google/unlink'));
       return { ok: true };
     } catch (err: unknown) {
       return {
@@ -202,17 +193,6 @@ export function useOAuth() {
           t('auth.connected_accounts.errors.unlink'),
         ),
       };
-    }
-  }
-
-  async function fetchLinkedProviders(): Promise<LinkedProvider[]> {
-    try {
-      const { data } = await api.get<{ providers: LinkedProvider[] }>(
-        '/auth/providers',
-      );
-      return data.providers ?? [];
-    } catch {
-      return [];
     }
   }
 
@@ -227,7 +207,6 @@ export function useOAuth() {
     handleOAuthReturn,
     signUpWithGoogle,
     unlinkGoogleAccount,
-    fetchLinkedProviders,
     closeSignUpModal,
   };
 }

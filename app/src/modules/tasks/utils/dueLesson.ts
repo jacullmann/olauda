@@ -161,7 +161,7 @@ export function inDueOrder<T extends DueTask & Pick<Task, 'takesCourse'>>(
       index,
       dayIndex: dayOrder.get(schoolDay.key)!,
       dueLesson: dueLessonAmong(dayLessons, task, schedule.courses),
-      isOtherCourse: ownCoursesFirst && task.takesCourse === false,
+      isOtherCourse: ownCoursesFirst && !task.takesCourse,
     };
   });
 

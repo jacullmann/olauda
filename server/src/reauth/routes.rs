@@ -1,26 +1,20 @@
 use super::handlers::*;
 use crate::{common::rate_limit, state::AppState};
-use axum::{
-    Router,
-    routing::{get, post},
-};
 use std::time::Duration;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub fn router() -> Router<AppState> {
+pub fn router() -> OpenApiRouter<AppState> {
     // Shares the pace of the password sign-in; the per-account lock bounds
     // guessing by anyone who holds a session.
-    let confirm = Router::new()
-        .route("/auth/reauth/password", post(confirm_with_password))
-        .route("/auth/reauth/passkey/start", post(start_passkey))
-        .route("/auth/reauth/passkey/finish", post(confirm_with_passkey))
-        .route("/auth/reauth/google/start", post(start_google))
-        .route(
-            "/auth/reauth/google/second-factor",
-            post(confirm_google_second_factor),
-        )
+    let confirm = OpenApiRouter::new()
+        .routes(routes!(confirm_with_password))
+        .routes(routes!(start_passkey))
+        .routes(routes!(confirm_with_passkey))
+        .routes(routes!(start_google))
+        .routes(routes!(confirm_google_second_factor))
         .layer(rate_limit::per_client(30, Duration::from_secs(3)));
 
-    Router::new()
-        .route("/auth/reauth", get(status))
+    OpenApiRouter::new()
+        .routes(routes!(get_reauth_status))
         .merge(confirm)
 }

@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { isPdf, previewUrl } from '@/api/files';
 import { useImageViewerModal } from '@/modules/tasks/stores/useImageViewerModal';
-import type { ItemType, Task, TaskPrefill } from '@/modules/tasks/types';
+import type { Task, TaskPrefill, TaskType } from '@/modules/tasks/types';
 import { X, Plus, Paperclip, FileText } from '@lucide/vue';
 import {
   OTHER_SUBJECT,
@@ -19,7 +19,7 @@ const { t } = useI18n();
 
 const props = defineProps<{
   groupId: string;
-  initialType?: Exclude<ItemType, 'all'>;
+  initialType?: TaskType;
   initial?: Task | null;
   /** Only for a new task. */
   prefill?: TaskPrefill;
@@ -139,7 +139,7 @@ function openImage(index: number) {
         <BaseTabs
           :items="typeTabItems"
           :active-id="activeType"
-          @change="(id) => (activeType = id as Exclude<ItemType, 'all'>)"
+          @change="(id) => (activeType = id as TaskType)"
         />
       </BaseFormGroup>
 

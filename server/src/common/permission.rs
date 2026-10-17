@@ -1,7 +1,10 @@
 use crate::common::role::Role;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, ToSchema,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum Permission {
     EditGroupProfile,
@@ -87,7 +90,8 @@ impl Permission {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// The lowest role each permission requires.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct GroupPermissions {
     pub edit_group_profile: Role,
     pub edit_subjects_courses: Role,
@@ -202,11 +206,10 @@ impl GroupPermissions {
         }
     }
 
-    pub fn effective_keys(&self, standing: Standing) -> Vec<&'static str> {
+    pub fn effective_permissions(&self, standing: Standing) -> Vec<Permission> {
         Permission::ALL
-            .iter()
-            .filter(|&&p| self.allows(standing, p))
-            .map(Permission::as_str)
+            .into_iter()
+            .filter(|&p| self.allows(standing, p))
             .collect()
     }
 }
@@ -330,37 +333,37 @@ mod tests {
                 .is_some_and(|matrix| matrix.contains_key("edit_group_configuration"))
         );
         assert!(
-            !p.effective_keys(Standing::Member(Role::Moderator))
-                .contains(&"edit_group_configuration")
+            !p.effective_permissions(Standing::Member(Role::Moderator))
+                .contains(&Permission::EditGroupConfiguration)
         );
         assert!(
-            p.effective_keys(Standing::Member(Role::Admin))
-                .contains(&"edit_group_configuration")
+            p.effective_permissions(Standing::Member(Role::Admin))
+                .contains(&Permission::EditGroupConfiguration)
         );
     }
 
     #[test]
-    fn effective_keys_user_role() {
+    fn effective_permissions_user_role() {
         let p = GroupPermissions::default();
-        let keys = p.effective_keys(Standing::Member(Role::User));
-        assert!(keys.contains(&"create_items"));
-        assert!(!keys.contains(&"edit_other_content"));
-        assert!(!keys.contains(&"delete_other_content"));
-        assert!(!keys.contains(&"edit_subjects_courses"));
+        let granted = p.effective_permissions(Standing::Member(Role::User));
+        assert!(granted.contains(&Permission::CreateItems));
+        assert!(!granted.contains(&Permission::EditOtherContent));
+        assert!(!granted.contains(&Permission::DeleteOtherContent));
+        assert!(!granted.contains(&Permission::EditSubjectsCourses));
     }
 
     #[test]
-    fn effective_keys_admin_gets_everything_except_superadmin_level() {
+    fn effective_permissions_admin_gets_everything() {
         let p = GroupPermissions::default();
-        let keys = p.effective_keys(Standing::Member(Role::Admin));
-        assert_eq!(keys.len(), Permission::ALL.len());
+        let granted = p.effective_permissions(Standing::Member(Role::Admin));
+        assert_eq!(granted.len(), Permission::ALL.len());
     }
 
     #[test]
-    fn effective_keys_owner_rights_override_matrix() {
+    fn effective_permissions_owner_rights_override_matrix() {
         let p = GroupPermissions::default();
         assert_eq!(
-            p.effective_keys(Standing::OwnerRights).len(),
+            p.effective_permissions(Standing::OwnerRights).len(),
             Permission::ALL.len()
         );
     }
@@ -370,7 +373,7 @@ mod tests {
         let everyone = GroupPermissions::from_json_with_defaults(&serde_json::json!({
             "edit_group_profile": "user",
         }));
-        assert!(everyone.effective_keys(Standing::Muted).is_empty());
+        assert!(everyone.effective_permissions(Standing::Muted).is_empty());
         assert!(
             Permission::ALL
                 .into_iter()

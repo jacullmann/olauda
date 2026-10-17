@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AdminTabBar from '@/modules/admin/components/AdminTabBar.vue';
 import { useAdminNav } from '@/modules/admin/composables/useAdminNav';
-import { useAdminStats } from '@/modules/admin/composables/useAdminStats';
 
 const { t } = useI18n();
-const { loadStats } = useAdminStats();
 const { navItems, activeTab, selectTab } = useAdminNav();
-
-// The only place the stats are fetched on entry; child pages share the result.
-onMounted(loadStats);
 </script>
 
 <template>

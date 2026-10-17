@@ -1,7 +1,7 @@
 import { readonly, ref } from 'vue';
 import { useEventListener, useTimeoutFn } from '@vueuse/core';
 import { useMfa } from './useMfa';
-import type { MfaChallengeResponse } from '@/modules/auth/types';
+import type { MfaChallengeDto } from '@/api/schema';
 
 const MS_PER_SECOND = 1000;
 
@@ -46,7 +46,7 @@ export function useMfaChallenge(onExpired: () => void) {
   });
 
   async function track(): Promise<void> {
-    let challenge: MfaChallengeResponse | null;
+    let challenge: MfaChallengeDto | null;
     try {
       challenge = await fetchMfaChallenge();
     } catch {

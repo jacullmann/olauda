@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT i.id FROM items i\n                   WHERE i.tenant_id = $1\n                     AND i.type = $2\n                     AND i.subject_id IS NOT DISTINCT FROM $3\n                     AND i.course_id IS NOT DISTINCT FROM $4\n                     AND lower(i.custom_subject) IS NOT DISTINCT FROM lower($5)\n                     AND (i.due_date AT TIME ZONE 'Europe/Berlin')::date = ($6 AT TIME ZONE 'Europe/Berlin')::date\n                   LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "items",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "736092f155d09b462162165e0c9a4ba3a2866431a572f0442089ff369ded3973"
+}

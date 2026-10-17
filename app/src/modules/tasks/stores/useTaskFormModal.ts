@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 import { useModalState } from '@/common/composables/useModalState';
-import type { ItemType, Task, TaskPrefill } from '@/modules/tasks/types';
-
-type TaskType = Exclude<ItemType, 'all'>;
+import type { Task, TaskPrefill, TaskType } from '@/modules/tasks/types';
 
 export interface TaskFormOptions {
   type?: TaskType;

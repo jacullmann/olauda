@@ -1,20 +1,29 @@
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import type { AdminSystemAnnouncement } from '@/modules/admin/types';
-
-const ENDPOINT = '/admin/system-announcements';
+import {
+  adminSystemAnnouncementsQuery,
+  invalidateSystemAnnouncements,
+} from '@/modules/admin/utils/adminQueries';
 
 export function useAdminAnnouncements() {
   const toast = useToast();
   const confirmModal = useConfirmModal();
+  const queryClient = useQueryClient();
   const { t } = useI18n();
 
-  /** Latest start first, as the server sends them. */
-  const announcements = ref<AdminSystemAnnouncement[]>([]);
-  const loading = ref(false);
+  const query = useQuery(adminSystemAnnouncementsQuery());
+  const announcements = computed(() => query.data.value ?? []);
+
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t('admin.announcements.errors.load')),
+  );
 
   const active = computed(() =>
     announcements.value.filter((a) => a.status === 'active'),
@@ -24,17 +33,19 @@ export function useAdminAnnouncements() {
     announcements.value.filter((a) => a.status === 'scheduled').toReversed(),
   );
 
-  async function load() {
-    loading.value = true;
-    try {
-      const { data } = await api.get<AdminSystemAnnouncement[]>(ENDPOINT);
-      announcements.value = data;
-    } catch {
-      toast.error(t('admin.announcements.errors.load'));
-    } finally {
-      loading.value = false;
-    }
-  }
+  const deletion = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        api.DELETE('/admin/system-announcements/{id}', {
+          params: { path: { id } },
+        }),
+      ),
+    onSuccess: () => invalidateSystemAnnouncements(queryClient),
+    onError: (error) =>
+      toast.error(
+        apiErrorMessage(error, t('admin.announcements.errors.delete')),
+      ),
+  });
 
   async function remove(announcement: AdminSystemAnnouncement) {
     const confirmed = await confirmModal.ask({
@@ -43,17 +54,8 @@ export function useAdminAnnouncements() {
       submitText: t('common.buttons.delete'),
       danger: true,
     });
-    if (!confirmed) return;
-
-    try {
-      await api.delete(`${ENDPOINT}/${announcement.id}`);
-      announcements.value = announcements.value.filter(
-        (a) => a.id !== announcement.id,
-      );
-    } catch {
-      toast.error(t('admin.announcements.errors.delete'));
-    }
+    if (confirmed) deletion.mutate(announcement.id);
   }
 
-  return { active, scheduled, loading, load, remove };
+  return { active, scheduled, loading: query.isPending, remove };
 }

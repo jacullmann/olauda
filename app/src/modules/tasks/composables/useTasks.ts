@@ -11,6 +11,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useEventListener } from '@vueuse/core';
+import { useQueryClient } from '@tanstack/vue-query';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useSubjectStore } from '@/modules/courses/stores/useSubjectStore';
 import { useTaskFormModal } from '@/modules/tasks/stores/useTaskFormModal';
@@ -21,6 +22,7 @@ import { useTaskPermissions } from './useTaskPermissions';
 import { subjectLabel } from '@/modules/courses/utils/subjectLabels';
 import type { Task, TaskMenuAction } from '@/modules/tasks/types';
 import { taskRoute } from '@/modules/tasks/utils/routes';
+import { taskKeys } from '@/modules/tasks/utils/taskQueries';
 
 import { useTaskFilters, type TaskFilters } from './useTaskFilters';
 import { useTaskMarks } from './useTaskMarks';
@@ -48,6 +50,7 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
   const imageUpload = useImageUpload(groupId);
   const permissions = useTaskPermissions(groupId);
   const toast = useToast();
+  const queryClient = useQueryClient();
   const i18n = useI18n();
   const t = i18n.t.bind(i18n);
   const te = i18n.te.bind(i18n);
@@ -77,38 +80,15 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
     pendingCheckRemovals: dismissals.pendingCheckRemovals,
   });
   const opened = useOpenedTask({
+    groupId,
     openedItemId,
     findInList: taskItems.findInList,
-    fetchTask: taskItems.fetchTask,
+    listUpdatedAt: taskItems.updatedAt,
   });
 
-  /** The loaded copy of a task, from the list or the task open on its own. */
-  function findLoadedTask(taskId: string): Task | undefined {
-    const openedTask = opened.openedItem.value;
-    return (
-      taskItems.findInList(taskId) ??
-      (openedTask?.id === taskId ? openedTask : undefined)
-    );
-  }
-
-  async function refreshTask(taskId: string) {
-    try {
-      const task = await taskItems.fetchTask(taskId);
-      taskItems.replaceInList(task);
-      opened.replaceOpenedItem(task);
-    } catch (e) {
-      console.error(`Failed to refresh item ${taskId}:`, e);
-    }
-  }
-
-  const actions = useTaskActions(groupId, taskItems.removeFromList);
-  const notes = useTaskNotes(groupId, findLoadedTask);
-  const images = useTaskImages({
-    isLoggedIn,
-    imageUpload,
-    permissions,
-    refreshTask,
-  });
+  const actions = useTaskActions(groupId);
+  const notes = useTaskNotes(groupId);
+  const images = useTaskImages({ isLoggedIn, imageUpload, permissions });
 
   const openMenuId = ref<string | null>(null);
   const infoItem = ref<Task | null>(null);
@@ -118,10 +98,7 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
   });
 
   const loading = computed(
-    () =>
-      taskItems.loading.value ||
-      marks.checksLoading.value ||
-      marks.pinsLoading.value,
+    () => taskItems.loading.value || marks.loading.value,
   );
 
   const hasLoadedOnce = ref(false);
@@ -149,10 +126,16 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
     toast.error(t('tasks.errors.save_status'));
   });
 
+  marks.onPinReverted(() => {
+    toast.error(t('tasks.errors.save_status'));
+  });
+
   async function archiveItem(task: Task) {
     dismissals.dismiss(task.id);
     const success = await marks.setInArchive(task, !showOldEntries.value);
-    if (!success) dismissals.restore(task.id);
+    if (success) return;
+    dismissals.restore(task.id);
+    toast.error(t('tasks.errors.save_status'));
   }
 
   /**
@@ -162,10 +145,13 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
   async function toggleArchive(task: Task) {
     const isInArchive = marks.isInArchive(task);
     if (isInArchive === showOldEntries.value) return archiveItem(task);
-    if (!(await marks.setInArchive(task, !isInArchive))) return;
+    if (!(await marks.setInArchive(task, !isInArchive))) {
+      toast.error(t('tasks.errors.save_status'));
+      return;
+    }
     // It joins the list, which may still hide it from an earlier dismissal.
     dismissals.restore(task.id);
-    await taskItems.reloadList();
+    await queryClient.invalidateQueries({ queryKey: taskKeys.lists(groupId) });
   }
 
   function openItem(task: Task) {
@@ -182,13 +168,6 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
       local: true,
     });
   }
-
-  taskFormModal.onSuccess(() => {
-    void taskItems.reloadList();
-    // The reload misses a task the list does not hold.
-    const taskId = openedItemId.value;
-    if (taskId && opened.isOpenedOutsideList.value) void refreshTask(taskId);
-  });
 
   async function onMenuAction(action: TaskMenuAction, task: Task) {
     openMenuId.value = null;
@@ -229,26 +208,24 @@ function createTasks(fixedFilters: Partial<TaskFilters>) {
   watch([filters.filters, showPersonalized], () => {
     dismissals.clear();
     listView.resetVisibleCount();
-    void taskItems.reloadList();
   });
 
-  watch(isLoggedIn, async (loggedIn) => {
-    await marks.load();
+  // What the server lists, such as whether checked tasks are left out,
+  // depends on who asks.
+  watch(isLoggedIn, (loggedIn) => {
     if (!loggedIn) dismissals.clear();
     void taskItems.reloadList();
   });
 
-  onMounted(async () => {
-    await subjectStore.loadSubjects(groupId);
-    await Promise.all([taskItems.reloadList(), marks.load()]);
+  onMounted(() => {
+    void subjectStore.loadSubjects(groupId);
   });
 
   return {
     user,
     loading,
     initialLoad,
-    checksLoading: marks.checksLoading,
-    pinsLoading: marks.pinsLoading,
+    marksLoading: marks.loading,
     tab,
     subjectFilter,
     showOldEntries,

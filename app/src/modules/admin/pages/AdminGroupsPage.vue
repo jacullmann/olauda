@@ -27,6 +27,7 @@ const {
   searchInput,
   total,
   state,
+  updating,
   itemAt,
   ensureRange,
   refresh,
@@ -111,7 +112,12 @@ function openGroup(group: AdminGroup, event: MouseEvent) {
     <div v-else-if="!total" class="text-center text-on-ghost-muted p-10">
       {{ t('admin.groups.empty') }}
     </div>
-    <BaseTableWrapper v-else>
+    <BaseTableWrapper
+      v-else
+      class="transition-opacity"
+      :class="{ 'opacity-60': updating }"
+      :aria-busy="updating"
+    >
       <table :style="TABLE.table" :aria-rowcount="total + 1">
         <colgroup>
           <col

@@ -2,23 +2,29 @@ use crate::{
     assets::service::{AssetPurpose, ensure_claimable},
     common::{
         client::ClientInfo,
-        group_type::{DEFAULT_COURSE_TYPE, GroupType, ZUSATZKURS_CATEGORY, resolve_course_type},
+        group_type::{CourseType, GroupType, SubjectCategory, resolve_course_type},
+        name_generator::generate_user_name,
         names::DisplayName,
         permission::{GroupPermissions, Permission},
         role::{MemberRole, Role},
     },
     error::{AppError, AppResult},
     group::{
-        dto::{ReplaceScheduleDto, ScheduleConfigDto, ScheduleLessonDto, ScheduleSubDto},
+        dto::{
+            BannedMemberDto, GroupInviteDto, ReplaceScheduleDto, ScheduleConfigDto,
+            ScheduleLessonDto, ScheduleSubDto,
+        },
         member_policy::{self, Actor, Caller, Target},
         service::{avatar_in_use_on_conflict, lock_group_owner, role_from_db},
     },
+    realtime::event::{AccountTopic, GroupTopic, Notice, publish},
+    schedule::dto::{CourseDto, SubjectDto, SubstitutionDto},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
 use chrono::NaiveTime;
 use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::json;
 use sqlx::{PgConnection, PgPool};
 use std::collections::{BTreeMap, HashSet};
 use uuid::Uuid;
@@ -99,25 +105,26 @@ pub struct GroupAdminService {
     db: PgPool,
 }
 
-/// The category a new subject gets when the client does not send one.
-const fn default_category(group_type: GroupType) -> &'static str {
-    match group_type {
-        GroupType::Regular => "core",
-        GroupType::Abitur => "mandatory",
+/// Categories belong to exactly one kind of group, so a group that switched its
+/// type keeps its old subjects but can only assign categories that fit now.
+fn validate_category(group_type: GroupType, category: SubjectCategory) -> AppResult<()> {
+    if group_type.allows_category(category) {
+        Ok(())
+    } else {
+        Err(AppError::bad_request(format!(
+            "This category is not available in this group. Allowed: {:?}.",
+            group_type.subject_categories()
+        )))
     }
 }
 
-/// Categories belong to exactly one kind of group, so a group that switched its
-/// type keeps its old subjects but can only assign categories that fit now.
-fn validate_category(group_type: GroupType, category: &str) -> AppResult<()> {
-    if group_type.allows_category(category) {
-        return Ok(());
-    }
-
-    Err(AppError::bad_request(format!(
-        "Category '{category}' is not available in this group. Allowed: {}.",
-        group_type.subject_categories().join(", ")
-    )))
+/// A change to who belongs to the group or how, which also changes what the
+/// affected member sees of it.
+fn membership_changed(tenant_id: Uuid, member: Uuid) -> [Notice; 2] {
+    [
+        Notice::group(tenant_id, GroupTopic::Members),
+        Notice::account(member, AccountTopic::Groups),
+    ]
 }
 
 const MAX_SCHEDULE_TEXT_CHARS: usize = 100;
@@ -211,12 +218,13 @@ impl GroupAdminService {
     }
 
     async fn group_type(&self, tenant_id: Uuid) -> AppResult<GroupType> {
-        let row = sqlx::query_scalar!(r#"SELECT group_type FROM groups WHERE id = $1"#, tenant_id)
-            .fetch_optional(&self.db)
-            .await?
-            .ok_or_else(|| AppError::not_found("Group not found"))?;
-
-        Ok(GroupType::from_str_or_regular(&row))
+        sqlx::query_scalar!(
+            r#"SELECT group_type AS "group_type: GroupType" FROM groups WHERE id = $1"#,
+            tenant_id
+        )
+        .fetch_optional(&self.db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Group not found"))
     }
 
     async fn ensure_dalton_enabled(&self, tenant_id: Uuid) -> AppResult<()> {
@@ -309,7 +317,7 @@ impl GroupAdminService {
         Ok(())
     }
 
-    pub async fn get_banned_users(&self, tenant_id: Uuid) -> AppResult<Value> {
+    pub async fn get_banned_users(&self, tenant_id: Uuid) -> AppResult<Vec<BannedMemberDto>> {
         let rows = sqlx::query!(
             r#"SELECT user_id, banned_at FROM group_bans WHERE tenant_id = $1"#,
             tenant_id
@@ -317,19 +325,14 @@ impl GroupAdminService {
         .fetch_all(&self.db)
         .await?;
 
-        Ok(json!(
-            rows.into_iter()
-                .map(|r| {
-                    let generated_name =
-                        crate::common::name_generator::generate_user_name(&r.user_id.to_string());
-                    json!({
-                        "userId": r.user_id,
-                        "generatedName": generated_name,
-                        "bannedAt": r.banned_at
-                    })
-                })
-                .collect::<Vec<_>>()
-        ))
+        Ok(rows
+            .into_iter()
+            .map(|r| BannedMemberDto {
+                generated_name: generate_user_name(&r.user_id.to_string()),
+                user_id: r.user_id,
+                banned_at: r.banned_at,
+            })
+            .collect())
     }
 
     pub async fn revert_ban(
@@ -338,7 +341,7 @@ impl GroupAdminService {
         current_user_id: Uuid,
         target: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         let unbanned = sqlx::query!(
@@ -360,9 +363,10 @@ impl GroupAdminService {
                 .await?;
         }
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Members)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// Locks the group and reads the caller's and target's roles inside the
@@ -411,7 +415,7 @@ impl GroupAdminService {
         target: Uuid,
         new_role: Role,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
         let locked = Self::lock_membership(&mut tx, tenant_id, caller, target).await?;
         member_policy::ensure_can_change_role(locked.actor, locked.target, new_role)?;
@@ -450,9 +454,10 @@ impl GroupAdminService {
             .await?;
         }
 
+        publish(&mut *tx, membership_changed(tenant_id, target)).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// A no-op for a member who is already muted.
@@ -489,6 +494,7 @@ impl GroupAdminService {
                 .await?;
         }
 
+        publish(&mut *tx, membership_changed(tenant_id, target)).await?;
         tx.commit().await?;
 
         Ok(())
@@ -518,6 +524,7 @@ impl GroupAdminService {
         )
         .await?;
 
+        publish(&mut *tx, membership_changed(tenant_id, target)).await?;
         tx.commit().await?;
 
         Ok(())
@@ -559,7 +566,7 @@ impl GroupAdminService {
         target: Uuid,
         ban: bool,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
         let locked = Self::lock_membership(&mut tx, tenant_id, caller, target).await?;
         member_policy::ensure_can_remove(locked.actor, locked.target)?;
@@ -593,9 +600,10 @@ impl GroupAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, membership_changed(tenant_id, target)).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// The previous owner always stays in the group as an admin.
@@ -605,7 +613,7 @@ impl GroupAdminService {
         caller: Caller,
         target: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
         let locked = Self::lock_membership(&mut tx, tenant_id, caller, target).await?;
         member_policy::ensure_can_transfer_ownership(locked.actor, locked.target)?;
@@ -652,12 +660,22 @@ impl GroupAdminService {
         )
         .await?;
 
+        publish(
+            &mut *tx,
+            [
+                Notice::group(tenant_id, GroupTopic::Members),
+                Notice::group(tenant_id, GroupTopic::Settings),
+                Notice::account(target, AccountTopic::Groups),
+                Notice::account(previous_owner, AccountTopic::Groups),
+            ],
+        )
+        .await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
-    pub async fn rename_group(
+    pub async fn update_settings(
         &self,
         tenant_id: Uuid,
         user_id: Uuid,
@@ -665,10 +683,11 @@ impl GroupAdminService {
         avatar_id: Option<Option<Uuid>>,
         group_type: Option<GroupType>,
         dalton_enabled: Option<bool>,
-    ) -> AppResult<Value> {
-        if let Some(enabled) = dalton_enabled {
-            let mut tx = self.db.begin().await?;
+    ) -> AppResult<()> {
+        // One transaction, so a refused avatar leaves the name unchanged too.
+        let mut tx = self.db.begin().await?;
 
+        if let Some(enabled) = dalton_enabled {
             sqlx::query!(
                 r#"UPDATE groups SET dalton_enabled = $1 WHERE id = $2"#,
                 enabled,
@@ -687,17 +706,15 @@ impl GroupAdminService {
                 .execute(&mut *tx)
                 .await?;
             }
-
-            tx.commit().await?;
         }
 
-        if let Some(gt) = group_type {
+        if let Some(group_type) = group_type {
             sqlx::query!(
                 r#"UPDATE groups SET group_type = $1 WHERE id = $2"#,
-                gt.as_str(),
+                group_type as GroupType,
                 tenant_id
             )
-            .execute(&self.db)
+            .execute(&mut *tx)
             .await?;
         }
 
@@ -707,13 +724,11 @@ impl GroupAdminService {
                 name.as_str(),
                 tenant_id
             )
-            .execute(&self.db)
+            .execute(&mut *tx)
             .await?;
         }
 
         if let Some(avatar_id) = avatar_id {
-            let mut tx = self.db.begin().await?;
-
             // The previous picture is left to the asset sweep.
             if let Some(avatar_id) = avatar_id {
                 ensure_claimable(&mut *tx, avatar_id, AssetPurpose::GroupAvatar, user_id).await?;
@@ -726,8 +741,6 @@ impl GroupAdminService {
             .execute(&mut *tx)
             .await
             .map_err(avatar_in_use_on_conflict)?;
-
-            tx.commit().await?;
         }
 
         sqlx::query!(
@@ -737,24 +750,34 @@ impl GroupAdminService {
             json!({
                 "name": name.map(DisplayName::as_str),
                 "avatarId": avatar_id,
-                "groupType": group_type.map(GroupType::as_str),
+                "groupType": group_type,
                 "daltonEnabled": dalton_enabled,
             })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        // Disabling Dalton takes its lessons out of the schedule.
+        let schedule_changed = dalton_enabled.is_some().then_some(GroupTopic::Schedule);
+        let notices = [Some(GroupTopic::Settings), schedule_changed]
+            .into_iter()
+            .flatten()
+            .map(|topic| Notice::group(tenant_id, topic));
+        publish(&mut *tx, notices).await?;
+        tx.commit().await?;
+
+        Ok(())
     }
 
-    pub async fn get_permissions(&self, tenant_id: Uuid) -> AppResult<Value> {
+    pub async fn get_permissions(&self, tenant_id: Uuid) -> AppResult<GroupPermissions> {
         let group = sqlx::query!(r#"SELECT permissions FROM groups WHERE id = $1"#, tenant_id)
             .fetch_optional(&self.db)
             .await?
             .ok_or_else(|| AppError::not_found("Group not found"))?;
 
-        let perms = GroupPermissions::from_json_with_defaults(&group.permissions);
-        Ok(json!({ "permissions": perms }))
+        Ok(GroupPermissions::from_json_with_defaults(
+            &group.permissions,
+        ))
     }
 
     pub async fn update_permissions(
@@ -763,7 +786,7 @@ impl GroupAdminService {
         user_id: Uuid,
         changes: &BTreeMap<Permission, Role>,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<GroupPermissions> {
         let mut tx = self.db.begin().await?;
 
         // Locked, so two concurrent changes cannot each merge into the same
@@ -798,9 +821,10 @@ impl GroupAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Settings)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true, "permissions": merged_json }))
+        Ok(merged)
     }
 
     pub async fn delete_group(
@@ -808,8 +832,16 @@ impl GroupAdminService {
         tenant_id: Uuid,
         user_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
+
+        // Read before the cascade removes them: every member loses the group.
+        let members = sqlx::query_scalar!(
+            r#"SELECT user_id FROM user_roles WHERE tenant_id = $1"#,
+            tenant_id
+        )
+        .fetch_all(&mut *tx)
+        .await?;
 
         // Everything in the group cascades with it; the asset sweep deletes
         // the files its items and avatar leave behind.
@@ -829,38 +861,13 @@ impl GroupAdminService {
             .record(&mut *tx)
             .await?;
 
+        let notices = members
+            .into_iter()
+            .map(|member| Notice::account(member, AccountTopic::Groups));
+        publish(&mut *tx, notices).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
-    }
-
-    pub async fn get_subjects(&self, tenant_id: Uuid) -> AppResult<Value> {
-        let rows = sqlx::query!(
-            r#"SELECT s.id, s.name, s.category, s.is_dalton,
-                      COALESCE(
-                          json_agg(json_build_object('id', c.id, 'name', c.name, 'courseType', c.course_type) ORDER BY c.name) FILTER (WHERE c.id IS NOT NULL),
-                          '[]'::json
-                      ) as "courses!"
-               FROM subjects s
-               LEFT JOIN courses c ON c.subject_id = s.id
-               WHERE s.tenant_id = $1
-               GROUP BY s.id ORDER BY s.name"#,
-            tenant_id
-        )
-            .fetch_all(&self.db)
-            .await?;
-
-        Ok(json!(
-            rows.into_iter()
-                .map(|s| json!({
-                    "id": s.id,
-                    "name": s.name,
-                    "category": s.category,
-                    "isDalton": s.is_dalton,
-                    "courses": s.courses,
-                }))
-                .collect::<Vec<_>>()
-        ))
+        Ok(())
     }
 
     pub async fn create_subject(
@@ -868,19 +875,19 @@ impl GroupAdminService {
         tenant_id: Uuid,
         user_id: Uuid,
         name: &DisplayName,
-        category: Option<&str>,
+        category: Option<SubjectCategory>,
         is_dalton: bool,
-    ) -> AppResult<Value> {
+    ) -> AppResult<SubjectDto> {
         let group_type = self.group_type(tenant_id).await?;
-        let cat = category.unwrap_or(default_category(group_type));
-        validate_category(group_type, cat)?;
+        let category = category.unwrap_or(group_type.default_category());
+        validate_category(group_type, category)?;
 
         let row = sqlx::query!(
             r#"INSERT INTO subjects (tenant_id, name, category, is_dalton) VALUES ($1, $2, $3, $4)
-               RETURNING id, name, category, is_dalton"#,
+               RETURNING id, name, category AS "category: SubjectCategory", is_dalton"#,
             tenant_id,
             name.as_str(),
-            cat,
+            category as SubjectCategory,
             is_dalton
         )
         .fetch_one(&self.db)
@@ -896,12 +903,15 @@ impl GroupAdminService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": row.id,
-            "name": row.name,
-            "category": row.category,
-            "isDalton": row.is_dalton,
-        }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+
+        Ok(SubjectDto {
+            id: row.id,
+            name: row.name,
+            category: row.category,
+            is_dalton: row.is_dalton,
+            courses: Vec::new(),
+        })
     }
 
     /// Keeps the courses of a subject consistent with its category: a
@@ -912,7 +922,7 @@ impl GroupAdminService {
         &self,
         subject_id: Uuid,
         group_type: GroupType,
-        category: &str,
+        category: SubjectCategory,
     ) -> AppResult<()> {
         if !group_type.uses_course_types() {
             sqlx::query!(
@@ -926,7 +936,7 @@ impl GroupAdminService {
             return Ok(());
         }
 
-        if category == ZUSATZKURS_CATEGORY {
+        if category == SubjectCategory::Zk {
             sqlx::query!(
                 r#"UPDATE courses SET course_type = 'zk'
                    WHERE subject_id = $1 AND course_type IS DISTINCT FROM 'zk'"#,
@@ -942,7 +952,7 @@ impl GroupAdminService {
             r#"UPDATE courses SET course_type = $2
                WHERE subject_id = $1 AND (course_type IS NULL OR course_type = 'zk')"#,
             subject_id,
-            DEFAULT_COURSE_TYPE
+            CourseType::Gk as CourseType
         )
         .execute(&self.db)
         .await?;
@@ -956,9 +966,9 @@ impl GroupAdminService {
         user_id: Uuid,
         id: Uuid,
         name: Option<&DisplayName>,
-        category: Option<&str>,
+        category: Option<SubjectCategory>,
         is_dalton: Option<bool>,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         sqlx::query!(
             r#"SELECT id FROM subjects WHERE id = $1 AND tenant_id = $2"#,
             id,
@@ -968,18 +978,18 @@ impl GroupAdminService {
         .await?
         .ok_or_else(|| AppError::not_found("Subject not found"))?;
 
-        if let Some(cat) = category {
+        if let Some(category) = category {
             let group_type = self.group_type(tenant_id).await?;
-            validate_category(group_type, cat)?;
+            validate_category(group_type, category)?;
             sqlx::query!(
                 r#"UPDATE subjects SET category = $1 WHERE id = $2"#,
-                cat,
+                category as SubjectCategory,
                 id
             )
             .execute(&self.db)
             .await?;
 
-            self.realign_course_types(id, group_type, cat).await?;
+            self.realign_course_types(id, group_type, category).await?;
         }
 
         if let Some(n) = name {
@@ -1012,15 +1022,12 @@ impl GroupAdminService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+
+        Ok(())
     }
 
-    pub async fn delete_subject(
-        &self,
-        tenant_id: Uuid,
-        user_id: Uuid,
-        id: Uuid,
-    ) -> AppResult<Value> {
+    pub async fn delete_subject(&self, tenant_id: Uuid, user_id: Uuid, id: Uuid) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         // The row lock makes lessons, courses and tasks that would reference
@@ -1060,18 +1067,19 @@ impl GroupAdminService {
             .execute(&mut *tx)
             .await?;
 
-        tx.commit().await?;
-
         sqlx::query!(
             r#"INSERT INTO user_activity (user_id, type, meta)
                VALUES ($1, 'group-admin:subject:delete', $2)"#,
             user_id,
             json!({ "subjectId": id })
         )
-        .execute(&self.db)
+        .execute(&mut *tx)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+        tx.commit().await?;
+
+        Ok(())
     }
 
     pub async fn replace_schedule(
@@ -1079,7 +1087,7 @@ impl GroupAdminService {
         tenant_id: Uuid,
         user_id: Uuid,
         dto: ReplaceScheduleDto,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         if NaiveTime::parse_from_str(&dto.schedule_config.start_time, "%H:%M").is_err() {
             return Err(AppError::bad_request(
                 "Start time must use the HH:MM format.",
@@ -1243,9 +1251,18 @@ impl GroupAdminService {
         .execute(&mut *tx)
         .await?;
 
+        // The day's layout is part of the group's settings.
+        publish(
+            &mut *tx,
+            [
+                Notice::group(tenant_id, GroupTopic::Schedule),
+                Notice::group(tenant_id, GroupTopic::Settings),
+            ],
+        )
+        .await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// Gives the lesson its change for one week, replacing the one it had
@@ -1255,7 +1272,7 @@ impl GroupAdminService {
         tenant_id: Uuid,
         user_id: Uuid,
         dto: ScheduleSubDto,
-    ) -> AppResult<Value> {
+    ) -> AppResult<SubstitutionDto> {
         let dto = validate_schedule_sub(dto)?;
         self.validate_sub_target(tenant_id, dto.lesson_id, dto.course_id)
             .await?;
@@ -1279,7 +1296,7 @@ impl GroupAdminService {
                  room = EXCLUDED.room,
                  cancelled = EXCLUDED.cancelled
                WHERE schedule_subs.tenant_id = EXCLUDED.tenant_id
-               RETURNING id, created_at, (xmax = 0) AS "created!""#,
+               RETURNING id, cancelled, created_at, (xmax = 0) AS "created!""#,
             tenant_id,
             dto.lesson_id,
             dto.week_start.monday(),
@@ -1308,14 +1325,22 @@ impl GroupAdminService {
         .execute(&mut *tx)
         .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Schedule)]).await?;
         tx.commit().await?;
 
-        Ok(json!({
-            "id": row.id, "lessonId": dto.lesson_id, "weekStart": dto.week_start,
-            "courseId": dto.course_id, "day": dto.day,
-            "slot": dto.slot, "duration": dto.duration, "subject": dto.subject, "room": dto.room,
-            "cancelled": dto.cancelled.unwrap_or(false), "createdAt": row.created_at,
-        }))
+        Ok(SubstitutionDto {
+            id: row.id,
+            lesson_id: dto.lesson_id,
+            course_id: dto.course_id,
+            week_start: dto.week_start.monday(),
+            day: dto.day,
+            slot: dto.slot,
+            duration: dto.duration,
+            subject: dto.subject,
+            room: dto.room,
+            cancelled: row.cancelled,
+            created_at: row.created_at,
+        })
     }
 
     /// A substitution may only target a lesson of this group, and a course
@@ -1361,7 +1386,7 @@ impl GroupAdminService {
         }
     }
 
-    pub async fn delete_schedule_sub(&self, tenant_id: Uuid, id: Uuid) -> AppResult<Value> {
+    pub async fn delete_schedule_sub(&self, tenant_id: Uuid, id: Uuid) -> AppResult<()> {
         sqlx::query!(
             r#"DELETE FROM schedule_subs WHERE id = $1 AND tenant_id = $2"#,
             id,
@@ -1370,7 +1395,9 @@ impl GroupAdminService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Schedule)]).await?;
+
+        Ok(())
     }
 
     /// The type a course of this subject has to get, which only a GK/LK subject
@@ -1379,10 +1406,10 @@ impl GroupAdminService {
         &self,
         tenant_id: Uuid,
         subject_id: Uuid,
-        requested: Option<&str>,
-    ) -> AppResult<Option<&'static str>> {
+        requested: Option<CourseType>,
+    ) -> AppResult<Option<CourseType>> {
         let category = sqlx::query_scalar!(
-            r#"SELECT category FROM subjects WHERE id = $1 AND tenant_id = $2"#,
+            r#"SELECT category AS "category: SubjectCategory" FROM subjects WHERE id = $1 AND tenant_id = $2"#,
             subject_id,
             tenant_id
         )
@@ -1391,7 +1418,8 @@ impl GroupAdminService {
         .ok_or_else(|| AppError::not_found("Subject not found"))?;
 
         let group_type = self.group_type(tenant_id).await?;
-        resolve_course_type(group_type, &category, requested).map_err(AppError::bad_request)
+        resolve_course_type(group_type, category, requested)
+            .map_err(|_| AppError::bad_request("This course type is set by the subject."))
     }
 
     pub async fn create_course(
@@ -1400,18 +1428,20 @@ impl GroupAdminService {
         user_id: Uuid,
         subject_id: Uuid,
         name: &DisplayName,
-        course_type: Option<&str>,
-    ) -> AppResult<Value> {
+        course_type: Option<CourseType>,
+    ) -> AppResult<CourseDto> {
         let course_type = self
             .course_type_for_subject(tenant_id, subject_id, course_type)
             .await?;
 
-        let row = sqlx::query!(
-            "INSERT INTO courses (tenant_id, name, subject_id, course_type) VALUES ($1, $2, $3, $4) RETURNING id, name, subject_id, course_type",
+        let course = sqlx::query_as!(
+            CourseDto,
+            r#"INSERT INTO courses (tenant_id, name, subject_id, course_type) VALUES ($1, $2, $3, $4)
+               RETURNING id, name, course_type AS "course_type: CourseType""#,
             tenant_id,
             name.as_str(),
             subject_id,
-            course_type
+            course_type as Option<CourseType>
         )
         .fetch_one(&self.db)
         .await
@@ -1421,17 +1451,14 @@ impl GroupAdminService {
             r#"INSERT INTO user_activity (user_id, type, meta) VALUES ($1, $2, $3)"#,
             user_id,
             "group-admin:course:create",
-            json!({ "courseId": row.id, "subjectId": subject_id })
+            json!({ "courseId": course.id, "subjectId": subject_id })
         )
         .execute(&self.db)
         .await?;
 
-        Ok(json!({
-            "id": row.id,
-            "name": row.name,
-            "subjectId": row.subject_id,
-            "courseType": row.course_type
-        }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+
+        Ok(course)
     }
 
     pub async fn update_course(
@@ -1440,10 +1467,11 @@ impl GroupAdminService {
         user_id: Uuid,
         course_id: Uuid,
         name: &DisplayName,
-        course_type: Option<&str>,
-    ) -> AppResult<Value> {
+        course_type: Option<CourseType>,
+    ) -> AppResult<CourseDto> {
         let course = sqlx::query!(
-            r#"SELECT subject_id, course_type FROM courses WHERE id = $1 AND tenant_id = $2"#,
+            r#"SELECT subject_id, course_type AS "course_type: CourseType"
+               FROM courses WHERE id = $1 AND tenant_id = $2"#,
             course_id,
             tenant_id
         )
@@ -1453,10 +1481,7 @@ impl GroupAdminService {
 
         // A request that only renames the course keeps the type it has. A stale
         // 'zk' under a GK/LK subject is not a valid pick, so it falls back.
-        let requested = course_type.or(course
-            .course_type
-            .as_deref()
-            .filter(|t| *t != ZUSATZKURS_CATEGORY));
+        let requested = course_type.or(course.course_type.filter(|kept| *kept != CourseType::Zk));
         let course_type = self
             .course_type_for_subject(tenant_id, course.subject_id, requested)
             .await?;
@@ -1464,7 +1489,7 @@ impl GroupAdminService {
         sqlx::query!(
             r#"UPDATE courses SET name = $1, course_type = $2 WHERE id = $3"#,
             name.as_str(),
-            course_type,
+            course_type as Option<CourseType>,
             course_id
         )
         .execute(&self.db)
@@ -1480,7 +1505,13 @@ impl GroupAdminService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true, "courseType": course_type }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+
+        Ok(CourseDto {
+            id: course_id,
+            name: name.as_str().to_owned(),
+            course_type,
+        })
     }
 
     pub async fn delete_course(
@@ -1488,7 +1519,7 @@ impl GroupAdminService {
         tenant_id: Uuid,
         user_id: Uuid,
         course_id: Uuid,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let rows = sqlx::query!(
             r#"DELETE FROM courses WHERE id = $1 AND tenant_id = $2"#,
             course_id,
@@ -1509,10 +1540,12 @@ impl GroupAdminService {
         .execute(&self.db)
         .await?;
 
-        Ok(json!({ "ok": true }))
+        publish(&self.db, [Notice::group(tenant_id, GroupTopic::Subjects)]).await?;
+
+        Ok(())
     }
 
-    pub async fn get_invites(&self, tenant_id: Uuid) -> AppResult<Value> {
+    pub async fn get_invites(&self, tenant_id: Uuid) -> AppResult<Vec<GroupInviteDto>> {
         let rows = sqlx::query!(
             r#"SELECT id, token, created_by, created_at, expires_at, used_at, used_by, revoked_at, revoked_by
                FROM group_invites
@@ -1520,43 +1553,33 @@ impl GroupAdminService {
                ORDER BY created_at DESC"#,
             tenant_id
         )
-            .fetch_all(&self.db)
-            .await?;
+        .fetch_all(&self.db)
+        .await?;
 
         let now = chrono::Utc::now();
-        let invites: Vec<Value> = rows
+        let name_of = |user: Option<Uuid>| user.map(|uid| generate_user_name(&uid.to_string()));
+
+        Ok(rows
             .into_iter()
             .map(|r| {
                 // Spent tokens are useless to admins, so they are not handed out again.
                 let is_active = r.used_at.is_none() && r.revoked_at.is_none() && r.expires_at > now;
-                let created_by_name = r
-                    .created_by
-                    .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string()));
-                let used_by_name = r
-                    .used_by
-                    .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string()));
-                let revoked_by_name = r
-                    .revoked_by
-                    .map(|uid| crate::common::name_generator::generate_user_name(&uid.to_string()));
-
-                json!({
-                    "id": r.id,
-                    "token": is_active.then_some(r.token),
-                    "createdBy": r.created_by,
-                    "createdByName": created_by_name,
-                    "createdAt": r.created_at,
-                    "expiresAt": r.expires_at,
-                    "usedAt": r.used_at,
-                    "usedBy": r.used_by,
-                    "usedByName": used_by_name,
-                    "revokedAt": r.revoked_at,
-                    "revokedBy": r.revoked_by,
-                    "revokedByName": revoked_by_name,
-                })
+                GroupInviteDto {
+                    id: r.id,
+                    token: is_active.then_some(r.token),
+                    created_by: r.created_by,
+                    created_by_name: name_of(r.created_by),
+                    created_at: r.created_at,
+                    expires_at: r.expires_at,
+                    used_at: r.used_at,
+                    used_by: r.used_by,
+                    used_by_name: name_of(r.used_by),
+                    revoked_at: r.revoked_at,
+                    revoked_by: r.revoked_by,
+                    revoked_by_name: name_of(r.revoked_by),
+                }
             })
-            .collect();
-
-        Ok(json!(invites))
+            .collect())
     }
 
     pub async fn revoke_invite(
@@ -1565,7 +1588,7 @@ impl GroupAdminService {
         user_id: Uuid,
         invite_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         let rows_affected = sqlx::query!(
@@ -1594,9 +1617,10 @@ impl GroupAdminService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [Notice::group(tenant_id, GroupTopic::Members)]).await?;
         tx.commit().await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 }
 

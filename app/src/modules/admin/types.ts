@@ -1,4 +1,30 @@
-import type { StoredFile } from '@/api/files';
+import type {
+  AccessControls as AccessControlsDto,
+  AccountSecurityDto,
+  AdminGroupDto,
+  AdminSystemAnnouncementDto,
+  AdminUserDto,
+  CleanupJobDto,
+  DailyActivityDto,
+  EmailActivityDto,
+  EmailQuotaDto,
+  EventLogEntryDto,
+  Outcome,
+  ReportDto,
+  SaveSystemAnnouncementDto,
+  ServerMetricsDto,
+  StatsDto,
+  UserMembershipDto,
+  WeeklyRhythmDto,
+  operations,
+} from '@/api/schema';
+
+export type {
+  EventSource,
+  MemberRole,
+  MetricPoint,
+  SystemAnnouncementStatus,
+} from '@/api/schema';
 
 export type AdminTab =
   'overview' | 'directory' | 'log' | 'reports' | 'announcements';
@@ -11,216 +37,80 @@ export interface ListWindow<T> {
   total: number;
 }
 
-export interface AdminStats {
-  userCount: number;
-  /** Sign-ups whose confirmation link has not been opened yet. */
-  pendingSignUps: number;
-  adminCount: number;
-  bannedCount: number;
-  newUsersThisWeek: number;
-  activeUsersThisWeek: number;
-  itemCount: number;
-  newItemsThisWeek: number;
-  reportCount: number;
-}
+export type AdminStats = StatsDto;
 
 /** A scheduled cleanup, named as in `database/pg_cron_setup.sql`, with the
  * rows it should already have removed. */
-export interface CleanupJob {
-  job: string;
-  overdueCount: number;
-}
+export type CleanupJob = CleanupJobDto;
 
-export type EventSource = 'security' | 'activity';
-
-export type EventOutcome = 'success' | 'failure';
+export type EventOutcome = Outcome;
 
 /** An entry of the security or the activity log. Security events outlive the
  * accounts and groups they name; the email or group name is there only while
  * those exist. Activity is caused by the account it belongs to and records no
  * outcome, address or group. */
-export interface EventLogEntry {
-  id: string;
-  source: EventSource;
-  type: string;
-  outcome: EventOutcome | null;
-  userId: string | null;
-  userEmail: string | null;
-  actorId: string | null;
-  actorEmail: string | null;
-  groupId: string | null;
-  groupName: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-}
+export type EventLogEntry = EventLogEntryDto;
 
-export interface EventLogPage {
-  items: EventLogEntry[];
-  /** Absent once the log is exhausted. */
-  nextCursor: string | null;
-  /** Counted for the first page only. */
-  total: number | null;
-}
+/** The log's filters as the API takes them; the cursor is the page's own. */
+export type EventLogQuery = Omit<
+  NonNullable<operations['get_events']['parameters']['query']>,
+  'cursor'
+>;
 
-export interface DailyActivity {
-  day: string;
-  newUsers: number;
-  newGroups: number;
-  newItems: number;
-  appOpens: number;
-  activeUsers: number;
-  failedLogins: number;
-}
+export type DailyActivity = DailyActivityDto;
 
-/** Users per hour of the week, in German local time, summed over `weeks`.
- * Rows run Monday to Sunday, columns from 0:00 to 23:00. */
-export interface WeeklyRhythm {
-  weeks: number;
-  activeUsers: number[][];
-}
+/** Users per hour of the week, in German local time, summed over `weeks`. */
+export type WeeklyRhythm = WeeklyRhythmDto;
 
 export type DailyMetric = Exclude<keyof DailyActivity, 'day'>;
 
 /** Every account split by how it is secured and how it signs in. Each
  * breakdown's parts add up to all accounts. */
-export interface AccountSecurity {
-  secondFactor: {
-    neither: number;
-    mfaOnly: number;
-    passkeyOnly: number;
-    both: number;
-  };
-  google: {
-    notLinked: number;
-    /** Linked next to a password. */
-    linked: number;
-    /** No password: Google (or a passkey) is the only way in. */
-    googleOnly: number;
-  };
-}
+export type AccountSecurity = AccountSecurityDto;
 
 /** Emails Resend sent per UTC day over the daily activity's days, and what
  * became of them; emails still on their way have no outcome yet. */
-export interface EmailActivity {
-  days: { day: string; sent: number }[];
-  delivered: number;
-  bounced: number;
-  failed: number;
-}
+export type EmailActivity = EmailActivityDto;
 
 /** Emails used in the current month of the Resend plan. */
-export interface EmailQuota {
-  used: number;
-  /** Absent on plans without a monthly limit. */
-  limit: number | null;
-  resetsAt: string;
-}
+export type EmailQuota = EmailQuotaDto;
 
-export type MetricsRange = '1h' | '24h' | '7d' | '30d';
-
-/** A sample in Unix seconds; a `null` value is a gap in the measurement. */
-export type MetricPoint = [timestamp: number, value: number | null];
+export type MetricsRange =
+  operations['get_server_metrics']['parameters']['query']['range'];
 
 /** The server's load as Hetzner measures it. CPU is in percent of one vCPU,
  * so it reaches `cpuCores * 100`; bandwidths are in bytes per second. */
-export interface ServerMetrics {
-  start: number;
-  end: number;
-  cpuCores: number;
-  cpu: MetricPoint[];
-  networkIn: MetricPoint[];
-  networkOut: MetricPoint[];
-}
+export type ServerMetrics = ServerMetricsDto;
 
-export type UserStatusFilter = 'all' | 'active' | 'banned' | 'superadmin';
+export type AdminUserListQuery = NonNullable<
+  operations['list_admin_users']['parameters']['query']
+>;
 
-export type UserSort = 'createdAt' | 'lastLoginAt' | 'email';
+export type UserStatusFilter = NonNullable<AdminUserListQuery['status']>;
 
-export interface AdminUser {
-  id: string;
-  email: string;
-  username: string;
-  mfaEnabled: boolean;
-  isSuperadmin: boolean;
-  isBanned: boolean;
-  createdAt: string;
-  lastLoginAt: string | null;
-}
+export type UserSort = NonNullable<AdminUserListQuery['sort']>;
 
-export type MemberRole = 'owner' | 'admin' | 'moderator' | 'user';
+export type AdminUser = AdminUserDto;
 
-export interface AdminMembership {
-  groupId: string;
-  groupName: string;
-  role: MemberRole;
-  joinedAt: string;
-  /** Promoting a muted member lifts the mute. */
-  muted: boolean;
-  assignableRoles: MemberRole[];
-}
+export type AdminMembership = UserMembershipDto;
 
-export interface AdminReport {
-  id: string;
-  reportedAt: string;
-  contentDeleted: boolean;
-  reason?: string | null;
-  reporterEmail?: string;
-  reportType: 'task';
-  itemId?: string;
-  itemTitle?: string;
-  itemType?: string;
-  itemSubject?: string;
-  itemCourse?: string | null;
-  itemDescription?: string;
-  /** A snapshot taken when the task was reported. */
-  itemAttachments?: StoredFile[];
-  itemDueDate?: string;
-  itemEditorNote?: string;
-  creatorEmail?: string;
-}
+export type AdminReport = ReportDto;
 
-export type GroupTypeFilter = 'all' | 'regular' | 'abitur';
+export type AdminGroupListQuery = NonNullable<
+  operations['list_admin_groups']['parameters']['query']
+>;
 
-export type GroupSort = 'createdAt' | 'name' | 'memberCount' | 'itemCount';
+export type GroupTypeFilter = NonNullable<AdminGroupListQuery['type']>;
 
-export interface AdminGroup {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  groupType: 'regular' | 'abitur';
-  ownerId: string;
-  ownerEmail: string;
-  ownerName: string;
-  createdAt: string;
-  /** Set while a superadmin has banned the group. */
-  bannedAt: string | null;
-  memberCount: number;
-  itemCount: number;
-}
+export type GroupSort = NonNullable<AdminGroupListQuery['sort']>;
 
-export type SystemAnnouncementStatus = 'active' | 'scheduled';
+export type AdminGroup = AdminGroupDto;
 
 /** A platform announcement that runs or is scheduled; ended ones are gone. */
-export interface AdminSystemAnnouncement {
-  id: string;
-  content: string;
-  important: boolean;
-  status: SystemAnnouncementStatus;
-  startsAt: string;
-  endsAt: string | null;
-  authorEmail: string | null;
-  readCount: number;
-}
+export type AdminSystemAnnouncement = AdminSystemAnnouncementDto;
 
 /** Omitting `startsAt` publishes right away; omitting `endsAt` never ends. */
-export interface SaveSystemAnnouncementRequest {
-  content: string;
-  important: boolean;
-  startsAt?: string;
-  endsAt?: string;
-}
+export type SaveSystemAnnouncementRequest = SaveSystemAnnouncementDto;
 
 export interface AdminNavItem {
   id: AdminTab;
@@ -229,9 +119,6 @@ export interface AdminNavItem {
 }
 
 /** The platform-wide switches, as superadmins manage them. */
-export interface AccessControls {
-  registrationPaused: boolean;
-  shutdown: boolean;
-}
+export type AccessControls = AccessControlsDto;
 
-export type AccessControlSwitch = 'registrationPaused' | 'shutdown';
+export type AccessControlSwitch = keyof AccessControls;

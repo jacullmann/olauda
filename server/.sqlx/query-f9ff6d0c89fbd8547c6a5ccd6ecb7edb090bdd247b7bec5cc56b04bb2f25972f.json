@@ -1,0 +1,105 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT r.id, r.report_type, r.reason, r.reporter_id AS \"reported_by\", r.reporter_email,\n                      r.reported_at, r.details AS \"task: Json<ReportedTaskDto>\",\n                      NOT EXISTS (\n                        SELECT 1 FROM items WHERE id = (r.details->>'itemId')::uuid\n                      ) AS \"content_deleted!\"\n               FROM reports r\n               ORDER BY r.reported_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "report_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "report_type"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "reason",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "reason"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "reported_by",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "reporter_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "reporter_email",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "reporter_email"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "reported_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "reported_at"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "task: Json<ReportedTaskDto>",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "reports",
+            "name": "details"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "content_deleted!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "f9ff6d0c89fbd8547c6a5ccd6ecb7edb090bdd247b7bec5cc56b04bb2f25972f"
+}

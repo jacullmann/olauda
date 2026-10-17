@@ -1,28 +1,18 @@
 import { WebAuthnError } from '@simplewebauthn/browser';
 import i18n from '@/i18n';
 import { apiErrorCode, apiErrorMessage, isReauthDeclined } from '@/api/errors';
-import { AuthErrorCode } from './authErrors';
+import type { ErrorCode } from '@/api/schema';
 
-/** Codes the API sends when a passkey ceremony fails. */
-export const PasskeyErrorCode = {
-  ChallengeExpired: 'PASSKEY_CHALLENGE_EXPIRED',
-  Unknown: 'PASSKEY_UNKNOWN',
-  Rejected: 'PASSKEY_REJECTED',
-  RegistrationRejected: 'PASSKEY_REGISTRATION_REJECTED',
-  AlreadyRegistered: 'PASSKEY_ALREADY_REGISTERED',
-  LimitReached: 'PASSKEY_LIMIT_REACHED',
-} as const;
-
-const MESSAGE_KEYS: Record<string, string> = {
-  [PasskeyErrorCode.ChallengeExpired]: 'auth.passkeys.errors.expired',
-  [PasskeyErrorCode.Unknown]: 'auth.passkeys.errors.not_registered',
-  [PasskeyErrorCode.Rejected]: 'auth.passkeys.errors.rejected',
-  [PasskeyErrorCode.RegistrationRejected]: 'auth.passkeys.errors.rejected',
-  [PasskeyErrorCode.AlreadyRegistered]:
-    'auth.passkeys.errors.already_registered',
-  [PasskeyErrorCode.LimitReached]: 'auth.passkeys.errors.limit_reached',
-  [AuthErrorCode.LastSignInMethod]: 'auth.errors.last_sign_in_method',
-  [AuthErrorCode.Shutdown]: 'auth.errors.shutdown',
+/** The failures of a passkey ceremony the user can act on. */
+const MESSAGE_KEYS: Partial<Record<ErrorCode, string>> = {
+  PASSKEY_CHALLENGE_EXPIRED: 'auth.passkeys.errors.expired',
+  PASSKEY_UNKNOWN: 'auth.passkeys.errors.not_registered',
+  PASSKEY_REJECTED: 'auth.passkeys.errors.rejected',
+  PASSKEY_REGISTRATION_REJECTED: 'auth.passkeys.errors.rejected',
+  PASSKEY_ALREADY_REGISTERED: 'auth.passkeys.errors.already_registered',
+  PASSKEY_LIMIT_REACHED: 'auth.passkeys.errors.limit_reached',
+  LAST_SIGN_IN_METHOD: 'auth.errors.last_sign_in_method',
+  SHUTDOWN: 'auth.errors.shutdown',
 };
 
 /**
@@ -49,6 +39,7 @@ export function passkeyErrorMessage(err: unknown, fallbackKey: string): string {
     return t('auth.passkeys.errors.already_on_device');
   }
 
-  const key = MESSAGE_KEYS[apiErrorCode(err) ?? ''];
+  const code = apiErrorCode(err);
+  const key = code && MESSAGE_KEYS[code];
   return key ? t(key) : apiErrorMessage(err, t(fallbackKey));
 }

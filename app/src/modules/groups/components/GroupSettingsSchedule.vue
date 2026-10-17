@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import {
   Trash2,
   Plus,
@@ -57,7 +57,7 @@ const { lessons, loadingLessons, savingScheduleConfig, saveScheduleBatch } =
   useGroupScheduleAdmin();
 
 const { activeGroupDaltonEnabled, checkPermission } = useGroups();
-const { subjects, loadSubjects } = useSubjectAdmin();
+const { subjects } = useSubjectAdmin();
 const { scheduleConfig, schedulesCoursesIndividually, formatDayName } =
   useScheduleDisplay();
 
@@ -108,7 +108,6 @@ const { canUndo, canRedo, undo, redo } = draftHistory;
 function enterEditMode() {
   if (!canEditScheduleConfig.value) return;
   hasSwitchedFromEditor.value = true;
-  void loadSubjects();
   draftLessons.value = cloneFnJSON(lessons.value);
   clearSelection();
   draftHistory.commit();
@@ -374,9 +373,6 @@ watch(subjects, (loadedSubjects) => {
 
 function openAddLessonModal(day: number, slot: number) {
   editingLessonRef.value = null;
-  if (!subjects.value || subjects.value.length === 0) {
-    void loadSubjects();
-  }
   lessonForm.value = {
     id: '',
     day: Number(day),
@@ -392,9 +388,6 @@ function openAddLessonModal(day: number, slot: number) {
 function openEditLessonModal(lesson: Lesson) {
   if (!lesson) return;
   editingLessonRef.value = lesson;
-  if (!subjects.value || subjects.value.length === 0) {
-    void loadSubjects();
-  }
 
   const matchedSub = findLessonSubject(lesson, subjects.value);
 
@@ -402,7 +395,7 @@ function openEditLessonModal(lesson: Lesson) {
     ? DALTON_LESSON_OPTION
     : (matchedSub?.id ?? '');
 
-  const lessonCourseId = lesson.courseId || lesson.courses?.id || '';
+  const lessonCourseId = lesson.courseId || '';
   const matchedCourseId = matchedSub?.courses?.some(
     (c) => c.id === lessonCourseId,
   )
@@ -468,9 +461,9 @@ function draftDaltonLesson(id: string): Lesson {
   return {
     ...draftLessonPlacement(id),
     subjectId: null,
-    subjects: null,
+    subjectName: null,
     courseId: null,
-    courses: null,
+    courseName: null,
     isDalton: true,
   };
 }
@@ -485,18 +478,12 @@ function draftSubjectLesson(id: string): Lesson | null {
   return {
     ...draftLessonPlacement(id),
     subjectId: subObj.id,
-    subject: subObj.name,
-    subjectAbbr: subObj.name.substring(0, 3).toUpperCase(),
-    subjects: { id: subObj.id, name: subObj.name },
+    subjectName: subObj.name,
     courseId: courseObj?.id ?? null,
-    courseName: courseObj?.name,
-    courses: courseObj ? { id: courseObj.id, name: courseObj.name } : null,
+    courseName: courseObj?.name ?? null,
+    isDalton: false,
   };
 }
-
-onMounted(() => {
-  void loadSubjects();
-});
 </script>
 
 <template>

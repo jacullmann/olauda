@@ -76,7 +76,7 @@ const displayLessons = computed(() => {
   const subjectMap = subjectsById(props.subjects);
 
   return props.lessons.map((lesson) => {
-    const { subjects, courses, ownCourse } = resolveLessonSubject(
+    const { subjectName, courses, ownCourse } = resolveLessonSubject(
       lesson,
       subjectMap,
     );
@@ -88,8 +88,7 @@ const displayLessons = computed(() => {
         ...lesson,
         courseId: ownCourse.id,
         courseName: ownCourse.name,
-        courses: ownCourse,
-        subjects,
+        subjectName,
       };
     }
 
@@ -99,7 +98,7 @@ const displayLessons = computed(() => {
         ...(courses.length > 1 && !props.individualCourses
           ? { courseCount: courses.length }
           : {}),
-        subjects,
+        subjectName,
       };
     }
 
@@ -109,15 +108,11 @@ const displayLessons = computed(() => {
         ...lesson,
         courseId: c.id,
         courseName: c.name,
-        courses: { id: c.id, name: c.name },
-        subjects,
+        subjectName,
       };
     }
 
-    return {
-      ...lesson,
-      subjects,
-    };
+    return { ...lesson, subjectName };
   });
 });
 

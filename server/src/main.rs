@@ -1,5 +1,6 @@
 mod access_control;
 mod announcements;
+mod api;
 mod assets;
 mod auth;
 mod common;
@@ -11,6 +12,7 @@ mod items;
 mod mfa;
 mod oauth;
 mod passkeys;
+mod realtime;
 mod reauth;
 mod reports;
 mod schedule;
@@ -23,12 +25,10 @@ mod todos;
 mod user;
 
 use anyhow::Context;
-use axum::{Router, extract::DefaultBodyLimit, middleware};
-use common::{csrf::csrf_middleware, extractors::resolve_tenant};
+use axum::Router;
 use config::Config;
 use sqlx::postgres::PgPoolOptions;
 use state::AppState;
-use std::time::Duration;
 use tower_http::{
     compression::CompressionLayer,
     cors::{AllowHeaders, AllowMethods, CorsLayer},
@@ -37,17 +37,6 @@ use tower_http::{
 };
 use tracing::info;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
-
-/// Every JSON request fits easily; the few routes that take more (uploads, the
-/// timetable) raise the limit for themselves. Axum's own default of 2 MB would
-/// let any request carry far more than the server ever needs to read.
-const DEFAULT_BODY_LIMIT_BYTES: usize = 64 * 1024;
-
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
-
-/// The timeout covers reading the request body, and a file at the upload
-/// limit takes minutes over a weak school or mobile connection.
-const UPLOAD_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -82,6 +71,8 @@ async fn main() -> anyhow::Result<()> {
 
     assets::sweep::spawn(state.db.clone(), state.cloudinary.clone());
 
+    let (api, _) = api::router(&state);
+
     let cors = CorsLayer::new()
         .allow_origin(
             cors_origin
@@ -101,62 +92,13 @@ async fn main() -> anyhow::Result<()> {
             axum::http::header::CONTENT_TYPE,
             axum::http::header::AUTHORIZATION,
             axum::http::HeaderName::from_static("x-csrf-token"),
-        ]))
-        .expose_headers([common::personalization::HIDDEN_BY_COURSES]);
+        ]));
 
-    // Every group-bound endpoint names its group in the path. The layer checks
-    // membership once per request, so no handler below can be reached for a
-    // group the caller does not belong to.
-    let group_scoped = Router::new()
-        .merge(announcements::routes::group_router())
-        .merge(group::routes::group_router())
-        .merge(items::routes::group_router())
-        .merge(schedule::routes::group_router())
-        .merge(user::routes::group_router())
-        .route_layer(middleware::from_fn_with_state(
-            state.clone(),
-            resolve_tenant,
-        ));
-
-    let group_uploads = assets::routes::group_router().route_layer(middleware::from_fn_with_state(
-        state.clone(),
-        resolve_tenant,
-    ));
-
-    #[allow(deprecated)]
-    let uploads = Router::new()
-        .nest("/groups/{group_id}", group_uploads)
-        .merge(assets::routes::router())
-        .route_layer(tower_http::timeout::TimeoutLayer::new(UPLOAD_TIMEOUT));
-
-    #[allow(deprecated)]
-    let api = Router::new()
-        .nest("/groups/{group_id}", group_scoped)
-        .merge(system::routes::router())
-        .merge(access_control::routes::router())
-        .merge(system_announcements::routes::router())
-        .merge(auth::routes::router())
-        .merge(user::routes::router())
-        .merge(data_export::routes::router())
-        .merge(group::routes::router())
-        .merge(todos::routes::router())
-        .merge(mfa::routes::router())
-        .merge(oauth::routes::router())
-        .merge(passkeys::routes::router())
-        .merge(reauth::routes::router())
-        .merge(super_admin::routes::router(state.clone()))
-        .route_layer(tower_http::timeout::TimeoutLayer::new(REQUEST_TIMEOUT))
-        .merge(uploads)
-        .layer(DefaultBodyLimit::max(DEFAULT_BODY_LIMIT_BYTES))
-        .layer(common::rate_limit::global())
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            csrf_middleware,
-        ))
-        .with_state(state);
+    let realtime = state.realtime.clone();
+    realtime.spawn_listener(state.config.database_url.clone());
 
     let app = Router::new()
-        .merge(api)
+        .merge(api.with_state(state))
         .layer(cors)
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
@@ -171,7 +113,10 @@ async fn main() -> anyhow::Result<()> {
     info!("Server listening on {addr}");
 
     axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(async move {
+            shutdown_signal().await;
+            realtime.close();
+        })
         .await
         .context("Server error")?;
 

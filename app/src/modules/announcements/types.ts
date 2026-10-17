@@ -1,23 +1,13 @@
+import type { AnnouncementDto, SystemAnnouncementDto } from '@/api/schema';
+
 /** An announcement to the members of one group. */
-export interface Announcement {
-  id: string;
-  content: string;
-  important: boolean;
-  createdBy: string | null;
-  createdAt: string;
-  read: boolean;
-}
+export type Announcement = AnnouncementDto;
 
 /**
  * An announcement from the platform to every user. The server only sends
  * those the user has yet to read: once read, it is shown nowhere.
  */
-export interface SystemAnnouncement {
-  id: string;
-  content: string;
-  important: boolean;
-  publishedAt: string;
-}
+export type SystemAnnouncement = SystemAnnouncementDto;
 
 /** Who an announcement was posted to: one group, or every user. */
 export type AnnouncementScope = 'group' | 'system';

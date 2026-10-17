@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import {
   useUserStore,
   type DismissibleNotice,
@@ -15,13 +15,12 @@ export function useDismissibleNotice(notice: DismissibleNotice) {
 
     userStore.markNoticeDismissed(notice);
 
-    // Hidden locally first; a failed sync only brings it back on the next load.
-    void api.put(`/user/dismissed-notices/${notice}`).catch((err) => {
-      console.error(
-        `Failed to sync dismissed notice ${notice} to backend`,
-        err,
-      );
-    });
+    // Hidden locally first; a failed save only brings it back on the next load.
+    unwrap(
+      api.PUT('/user/dismissed-notices/{notice}', {
+        params: { path: { notice } },
+      }),
+    ).catch(() => undefined);
   }
 
   return { isDismissed, dismiss };

@@ -19,20 +19,35 @@ const checked = { checked: true, pinned: false };
 describe('tasks archiving on their own', () => {
   it('archives checked tasks from their due day on by default', () => {
     expect(
-      archivesOnItsOwn({ dueDate: dueLaterToday }, checked, defaults, now),
+      archivesOnItsOwn(
+        { dueDate: dueLaterToday, takesCourse: true },
+        checked,
+        defaults,
+        now,
+      ),
     ).toBe(true);
     expect(
-      archivesOnItsOwn({ dueDate: dueTomorrow }, checked, defaults, now),
+      archivesOnItsOwn(
+        { dueDate: dueTomorrow, takesCourse: true },
+        checked,
+        defaults,
+        now,
+      ),
     ).toBe(false);
   });
 
   it('archives checked tasks right away or never as set', () => {
-    const task = { dueDate: dueTomorrow };
+    const task = { dueDate: dueTomorrow, takesCourse: true };
     const always = { ...defaults, archiveChecked: 'always' as const };
     const never = { ...defaults, archiveChecked: 'never' as const };
     expect(archivesOnItsOwn(task, checked, always, now)).toBe(true);
     expect(
-      archivesOnItsOwn({ dueDate: dueYesterday }, checked, never, now),
+      archivesOnItsOwn(
+        { dueDate: dueYesterday, takesCourse: true },
+        checked,
+        never,
+        now,
+      ),
     ).toBe(false);
   });
 
@@ -48,7 +63,12 @@ describe('tasks archiving on their own', () => {
       ),
     ).toBe(false);
     expect(
-      archivesOnItsOwn({ dueDate: dueYesterday }, unmarked, defaults, now),
+      archivesOnItsOwn(
+        { dueDate: dueYesterday, takesCourse: true },
+        unmarked,
+        defaults,
+        now,
+      ),
     ).toBe(false);
   });
 

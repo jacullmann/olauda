@@ -2,7 +2,7 @@ use super::dto::{PasskeyList, PasskeySummary};
 use crate::{
     auth::{
         security_notice,
-        service::{AuthService, LoginResult, SecondFactorKind},
+        service::{AuthService, LoginResult, SecondFactorKind, security_changed},
         sign_in_methods::{SignInMethod, SignInMethods},
     },
     common::{
@@ -12,6 +12,7 @@ use crate::{
     },
     config::{PASSKEY_CEREMONY_TTL, chrono_ttl},
     error::{AppError, AppResult, PasskeyFailure},
+    realtime::event::publish,
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
@@ -223,6 +224,7 @@ impl PasskeyService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
 
         security_notice::notify(&self.db, &self.email, user_id, SecurityNotice::PasskeyAdded);
@@ -251,6 +253,8 @@ impl PasskeyService {
         .fetch_optional(&self.db)
         .await?
         .ok_or_else(passkey_not_found)?;
+
+        publish(&self.db, [security_changed(user_id)]).await?;
 
         Ok(())
     }
@@ -284,6 +288,7 @@ impl PasskeyService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
 
         security_notice::notify(

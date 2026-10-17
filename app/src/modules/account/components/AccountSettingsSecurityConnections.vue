@@ -1,45 +1,38 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useOAuth } from '@/modules/auth/composables/useOAuth';
 import AuthGoogleIcon from '@/modules/auth/components/AuthGoogleIcon.vue';
 import { useToast } from '@/common/composables/useToast';
+import {
+  accountKeys,
+  linkedProvidersQuery,
+} from '@/modules/account/utils/accountQueries';
 
 const { t } = useI18n();
 const toast = useToast();
+const queryClient = useQueryClient();
 
-const { fetchLinkedProviders, unlinkGoogleAccount, initiateGoogleLink } =
-  useOAuth();
+const { unlinkGoogleAccount, initiateGoogleLink } = useOAuth();
 
-interface Provider {
-  provider: string;
-  email: string;
-}
-
-const providers = ref<Provider[]>([]);
-const loading = ref(true);
+const { data: providers, isPending: loading } = useQuery(
+  linkedProvidersQuery(),
+);
 const actionLoading = ref(false);
 
-const googleLinked = () => providers.value.some((p) => p.provider === 'google');
-const googleProvider = () =>
-  providers.value.find((p) => p.provider === 'google');
-
-onMounted(async () => {
-  providers.value = await fetchLinkedProviders();
-  loading.value = false;
-});
+const googleProvider = computed(() =>
+  providers.value?.find((p) => p.provider === 'google'),
+);
+const googleLinked = () => googleProvider.value !== undefined;
 
 async function handleUnlink() {
   actionLoading.value = true;
-
   const result = await unlinkGoogleAccount();
+  await queryClient.invalidateQueries({ queryKey: accountKeys.all });
   actionLoading.value = false;
 
-  if (result.ok) {
-    providers.value = providers.value.filter((p) => p.provider !== 'google');
-  } else {
-    toast.error(result.error);
-  }
+  if (!result.ok) toast.error(result.error);
 }
 
 async function handleLink() {
@@ -73,7 +66,7 @@ async function handleLink() {
           <div class="flex flex-col gap-1">
             <span class="text-base/5 font-semibold text-on-ghost">Google</span>
             <span v-if="googleLinked()" class="text-sm/4 text-on-ghost-muted">{{
-              googleProvider()?.email
+              googleProvider?.email
             }}</span>
           </div>
         </div>

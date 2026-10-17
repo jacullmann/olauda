@@ -12,17 +12,17 @@ import { subjectLabel } from '@/modules/courses/utils/subjectLabels';
  * Both double as `common.subjects.*` translation keys where one exists.
  */
 export function lessonSubjectName(
-  lesson: Pick<Lesson, 'isDalton' | 'subjects' | 'subject' | 'subjectAbbr'>,
+  lesson: Pick<Lesson, 'isDalton' | 'subjectName' | 'subject'>,
 ): string {
   if (lesson.isDalton) return DALTON_SUBJECT_KEY;
-  return lesson.subjects?.name || lesson.subject || lesson.subjectAbbr || '';
+  return lesson.subjectName || lesson.subject || '';
 }
 
 /** The name a lesson is shown with, in the reader's language. */
 export function lessonDisplayName(
   lesson: Pick<
     Lesson,
-    'isDalton' | 'subjects' | 'subject' | 'subjectAbbr' | 'isSubstitutedSubject'
+    'isDalton' | 'subjectName' | 'subject' | 'isSubstitutedSubject'
   >,
   t: (key: string) => string,
   te: (key: string) => boolean,
@@ -36,12 +36,12 @@ export function lessonDisplayName(
 }
 
 export const lessonSubjectId = (
-  lesson: Pick<Lesson, 'subjectId' | 'subjects'>,
-): string | null => lesson.subjectId ?? lesson.subjects?.id ?? null;
+  lesson: Pick<Lesson, 'subjectId'>,
+): string | null => lesson.subjectId ?? null;
 
 export const lessonCourseId = (
-  lesson: Pick<Lesson, 'courseId' | 'courses'>,
-): string | null => lesson.courseId ?? lesson.courses?.id ?? null;
+  lesson: Pick<Lesson, 'courseId'>,
+): string | null => lesson.courseId ?? null;
 
 /** How many slots a lesson fills; a missing or zero duration still fills its own. */
 export function lessonSpan(lesson: { duration?: number | null }): number {
@@ -123,11 +123,11 @@ export function subjectsById(
 
 export interface ResolvedLessonSubject {
   subjectId: string | null;
-  subjects: Lesson['subjects'];
+  subjectName: string | null;
   /** Every course of the lesson's subject. */
   courses: ScheduleCourse[];
   ownCourseId: string | null;
-  /** The one course the lesson is scheduled for, if it names one the group knows. */
+  /** The one course the lesson is scheduled for, if it names one. */
   ownCourse: ScheduleCourse | null;
 }
 
@@ -136,32 +136,32 @@ export function resolveLessonSubject(
   lesson: Lesson,
   subjects: ReadonlyMap<string, ScheduleSubject>,
 ): ResolvedLessonSubject {
-  const subjectId = lesson.subjectId || lesson.subjects?.id;
+  const subjectId = lesson.subjectId || null;
   const subject = subjectId ? subjects.get(subjectId) : undefined;
   const courses = subject?.courses ?? [];
-  const ownCourseId = lesson.courseId || lesson.courses?.id || null;
+  const ownCourseId = lesson.courseId || null;
+  const ownCourseName =
+    lesson.courseName ??
+    courses.find((course) => course.id === ownCourseId)?.name;
 
   return {
-    subjectId: subjectId || null,
-    subjects:
-      lesson.subjects ||
-      (subject ? { id: subject.id, name: subject.name } : null),
+    subjectId,
+    subjectName: lesson.subjectName ?? subject?.name ?? null,
     courses,
     ownCourseId,
     ownCourse:
-      lesson.courses ??
-      (ownCourseId
-        ? (courses.find((course) => course.id === ownCourseId) ?? null)
-        : null),
+      ownCourseId && ownCourseName
+        ? { id: ownCourseId, name: ownCourseName }
+        : null,
   };
 }
 
 /** The group subject a lesson belongs to, by its id or, for a lesson that only carries a name, by that name. */
 export function findLessonSubject<Subject extends ScheduleSubject>(
-  lesson: Pick<Lesson, 'subjectId' | 'subjects' | 'subject'>,
+  lesson: Pick<Lesson, 'subjectId' | 'subject'>,
   subjects: readonly Subject[],
 ): Subject | undefined {
-  const subjectId = lesson.subjectId || lesson.subjects?.id;
+  const subjectId = lesson.subjectId;
   const subjectName = lesson.subject?.toLowerCase();
   return subjects.find(
     (subject) =>

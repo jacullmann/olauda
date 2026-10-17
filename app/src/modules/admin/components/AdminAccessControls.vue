@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, useId } from 'vue';
+import { computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccessControls } from '@/modules/admin/composables/useAccessControls';
 import type { AccessControlSwitch } from '@/modules/admin/types';
@@ -48,8 +48,6 @@ const rows = computed<SwitchRow[]>(() => {
     },
   ];
 });
-
-onMounted(load);
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { usePreferences } from '@/modules/account/composables/usePreferences';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { isStrongPassword } from '@/modules/auth/utils/password';
@@ -103,17 +103,19 @@ export function useRegister() {
 
     submitting.value = true;
     try {
-      const preferences = {
-        theme: currentTheme.value,
-        language: currentLanguage.value,
-      };
-
-      await api.post('/auth/register', {
-        email: email.value,
-        password: password.value,
-        acceptedTerms: acceptedTerms.value,
-        preferences,
-      });
+      await unwrap(
+        api.POST('/auth/register', {
+          body: {
+            email: email.value,
+            password: password.value,
+            acceptedTerms: acceptedTerms.value,
+            preferences: {
+              theme: currentTheme.value,
+              language: currentLanguage.value,
+            },
+          },
+        }),
+      );
 
       signUp.value = { email: email.value.trim(), password: password.value };
       password.value = '';

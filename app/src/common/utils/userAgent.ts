@@ -5,7 +5,7 @@ export interface ParsedUserAgent {
 }
 
 /** Best-effort browser and OS names for showing a device to its owner. */
-export function parseUserAgent(ua: string | null): ParsedUserAgent {
+export function parseUserAgent(ua?: string | null): ParsedUserAgent {
   if (!ua) return { browser: null, os: null, isMobile: false };
 
   const uaLower = ua.toLowerCase();

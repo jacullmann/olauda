@@ -59,7 +59,11 @@ const formatDate = (date: Date) =>
 
 const lessonName = (lesson: Lesson) =>
   lessonDisplayName(
-    { ...lesson, subjects: findLessonSubject(lesson, subjects.value) },
+    {
+      ...lesson,
+      subjectName:
+        lesson.subjectName ?? findLessonSubject(lesson, subjects.value)?.name,
+    },
     t,
     te,
   ) || t('common.selection.unknown');

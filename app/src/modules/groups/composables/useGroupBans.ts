@@ -1,47 +1,58 @@
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useGroupPageId } from './useGroupPageId';
 import { useGroups } from './useGroups';
 import type { BannedMember } from '@/modules/groups/types';
+import { groupBansQuery, groupKeys } from '@/modules/groups/utils/groupQueries';
 
 /** Former members banned from rejoining the group. */
 export function useGroupBans() {
   const groupId = useGroupPageId();
   const { t } = useI18n();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const { checkPermission } = useGroups();
 
-  const bannedUsers = ref<BannedMember[]>([]);
-  const loadingBannedUsers = ref(false);
+  const canModerate = computed(() => checkPermission('moderate_members'));
+  const query = useQuery(
+    computed(() => ({
+      ...groupBansQuery(groupId),
+      enabled: canModerate.value,
+    })),
+  );
+  const bannedUsers = computed<BannedMember[]>(() => query.data.value ?? []);
 
-  async function loadBannedUsers() {
-    if (!checkPermission('moderate_members')) return;
-    loadingBannedUsers.value = true;
-    try {
-      const { data } = await api.get<BannedMember[]>(
-        groupPath(groupId, '/admin/banned-users'),
-      );
-      bannedUsers.value = data;
-    } catch {
-      toast.error(t('groups.settings.members.errors.load_banned'));
-    } finally {
-      loadingBannedUsers.value = false;
-    }
-  }
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t('groups.settings.members.errors.load_banned')),
+  );
 
-  async function revertBan(userId: string) {
-    try {
-      await api.delete(groupPath(groupId, `/admin/banned-users/${userId}`));
-      bannedUsers.value = bannedUsers.value.filter((u) => u.userId !== userId);
-    } catch {
-      toast.error(t('groups.settings.members.errors.unban'));
-    }
-  }
+  const unban = useMutation({
+    mutationFn: (userId: string) =>
+      unwrap(
+        api.DELETE('/groups/{group_id}/admin/banned-users/{user_id}', {
+          params: { path: { group_id: groupId, user_id: userId } },
+        }),
+      ),
+    onError: (error) =>
+      toast.error(
+        apiErrorMessage(error, t('groups.settings.members.errors.unban')),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.topic(groupId, 'members'),
+      }),
+  });
 
-  onMounted(loadBannedUsers);
-
-  return { bannedUsers, loadingBannedUsers, revertBan };
+  return {
+    bannedUsers,
+    loadingBannedUsers: computed(
+      () => canModerate.value && query.isPending.value,
+    ),
+    revertBan: (userId: string) => unban.mutate(userId),
+  };
 }

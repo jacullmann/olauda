@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ArrowUp } from '@lucide/vue';
 import AdminDailyBarChart, {
@@ -22,19 +22,8 @@ interface DailyChart {
   summary?: DailySummary;
 }
 
-const {
-  stats,
-  dailyActivity,
-  weeklyRhythm,
-  loadingStats,
-  loadDailyActivity,
-  loadWeeklyRhythm,
-} = useAdminStats();
-const {
-  activity: emailActivity,
-  quota: emailQuota,
-  load: loadEmailStats,
-} = useEmailStats();
+const { stats, dailyActivity, weeklyRhythm, loadingStats } = useAdminStats();
+const { activity: emailActivity, quota: emailQuota } = useEmailStats();
 const { t } = useI18n();
 
 const headlineStats = computed(() =>
@@ -72,11 +61,6 @@ const charts = computed(() =>
       value: d[chart.metric],
     })),
   })),
-);
-
-// The stats themselves are loaded once by the dashboard shell.
-onMounted(() =>
-  Promise.all([loadDailyActivity(), loadWeeklyRhythm(), loadEmailStats()]),
 );
 </script>
 

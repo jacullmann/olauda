@@ -78,9 +78,7 @@ impl Message {
                 ],
                 code: Some(code.to_owned()),
                 note: Some(format!("The code is valid for {valid_hours} hours.")),
-                disclaimer: Some(
-                    "Didn't sign up for Olauda? You can safely ignore this email.",
-                ),
+                disclaimer: Some("Didn't sign up for Olauda? You can safely ignore this email."),
             },
         }
     }
@@ -106,9 +104,7 @@ impl Message {
                 subject: format!("{code} is your password reset code"),
                 preheader: "Your code to reset your password.",
                 heading: "Reset your password",
-                paragraphs: &[
-                    "Enter this code on the Olauda page to choose a new password:",
-                ],
+                paragraphs: &["Enter this code on the Olauda page to choose a new password:"],
                 code: Some(code.to_owned()),
                 note: Some(format!("The code is valid for {valid_minutes} minutes.")),
                 disclaimer: Some(
@@ -195,7 +191,8 @@ struct NoticeText {
 
 const ADVICE_DE: &str = "Warst du das nicht? Setze dein Passwort zurück, melde in den Kontoeinstellungen unter Sicherheit alle anderen Geräte ab und schreib uns an contact@olauda.com.";
 const ADVICE_EN: &str = "Wasn't you? Reset your password, sign out all other devices under Security in your account settings and write to us at contact@olauda.com.";
-const SUPPORT_ADVICE_DE: &str = "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an contact@olauda.com.";
+const SUPPORT_ADVICE_DE: &str =
+    "Hast du das nicht bei uns angefragt? Dann schreib uns bitte sofort an contact@olauda.com.";
 const SUPPORT_ADVICE_EN: &str =
     "Didn't ask us for this? Please write to us at contact@olauda.com right away.";
 

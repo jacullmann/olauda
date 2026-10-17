@@ -6,6 +6,9 @@ const LOCALE_KEY = 'user-locale';
 const SUPPORTED_LOCALES = ['de', 'en'] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
+export const isSupportedLocale = (value: string): value is SupportedLocale =>
+  (SUPPORTED_LOCALES as readonly string[]).includes(value);
+
 function getInitialLocale(): SupportedLocale {
   try {
     const saved = localStorage.getItem(LOCALE_KEY) as SupportedLocale | null;

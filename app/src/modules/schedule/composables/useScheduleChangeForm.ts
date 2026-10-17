@@ -1,26 +1,19 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
+import type { ScheduleSubDto } from '@/api/schema';
 import { useToast } from '@/common/composables/useToast';
 import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
-import { useSubjectAdmin } from '@/modules/groups/composables/useSubjectAdmin';
 import { useScheduleDisplay } from './useScheduleDisplay';
 import type { Lesson, Substitution } from '@/modules/schedule/types';
 import { findLessonSubject } from '@/modules/schedule/utils/lesson';
+import { scheduleKeys } from '@/modules/schedule/utils/scheduleQueries';
+import { subjectsQuery } from '@/modules/courses/utils/courseQueries';
 import { courseOptionLabel } from '@/modules/courses/utils/subjectLabels';
 
-interface ScheduleChangePayload {
-  lessonId: string;
-  weekStart: string;
-  courseId?: string;
-  cancelled?: true;
-  subject?: string;
-  room?: string;
-  slot?: number;
-  duration?: number;
-  day?: number;
-}
+type ScheduleChange = Omit<ScheduleSubDto, 'lessonId' | 'weekStart'>;
 
 // A cleared number input hands `v-model.number` back an empty string.
 const emptyChangeForm = () => ({
@@ -42,7 +35,7 @@ type ChangeForm = ReturnType<typeof emptyChangeForm>;
 function changeFormOf(lesson: Lesson, change: Substitution | null): ChangeForm {
   const form = { ...emptyChangeForm(), courseId: lesson.courseId ?? '' };
   if (!change) return form;
-  const day = change.day == null ? null : Number(change.day);
+  const day = change.day ?? null;
   return {
     courseId: change.courseId ?? form.courseId,
     subject: change.subject ?? '',
@@ -50,7 +43,7 @@ function changeFormOf(lesson: Lesson, change: Substitution | null): ChangeForm {
     slot: change.slot ?? '',
     duration: change.duration ?? '',
     day: day === lesson.day ? null : day,
-    cancelled: !!change.cancelled,
+    cancelled: change.cancelled,
   };
 }
 
@@ -68,14 +61,15 @@ export function useScheduleChangeForm(
   const { t } = i18n;
   const te = i18n.te.bind(i18n);
   const toast = useToast();
+  const queryClient = useQueryClient();
   const groupId = useGroupPageId();
-  const { subjects, loadSubjects } = useSubjectAdmin();
+  const subjectsResult = useQuery(subjectsQuery(groupId));
+  const subjects = computed(() => subjectsResult.data.value ?? []);
   const { days, schedulesCoursesIndividually, formatDayName, getDisplayName } =
     useScheduleDisplay();
 
   const form = ref(emptyChangeForm());
   const savedPayload = ref('');
-  const saving = ref(false);
 
   // An Abitur group runs too many courses for one to be moved or given another
   // subject, so its changes only cancel a lesson or send it to another room.
@@ -91,7 +85,6 @@ export function useScheduleChangeForm(
       if (!opened) return;
       form.value = changeFormOf(opened, existingChange.value);
       savedPayload.value = JSON.stringify(changesPayload());
-      if (subjects.value.length === 0) void loadSubjects();
     },
     { immediate: true },
   );
@@ -167,10 +160,7 @@ export function useScheduleChangeForm(
   );
 
   /** What the folded-away fields hold stays out of a cancellation. */
-  function changesPayload(): Omit<
-    ScheduleChangePayload,
-    'lessonId' | 'weekStart'
-  > {
+  function changesPayload(): ScheduleChange {
     const { courseId, cancelled, subject, room, slot, duration, day } =
       form.value;
     const course = courseId ? { courseId } : {};
@@ -185,43 +175,56 @@ export function useScheduleChangeForm(
     };
   }
 
-  async function replaceChange(target: Lesson): Promise<boolean> {
-    const payload: ScheduleChangePayload = {
-      lessonId: target._originalId || target.id,
-      weekStart: weekStart.value,
-      ...changesPayload(),
-    };
-    try {
-      await api.put(groupPath(groupId, '/admin/schedule/subs'), payload);
-      return true;
-    } catch {
-      toast.error(t('schedule.errors.save_change'));
-      return false;
-    }
-  }
+  const reloadSchedule = () =>
+    void queryClient.invalidateQueries({ queryKey: scheduleKeys.all(groupId) });
 
-  async function removeChange(change: Substitution): Promise<boolean> {
-    try {
-      await api.delete(groupPath(groupId, `/admin/schedule/subs/${change.id}`));
-      return true;
-    } catch {
-      toast.error(t('schedule.errors.delete_change'));
-      return false;
-    }
-  }
+  const replaceChange = useMutation({
+    mutationFn: (body: ScheduleSubDto) =>
+      unwrap(
+        api.PUT('/groups/{group_id}/admin/schedule/subs', {
+          params: { path: { group_id: groupId } },
+          body,
+        }),
+      ),
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t('schedule.errors.save_change'))),
+    onSuccess: reloadSchedule,
+  });
 
+  const removeChange = useMutation({
+    mutationFn: (change: Substitution) =>
+      unwrap(
+        api.DELETE('/groups/{group_id}/admin/schedule/subs/{id}', {
+          params: { path: { group_id: groupId, id: change.id } },
+        }),
+      ),
+    onError: (err) =>
+      toast.error(apiErrorMessage(err, t('schedule.errors.delete_change'))),
+    onSuccess: reloadSchedule,
+  });
+
+  const saving = computed(
+    () => replaceChange.isPending.value || removeChange.isPending.value,
+  );
+
+  /** Resolves to whether the change was saved; a failure was already told. */
   async function saveChange(): Promise<boolean> {
     const target = lesson.value;
     if (!target || !canSave.value || saving.value) return false;
     const change = existingChange.value;
-
-    saving.value = true;
     try {
-      return change && !changesLesson.value
-        ? await removeChange(change)
-        : await replaceChange(target);
-    } finally {
-      saving.value = false;
+      if (change && !changesLesson.value) {
+        await removeChange.mutateAsync(change);
+      } else {
+        await replaceChange.mutateAsync({
+          lessonId: target._originalId || target.id,
+          weekStart: weekStart.value,
+          ...changesPayload(),
+        });
+      }
+      return true;
+    } catch {
+      return false;
     }
   }
 

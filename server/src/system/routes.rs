@@ -1,9 +1,9 @@
 use super::handlers::*;
 use crate::state::AppState;
-use axum::{Router, routing::get};
+use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/system/status", get(status))
-        .route("/system/csrf/init", get(csrf_init))
+pub fn router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(health))
+        .routes(routes!(csrf_init))
 }

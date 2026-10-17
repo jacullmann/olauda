@@ -5,6 +5,7 @@ use super::dto::{
 use crate::{
     common::client::ClientInfo,
     error::{AppError, AppResult},
+    realtime::event::{Notice, PlatformTopic, publish},
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
@@ -57,6 +58,15 @@ impl SystemAnnouncementService {
             ids
         )
         .execute(&self.db)
+        .await?;
+
+        publish(
+            &self.db,
+            [Notice::platform_for(
+                user_id,
+                PlatformTopic::SystemAnnouncements,
+            )],
+        )
         .await?;
 
         Ok(())
@@ -121,6 +131,11 @@ impl SystemAnnouncementService {
             .record(&mut *tx)
             .await?;
 
+        publish(
+            &mut *tx,
+            [Notice::platform(PlatformTopic::SystemAnnouncements)],
+        )
+        .await?;
         tx.commit().await?;
 
         Ok(id)
@@ -173,6 +188,11 @@ impl SystemAnnouncementService {
             .record(&mut *tx)
             .await?;
 
+        publish(
+            &mut *tx,
+            [Notice::platform(PlatformTopic::SystemAnnouncements)],
+        )
+        .await?;
         tx.commit().await?;
 
         Ok(())
@@ -196,6 +216,11 @@ impl SystemAnnouncementService {
             .record(&mut *tx)
             .await?;
 
+        publish(
+            &mut *tx,
+            [Notice::platform(PlatformTopic::SystemAnnouncements)],
+        )
+        .await?;
         tx.commit().await?;
 
         Ok(())

@@ -1,5 +1,6 @@
 // @ts-check
 import eslint from '@eslint/js';
+import pluginQuery from '@tanstack/eslint-plugin-query';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import pluginVue from 'eslint-plugin-vue';
 import globals from 'globals';
@@ -7,9 +8,16 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs', 'dist/**', 'components.d.ts'],
+    ignores: [
+      'eslint.config.mjs',
+      'dist/**',
+      'components.d.ts',
+      'scripts/**',
+      'src/api/schema.d.ts',
+    ],
   },
   eslint.configs.recommended,
+  ...pluginQuery.configs['flat/recommended'],
   ...tseslint.configs.recommendedTypeChecked,
   ...pluginVue.configs['flat/recommended'],
   eslintPluginPrettierRecommended,

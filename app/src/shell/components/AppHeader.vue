@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onClickOutside, useWindowScroll } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -80,10 +80,6 @@ const searchHandoverClasses = computed(() => [
   { 'opacity-0 pointer-events-none': isSearching.value },
 ]);
 
-function onPersonalizationChanged(value: boolean) {
-  userStore.updateUser({ personalized: value });
-}
-
 const groupMenuOpen = ref(false);
 const groupMenuRef = ref<HTMLElement | null>(null);
 const groupButtonRef = ref<HTMLElement | null>(null);
@@ -127,12 +123,6 @@ function openAnnouncements() {
   groupMenuOpen.value = false;
   announcementsModal.show();
 }
-
-onMounted(() => {
-  if (!userStore.initialized) {
-    void userStore.fetchUser();
-  }
-});
 
 defineExpose({ groupButton: groupButtonRef });
 </script>
@@ -303,7 +293,6 @@ defineExpose({ groupButton: groupButtonRef });
             { 'opacity-0 scale-50 blur-xs pointer-events-none': isSearching },
           ]"
           @logout="performLogout"
-          @personalization-changed="onPersonalizationChanged"
         />
       </div>
     </div>

@@ -7,7 +7,7 @@ import AccountThemePreview from './AccountThemePreview.vue';
 import { haptic } from '@/common/utils/haptics';
 
 const { t } = useI18n();
-const { currentTheme, setPreference } = usePreferences();
+const { currentTheme, setTheme } = usePreferences();
 
 const headingId = useId();
 const radioName = useId();
@@ -19,7 +19,7 @@ const themeOptions = computed<{ value: ThemeMode; label: string }[]>(() => [
 ]);
 
 function selectTheme(theme: ThemeMode) {
-  setPreference('theme', theme);
+  setTheme(theme);
   haptic();
 }
 </script>

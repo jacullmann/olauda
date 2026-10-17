@@ -1,24 +1,26 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 use crate::common::{
     cloudinary::Cloudinary,
     email::{EmailActivity, EmailQuota},
+    group_type::GroupType,
     hetzner::MetricPoint,
     name_generator::generate_user_name,
     pagination::{Limit, Offset, SortOrder},
     role::MemberRole,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangeMembershipRoleDto {
     pub role: MemberRole,
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum UserStatusFilter {
     #[default]
@@ -39,7 +41,7 @@ impl UserStatusFilter {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum UserSort {
     #[default]
@@ -58,23 +60,29 @@ impl UserSort {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 #[serde(rename_all = "camelCase")]
+#[into_params(parameter_in = Query)]
 pub struct UsersQuery {
     #[serde(default)]
+    #[param(inline)]
     pub offset: Offset,
     #[serde(default)]
+    #[param(inline)]
     pub limit: Limit,
     pub search: Option<String>,
     #[serde(default)]
+    #[param(inline)]
     pub status: UserStatusFilter,
     #[serde(default)]
+    #[param(inline)]
     pub sort: UserSort,
     #[serde(default)]
+    #[param(inline)]
     pub order: SortOrder,
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum GroupTypeFilter {
     #[default]
@@ -93,7 +101,7 @@ impl GroupTypeFilter {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum GroupSort {
     #[default]
@@ -114,23 +122,29 @@ impl GroupSort {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 #[serde(rename_all = "camelCase")]
+#[into_params(parameter_in = Query)]
 pub struct GroupsQuery {
     #[serde(default)]
+    #[param(inline)]
     pub offset: Offset,
     #[serde(default)]
+    #[param(inline)]
     pub limit: Limit,
     pub search: Option<String>,
     #[serde(default)]
+    #[param(inline)]
     pub r#type: GroupTypeFilter,
     #[serde(default)]
+    #[param(inline)]
     pub sort: GroupSort,
     #[serde(default)]
+    #[param(inline)]
     pub order: SortOrder,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct StatsDto {
     pub user_count: i64,
@@ -145,7 +159,7 @@ pub struct StatsDto {
     pub report_count: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyActivityDto {
     pub day: NaiveDate,
@@ -159,7 +173,7 @@ pub struct DailyActivityDto {
 
 /// How every account, superadmins included, is secured and signs in. Each
 /// breakdown splits all accounts into disjoint parts that add up to the total.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSecurityDto {
     pub second_factor: SecondFactorBreakdown,
@@ -167,7 +181,7 @@ pub struct AccountSecurityDto {
 }
 
 /// Authenticator app (TOTP) and passkeys, each on its own or both.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SecondFactorBreakdown {
     pub neither: i64,
@@ -176,7 +190,7 @@ pub struct SecondFactorBreakdown {
     pub both: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleBreakdown {
     pub not_linked: i64,
@@ -192,7 +206,7 @@ pub const DAYS_PER_WEEK: usize = 7;
 /// When in the week the app is used, in German local time. Each cell counts a
 /// user at most once per day, so one person reloading the app all evening
 /// does not outweigh a class opening it once.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct WeeklyRhythmDto {
     /// Whole weeks the counts span, so every hour of the week is sampled equally often.
@@ -213,7 +227,7 @@ pub struct AdminUserRow {
     pub last_login_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminUserDto {
     pub id: Uuid,
@@ -248,7 +262,7 @@ pub struct AdminGroupRow {
     pub id: Uuid,
     pub name: String,
     pub avatar_public_id: Option<String>,
-    pub group_type: String,
+    pub group_type: GroupType,
     pub owner_id: Uuid,
     pub owner_email: String,
     pub created_at: DateTime<Utc>,
@@ -257,13 +271,13 @@ pub struct AdminGroupRow {
     pub item_count: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminGroupDto {
     pub id: Uuid,
     pub name: String,
     pub avatar_url: Option<String>,
-    pub group_type: String,
+    pub group_type: GroupType,
     pub owner_id: Uuid,
     pub owner_email: String,
     pub owner_name: String,
@@ -292,7 +306,7 @@ impl AdminGroupDto {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UserMembershipDto {
     pub group_id: Uuid,
@@ -306,7 +320,7 @@ pub struct UserMembershipDto {
 
 /// The emails Resend sent per day and what became of them, over the same days
 /// as the daily activity.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmailActivityDto {
     pub days: Vec<DailyEmailsDto>,
@@ -315,7 +329,7 @@ pub struct EmailActivityDto {
     pub failed: u64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyEmailsDto {
     pub day: NaiveDate,
@@ -341,7 +355,7 @@ impl From<EmailActivity> for EmailActivityDto {
 }
 
 /// Emails used in the current billing month of the Resend plan.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EmailQuotaDto {
     pub used: u32,
@@ -362,7 +376,7 @@ impl From<EmailQuota> for EmailQuotaDto {
 
 /// A pg_cron cleanup (or the asset worker), named as scheduled, with the rows
 /// it should already have removed. Anything above zero means it is not running.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CleanupJobDto {
     pub job: String,
@@ -371,7 +385,7 @@ pub struct CleanupJobDto {
 
 /// The time windows, ending now, that the server metrics can be shown for. A fixed set keeps
 /// every request to the Hetzner API small and predictable.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, ToSchema)]
 pub enum MetricsRange {
     #[serde(rename = "1h")]
     Hour,
@@ -403,14 +417,16 @@ impl MetricsRange {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct ServerMetricsQuery {
+    #[param(inline)]
     pub range: MetricsRange,
 }
 
 /// The window is sent along so charts span all of it, even where the series
 /// start late or have gaps.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerMetricsDto {
     pub start: i64,

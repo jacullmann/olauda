@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -14,10 +13,7 @@ const router = useRouter();
 const toast = useToast();
 const confirmModal = useConfirmModal();
 const { hasPassword } = storeToRefs(useUserStore());
-const { removing, canRemovePassword, fetchMethods, removePassword } =
-  useSignInMethods();
-
-onMounted(() => void fetchMethods());
+const { removing, canRemovePassword, removePassword } = useSignInMethods();
 
 function openPasswordForm() {
   void router.push({ name: 'account-password-edit' });

@@ -175,6 +175,48 @@ fn require_min(key: &str, min_len: usize) -> Result<String> {
     Ok(val)
 }
 
+#[cfg(test)]
+impl Config {
+    /// A complete configuration that reaches nothing, for tests that build
+    /// the application without serving it.
+    pub fn for_tests() -> Self {
+        let secret = "test-secret-that-is-long-enough-for-hs256".to_owned();
+        let origin = "http://localhost:5173";
+
+        Self {
+            port: 0,
+            cors_origin: origin.to_owned(),
+            cookie_domain: None,
+            cookie_secure: false,
+            log_unsent_emails: true,
+            database_url: "postgres://localhost/unused".to_owned(),
+            user_jwt_secret: secret.clone(),
+            password_reset_jwt_secret: secret.clone(),
+            mfa_pending_jwt_secret: secret.clone(),
+            oauth_pending_jwt_secret: secret,
+            google_client_id: None,
+            google_client_secret: None,
+            google_redirect_uri: None,
+            encryption_key: "0".repeat(64),
+            user_key_pepper: "pepper".to_owned(),
+            cloudinary_cloud_name: String::new(),
+            cloudinary_api_key: String::new(),
+            cloudinary_api_secret: String::new(),
+            resend_api_key: String::new(),
+            email_from: "Olauda <test@example.com>".to_owned(),
+            geoip_service_url: "http://localhost:0".to_owned(),
+            hetzner: HetznerConfig {
+                api_token: String::new(),
+                server_id: 0,
+            },
+            webauthn: WebauthnConfig {
+                rp_id: "localhost".to_owned(),
+                rp_origin: Url::parse(origin).expect("valid origin"),
+            },
+        }
+    }
+}
+
 pub const ACCESS_TOKEN_TTL: Duration = Duration::from_secs(15 * 60);
 pub const REFRESH_TOKEN_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 /// How long a rotated refresh token may still be exchanged. Parallel refreshes

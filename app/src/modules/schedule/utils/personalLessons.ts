@@ -34,13 +34,8 @@ export function personalLessons(
   const subjectMap = subjectsById(subjects);
 
   lessons.forEach((lesson) => {
-    const {
-      subjectId,
-      subjects: subjectRef,
-      courses,
-      ownCourseId,
-      ownCourse,
-    } = resolveLessonSubject(lesson, subjectMap);
+    const { subjectId, subjectName, courses, ownCourseId, ownCourse } =
+      resolveLessonSubject(lesson, subjectMap);
 
     // A lesson scheduled for one course is already personal — Abitur groups
     // schedule nearly all of them that way.
@@ -49,9 +44,8 @@ export function personalLessons(
         ...lesson,
         _originalId: lesson.id,
         courseId: ownCourseId,
-        courseName: lesson.courseName ?? ownCourse?.name,
-        courses: ownCourse,
-        subjects: subjectRef,
+        courseName: ownCourse?.name,
+        subjectName,
         outsideCourseSelection:
           hasCourseSelection && !courseIds.has(ownCourseId),
       });
@@ -65,7 +59,7 @@ export function personalLessons(
       result.push({
         ...lesson,
         _originalId: lesson.id,
-        subjects: subjectRef,
+        subjectName,
         outsideCourseSelection:
           hasCourseSelection &&
           !schedulesCoursesIndividually &&
@@ -90,9 +84,8 @@ export function personalLessons(
         _originalId: lesson.id,
         courseId: c.id,
         courseName: c.name,
-        courses: { id: c.id, name: c.name },
         subjectId,
-        subjects: subjectRef,
+        subjectName,
       });
     });
   });

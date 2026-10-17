@@ -6,6 +6,7 @@ use crate::{
     config::Config,
     mfa::{recovery_codes::RecoveryCodeHasher, second_factor::SecondFactorKeys},
     passkeys::relying_party,
+    realtime::hub::Hub,
 };
 use anyhow::Context;
 use reqwest::Client;
@@ -25,6 +26,7 @@ pub struct AppState {
     pub encryption: EncryptionService,
     pub recovery_codes: RecoveryCodeHasher,
     pub webauthn: Arc<Webauthn>,
+    pub realtime: Hub,
 }
 
 impl AppState {
@@ -65,6 +67,7 @@ impl AppState {
             encryption,
             recovery_codes,
             webauthn: Arc::new(webauthn),
+            realtime: Hub::default(),
         })
     }
 
@@ -73,5 +76,18 @@ impl AppState {
             encryption: &self.encryption,
             recovery_codes: &self.recovery_codes,
         }
+    }
+}
+
+#[cfg(test)]
+impl AppState {
+    /// A state whose database pool connects only when first used.
+    pub fn for_tests() -> Self {
+        let config = Config::for_tests();
+        let db = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy(&config.database_url)
+            .expect("valid database URL");
+
+        Self::new(db, config).expect("valid test configuration")
     }
 }

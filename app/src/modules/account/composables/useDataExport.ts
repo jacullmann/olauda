@@ -1,10 +1,8 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorMessage, isReauthDeclined } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
-
-const DATA_EXPORT_URL = '/user/data-export';
 
 // Mirrors the server's name; Content-Disposition is not exposed cross-origin.
 function exportFileName(): string {
@@ -32,10 +30,10 @@ export function useDataExport() {
     if (exporting.value) return;
     exporting.value = true;
     try {
-      const { data } = await api.get<Blob>(DATA_EXPORT_URL, {
-        responseType: 'blob',
-      });
-      saveFile(data, exportFileName());
+      const archive = await unwrap(
+        api.GET('/user/data-export', { parseAs: 'blob' }),
+      );
+      saveFile(archive, exportFileName());
     } catch (e: unknown) {
       if (isReauthDeclined(e)) return;
       toast.error(

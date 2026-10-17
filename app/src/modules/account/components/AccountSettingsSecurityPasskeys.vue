@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AlertCircle, Check, Pencil, Plus, Trash2, X } from '@lucide/vue';
 import { passkeyIcon } from '@/modules/auth/utils/passkeyIcon';
 import { usePasskeys } from '@/modules/account/composables/usePasskeys';
-import type { Passkey } from '@/modules/auth/types';
+import type { PasskeySummary as Passkey } from '@/api/schema';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import { useToast } from '@/common/composables/useToast';
 import { formatDate } from '@/common/utils/formatDate';
@@ -105,10 +105,6 @@ function usageLabel(passkey: Passkey): string {
     : t('auth.passkeys.never_used');
   return `${added} • ${used}`;
 }
-
-onMounted(() => {
-  void fetchPasskeys();
-});
 </script>
 
 <template>

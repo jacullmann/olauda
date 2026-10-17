@@ -36,7 +36,7 @@ const {
   loadingLessons,
   loadingSubs,
   lessonsLoadError,
-  loadSchedule,
+  retrySchedule,
   schoolWeekSubstitutionsFailed,
   retrySubstitutions,
   scheduleConfig,
@@ -331,7 +331,7 @@ const isScheduleVisible = computed(() => {
     <BaseLoadError
       v-else-if="lessonsLoadError"
       class="w-full max-w-192 mx-auto animate-enter"
-      @retry="loadSchedule()"
+      @retry="retrySchedule"
     >
       {{ t('schedule.errors.load') }}
     </BaseLoadError>

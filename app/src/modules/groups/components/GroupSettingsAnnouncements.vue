@@ -10,8 +10,7 @@ import AnnouncementList from '@/modules/announcements/components/AnnouncementLis
 import { fromGroupAnnouncement } from '@/modules/announcements/composables/useAnnouncementFeed';
 
 const groupId = useGroupPageId();
-const { announcements, loadAnnouncements, deleteAnnouncement } =
-  useGroupAnnouncementsAdmin();
+const { announcements, deleteAnnouncement } = useGroupAnnouncementsAdmin();
 const listedAnnouncements = computed(() =>
   announcements.value.map(fromGroupAnnouncement),
 );
@@ -24,8 +23,6 @@ const { checkPermission } = useGroups();
 const canManageAnnouncements = computed(() =>
   checkPermission('manage_announcements'),
 );
-
-announcementFormModal.onSuccess(() => void loadAnnouncements());
 </script>
 
 <template>

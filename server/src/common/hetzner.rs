@@ -17,6 +17,27 @@ const API_BASE: &str = "https://api.hetzner.cloud/v1";
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct MetricPoint(pub i64, pub Option<f64>);
 
+impl utoipa::PartialSchema for MetricPoint {
+    /// A two-item tuple, which the derive cannot describe.
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        use utoipa::openapi::schema::{ArrayBuilder, ObjectBuilder, SchemaType, Type};
+
+        let timestamp = ObjectBuilder::new().schema_type(Type::Integer);
+        let value =
+            ObjectBuilder::new().schema_type(SchemaType::from_iter([Type::Number, Type::Null]));
+
+        ArrayBuilder::new()
+            .prefix_items([timestamp, value])
+            .items(utoipa::openapi::schema::ArrayItems::False)
+            .min_items(Some(2))
+            .max_items(Some(2))
+            .build()
+            .into()
+    }
+}
+
+impl utoipa::ToSchema for MetricPoint {}
+
 /// The server's CPU and network series over one time window. CPU is in
 /// percent of one vCPU (so up to 100 per core), bandwidths in bytes per second.
 #[derive(Debug, PartialEq)]

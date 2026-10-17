@@ -45,11 +45,8 @@ import {
   slotRangeMinutes,
   type MinuteRange,
 } from '@/modules/schedule/utils/slotTimes';
-import {
-  isoDate,
-  parseIsoDate,
-  SCHOOL_DAYS,
-} from '@/modules/schedule/utils/weekday';
+import { isoDate, parseIsoDate } from '@/modules/schedule/utils/weekday';
+import { pageOf, weekOfPage } from '@/modules/schedule/utils/schedulePages';
 
 import CoursePersonalizedViewNotice from '@/modules/courses/components/CoursePersonalizedViewNotice.vue';
 import ScheduleHeader from '@/modules/schedule/components/ScheduleHeader.vue';
@@ -65,9 +62,7 @@ import ScheduleWeekNav from '@/modules/schedule/components/ScheduleWeekNav.vue';
 const dayPager = useSchedulePager();
 const { hasPaged, selectedPage, goToPage, showPage, skipToPage } = dayPager;
 
-const shownWeek = computed(() =>
-  Math.floor(selectedPage.value / SCHOOL_DAYS.length),
-);
+const shownWeek = computed(() => weekOfPage(selectedPage.value));
 
 const {
   isPersonalized,
@@ -92,7 +87,6 @@ const {
   formatDayInitials,
   substitutionsFailedFor,
   retrySubstitutions,
-  refresh,
 } = useSchedule(shownWeek);
 
 const { t } = useI18n();
@@ -142,7 +136,7 @@ const queryDate = computed(() => {
       ? undefined
       : isoDate(dateOfPage(selectedPage.value));
   }
-  const defaultWeek = Math.floor(defaultPage.value / days.length);
+  const defaultWeek = weekOfPage(defaultPage.value);
   return shownWeek.value === defaultWeek
     ? undefined
     : weekKeyOf(shownWeek.value);
@@ -372,7 +366,7 @@ const todayMarker = computed(() => {
     return null;
   }
   const week = todayWeek.value;
-  const day = days[page - week * days.length];
+  const day = days[page - pageOf(week, 0)];
   if (day === undefined) return null;
   const layout = dayLayoutOf(day, week);
   const cells: RowSpan[] = [
@@ -393,7 +387,7 @@ const todayMarker = computed(() => {
 });
 
 const markerOf = (day: number, week: number) =>
-  week * days.length + days.indexOf(day) === todayPage.value
+  pageOf(week, days.indexOf(day)) === todayPage.value
     ? todayMarker.value
     : null;
 
@@ -483,7 +477,7 @@ const isActiveGroup = (key: string, week: number) =>
 
 /** A lesson opens on the date it takes place in the week it is shown in. */
 function openLesson(lesson: Lesson, week: number) {
-  const date = dateOfPage(week * days.length + days.indexOf(lesson.day));
+  const date = dateOfPage(pageOf(week, days.indexOf(lesson.day)));
   void router.push(scheduleLessonRoute(groupId, isoDate(date), lesson.id));
 }
 
@@ -498,15 +492,13 @@ onBeforeRouteLeave(() => {
 });
 
 // Returning puts the page's nodes back into the document, which would restart
-// their entrance, so it only plays the first time the page is shown. The
-// lesson may have been changed meanwhile, so the schedule is fetched again.
+// their entrance, so it only plays the first time the page is shown.
 const hasEntered = ref(false);
 onDeactivated(() => {
   hasEntered.value = true;
 });
 onActivated(() => {
   window.scrollTo({ top: scrollTop, behavior: 'instant' });
-  if (hasEntered.value) void refresh();
 });
 
 const personalizedNotice = useDismissibleNotice('personalizedSchedule');

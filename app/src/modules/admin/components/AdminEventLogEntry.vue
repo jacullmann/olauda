@@ -35,10 +35,10 @@ const accounts = computed(() => {
   const { userId, userEmail, actorId, actorEmail } = props.entry;
   const result: Account[] = [];
   if (userId && userId !== props.scopedUserId) {
-    result.push({ role: 'user', id: userId, email: userEmail });
+    result.push({ role: 'user', id: userId, email: userEmail ?? null });
   }
   if (actorId && actorId !== userId && actorId !== props.scopedUserId) {
-    result.push({ role: 'actor', id: actorId, email: actorEmail });
+    result.push({ role: 'actor', id: actorId, email: actorEmail ?? null });
   }
   return result;
 });

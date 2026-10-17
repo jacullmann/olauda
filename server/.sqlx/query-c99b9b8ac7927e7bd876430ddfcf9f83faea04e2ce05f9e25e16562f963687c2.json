@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.personalized, ur.done_course_setup\n               FROM users u\n               JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = $2\n               WHERE u.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "personalized",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "personalized"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "done_course_setup",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "done_course_setup"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "c99b9b8ac7927e7bd876430ddfcf9f83faea04e2ce05f9e25e16562f963687c2"
+}

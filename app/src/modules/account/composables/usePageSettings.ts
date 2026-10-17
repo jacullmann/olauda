@@ -1,8 +1,8 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
 import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { savePreferences } from '@/modules/account/composables/usePreferences';
 import {
   useUserStore,
   type PageSettings,
@@ -44,14 +44,14 @@ export function usePageSettings<P extends SettingsPage>(page: P) {
     key: K,
     value: PageSettings[P][K],
   ): Promise<void> {
-    if (!userStore.isLoggedIn) return;
-    const previous = userStore.storedPageSettings(page)[key];
+    const previous = userStore.user?.preferences;
+    if (!previous) return;
     userStore.setPageSetting(page, key, value);
     try {
-      await api.patch('/user/preferences', { [page]: { [key]: value } });
-    } catch (e) {
-      userStore.setPageSetting(page, key, previous);
-      toast.error(apiErrorMessage(e, t('auth.account_settings.errors.save')));
+      await savePreferences({ [page]: { [key]: value } });
+    } catch (err: unknown) {
+      userStore.updateUser({ preferences: previous });
+      toast.error(apiErrorMessage(err, t('auth.account_settings.errors.save')));
     }
   }
 

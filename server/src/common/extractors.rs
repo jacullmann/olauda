@@ -38,6 +38,8 @@ pub struct AuthUser {
     pub session_id: Uuid,
     /// When the user last proved who they are in this session.
     pub authenticated_at: DateTime<Utc>,
+    /// When the access token stops vouching for the caller.
+    pub expires_at: DateTime<Utc>,
 }
 
 impl AuthUser {
@@ -47,9 +49,15 @@ impl AuthUser {
         let token = jar.get(ACCESS_COOKIE).ok_or(AppError::AuthRequired)?;
         let claims = jwt.verify_access(token.value())?;
 
+        let expires_at = i64::try_from(claims.exp)
+            .ok()
+            .and_then(|exp| DateTime::from_timestamp(exp, 0))
+            .ok_or(AppError::TokenExpired)?;
+
         Ok(AuthUser {
             user_id: claims.sub,
             authenticated_at: claims.authenticated_at(),
+            expires_at,
             email: claims.email,
             session_id: claims.sid,
         })
@@ -304,8 +312,9 @@ impl TenantContext {
         self.is_superadmin || self.is_owner()
     }
 
-    pub fn effective_permission_keys(&self) -> Vec<&'static str> {
-        self.group_permissions.effective_keys(self.standing())
+    pub fn effective_permissions(&self) -> Vec<Permission> {
+        self.group_permissions
+            .effective_permissions(self.standing())
     }
 }
 

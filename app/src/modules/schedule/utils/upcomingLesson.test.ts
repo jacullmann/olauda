@@ -17,7 +17,7 @@ function lesson(
   slot: number,
   extra: Partial<Lesson> = {},
 ): Lesson {
-  return { id, day, slot, duration: 1, room: null, ...extra };
+  return { id, day, slot, duration: 1, isDalton: false, ...extra };
 }
 
 /** 2024-01-01 is a Monday. */
@@ -87,7 +87,7 @@ describe('findUpcomingLesson', () => {
   it("prefers one of the member's courses among parallel lessons", () => {
     const lessons = [
       lesson('other', 1, 2, { courseId: 'course-a' }),
-      lesson('own', 1, 2, { courses: { id: 'course-b', name: 'B' } }),
+      lesson('own', 1, 2, { courseId: 'course-b', courseName: 'B' }),
     ];
     const taken = new Set(['course-b']);
     expect(findUpcomingLesson(lessons, config, taken, at(1, '08:00'))?.id).toBe(

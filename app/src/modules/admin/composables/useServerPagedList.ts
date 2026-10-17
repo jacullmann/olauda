@@ -1,13 +1,21 @@
 import {
-  onActivated,
-  onDeactivated,
-  ref,
+  computed,
+  effectScope,
+  onScopeDispose,
+  shallowReactive,
   shallowRef,
-  triggerRef,
   watch,
+  type EffectScope,
 } from 'vue';
-import axios from 'axios';
-import api from '@/api/client';
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+  type QueryOptions,
+  type UseQueryReturnType,
+} from '@tanstack/vue-query';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import type { ListWindow, SortOrder } from '@/modules/admin/types';
 import {
   useRouteQueryState,
@@ -23,13 +31,36 @@ type ListParams = { search: string; sort: string; order: SortOrder } & Record<
   string
 >;
 
-export interface WindowedListOptions<
+/** A block of the list: the rows from `offset` on, at most `limit` of them. */
+export type ListBlock<TParams extends ListParams> = TParams & {
+  offset: number;
+  limit: number;
+};
+
+export interface ServerPagedListOptions<
   TParams extends ListParams,
+  TItem,
+  TKey extends QueryKey,
 > extends RouteQueryStateOptions<TParams> {
-  endpoint: string;
+  /** The query for one block, such as `adminUsersQuery`. */
+  query: (
+    block: ListBlock<TParams>,
+  ) => Pick<
+    QueryOptions<
+      ListWindow<TItem>,
+      Error,
+      ListWindow<TItem>,
+      ListWindow<TItem>,
+      TKey
+    >,
+    'queryKey' | 'queryFn'
+  >;
+  /** The prefix of every block's key, which a refresh invalidates. */
+  listKey: QueryKey;
   /** Sorts that start ascending when first picked, such as names. */
   ascendingSorts?: readonly TParams['sort'][];
-  onError: () => void;
+  /** For a block other than the first that failed while the list is on screen. */
+  loadErrorMessage: (error: unknown) => string;
 }
 
 export type WindowedListState = 'loading' | 'ready' | 'failed';
@@ -41,100 +72,135 @@ export type WindowedListState = 'loading' | 'ready' | 'failed';
  * only the blocks in view are then fetched. Filters and sorting live in the
  * URL query.
  */
-export function useServerPagedList<TItem, TParams extends ListParams>(
-  options: WindowedListOptions<TParams>,
-) {
+export function useServerPagedList<
+  TParams extends ListParams,
+  TItem,
+  TKey extends QueryKey,
+>(options: ServerPagedListOptions<TParams, TItem, TKey>) {
+  const queryClient = useQueryClient();
   const { params, setParams } = useRouteQueryState(options);
   const searchInput = useSearchInput(
     () => params.value.search,
     (search) => setParams({ search } as Partial<TParams>, true),
   );
 
-  const total = ref(0);
-  const state = ref<WindowedListState>('loading');
-  // Replaced or triggered as a whole: rows are never edited in place.
-  const blocks = shallowRef(new Map<number, TItem[]>());
-  const inFlight = new Map<number, AbortController>();
-  /** The blocks last in view, which a refresh fetches again. */
-  let blocksInView: number[] = [0];
-  /** Bumped whenever loaded blocks may no longer fit together. */
-  let generation = 0;
+  const blockOptions = (block: number) =>
+    options.query({
+      ...params.value,
+      offset: block * BLOCK_SIZE,
+      limit: BLOCK_SIZE,
+    });
+
+  // The first block stands for the list as a whole: while another search,
+  // filter or sort loads, the rows and total shown so far stay on screen.
+  const first = useQuery(
+    computed(() => ({
+      ...blockOptions(0),
+      placeholderData: keepPreviousData,
+    })),
+  );
+
+  /** The blocks after the first that are in view, in order. */
+  const laterBlocks = shallowRef<number[]>([]);
+
+  // A query per block in view, each in a scope of its own that is stopped
+  // once the block leaves the view; its rows stay cached for a return.
+  const later = shallowReactive(
+    new Map<
+      number,
+      {
+        query: UseQueryReturnType<ListWindow<TItem>, Error>;
+        scope: EffectScope;
+      }
+    >(),
+  );
+
+  watch(laterBlocks, (inView) => {
+    for (const [block, entry] of later) {
+      if (inView.includes(block)) continue;
+      entry.scope.stop();
+      later.delete(block);
+    }
+    for (const block of inView) {
+      if (later.has(block)) continue;
+      const scope = effectScope();
+      const query = scope.run(() => {
+        const blockQuery = useQuery(
+          computed(() => ({
+            ...blockOptions(block),
+            // Rows for new params wait until the first block has them, so
+            // the old rows above are never followed by new ones below.
+            enabled: !first.isPlaceholderData.value,
+          })),
+          queryClient,
+        );
+        useLoadErrorToast(blockQuery, options.loadErrorMessage);
+        return blockQuery;
+      });
+      if (query) later.set(block, { query, scope });
+    }
+  });
+
+  onScopeDispose(() => {
+    for (const entry of later.values()) entry.scope.stop();
+    later.clear();
+  });
+
+  const blocks = computed(() => {
+    const rows = new Map<number, ListWindow<TItem>['items']>();
+    const firstRows = first.data.value?.items;
+    if (firstRows) rows.set(0, firstRows);
+    for (const [block, { query }] of later) {
+      const blockRows = query.data.value?.items;
+      if (blockRows) rows.set(block, blockRows);
+    }
+    return rows;
+  });
+
+  const total = computed(() => first.data.value?.total ?? 0);
+
+  const state = computed<WindowedListState>(() => {
+    if (first.data.value) return 'ready';
+    if (first.isError.value && !first.isFetching.value) return 'failed';
+    return 'loading';
+  });
+
+  /** Whether the rows shown belong to the previous params while new ones load. */
+  const updating = first.isPlaceholderData;
 
   const itemAt = (index: number): TItem | undefined =>
     blocks.value.get(Math.floor(index / BLOCK_SIZE))?.[index % BLOCK_SIZE];
 
-  async function fetchBlock(block: number) {
-    const controller = new AbortController();
-    const startedIn = generation;
-    inFlight.set(block, controller);
-
-    try {
-      const { data } = await api.get<ListWindow<TItem>>(options.endpoint, {
-        params: {
-          ...params.value,
-          offset: block * BLOCK_SIZE,
-          limit: BLOCK_SIZE,
-        },
-        signal: controller.signal,
-      });
-      if (startedIn !== generation) return;
-      blocks.value.set(block, data.items);
-      triggerRef(blocks);
-      total.value = data.total;
-      state.value = 'ready';
-    } catch (error) {
-      if (axios.isCancel(error) || startedIn !== generation) return;
-      if (state.value === 'loading') state.value = 'failed';
-      else options.onError();
-    } finally {
-      if (inFlight.get(block) === controller) inFlight.delete(block);
-    }
-  }
-
-  function abortAll() {
-    generation += 1;
-    for (const controller of inFlight.values()) controller.abort();
-    inFlight.clear();
-  }
-
-  /** Fetches the blocks covering rows `start` to `end` that are neither loaded nor loading. */
+  /** Loads the blocks covering rows `start` to `end`, retrying failed ones. */
   function ensureRange(start: number, end: number) {
-    const first = Math.floor(start / BLOCK_SIZE);
-    const last = Math.floor(end / BLOCK_SIZE);
-    blocksInView = Array.from(
-      { length: last - first + 1 },
-      (_, i) => first + i,
+    const firstBlock = Math.max(1, Math.floor(start / BLOCK_SIZE));
+    const lastBlock = Math.floor(end / BLOCK_SIZE);
+    const next = Array.from(
+      { length: Math.max(0, lastBlock - firstBlock + 1) },
+      (_, i) => firstBlock + i,
     );
-    for (const block of blocksInView) {
-      if (!blocks.value.has(block) && !inFlight.has(block)) {
-        void fetchBlock(block);
+    const current = laterBlocks.value;
+    if (
+      next.length !== current.length ||
+      next.some((block, i) => block !== current[i])
+    ) {
+      laterBlocks.value = next;
+    }
+    for (const block of next) {
+      const query = later.get(block)?.query;
+      if (query?.isError.value && !query.isFetching.value) {
+        void query.refetch();
       }
     }
   }
 
-  function reset() {
-    abortAll();
-    blocks.value = new Map();
-    total.value = 0;
-    state.value = 'loading';
-    blocksInView = [0];
-    void fetchBlock(0);
-  }
-
   /**
    * Fetches the rows in view again, showing the old ones until the new ones
-   * arrive. Every other block is dropped: rows may have come or gone since.
+   * arrive. Every other block is fetched again once it comes back into view:
+   * rows may have come or gone since.
    */
   function refresh() {
-    if (state.value !== 'ready') return reset();
-    abortAll();
-    const kept = new Map<number, TItem[]>();
-    for (const block of blocksInView) {
-      const rows = blocks.value.get(block);
-      if (rows) kept.set(block, rows);
-    }
-    blocks.value = kept;
-    for (const block of blocksInView) void fetchBlock(block);
+    void queryClient.invalidateQueries({ queryKey: options.listKey });
   }
 
   function toggleSort(sort: TParams['sort']) {
@@ -148,18 +214,6 @@ export function useServerPagedList<TItem, TParams extends ListParams>(
     return setParams({ sort, order } as Partial<TParams>);
   }
 
-  watch(params, reset, { immediate: true });
-
-  // A list kept alive behind a detail page shows what may have changed there,
-  // such as an account banned or deleted, as soon as it is back.
-  let wasDeactivated = false;
-  onDeactivated(() => {
-    wasDeactivated = true;
-  });
-  onActivated(() => {
-    if (wasDeactivated) refresh();
-  });
-
   return {
     params,
     setParams,
@@ -167,6 +221,7 @@ export function useServerPagedList<TItem, TParams extends ListParams>(
     searchInput,
     total,
     state,
+    updating,
     itemAt,
     ensureRange,
     refresh,

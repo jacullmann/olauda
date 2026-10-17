@@ -11,6 +11,7 @@ use reqwest::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{sync::Arc, time::Duration};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// Uploads carry up to a few megabytes, far more than the default timeout of
@@ -19,7 +20,7 @@ const UPLOAD_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// Cloudinary keeps images, which it can transform on delivery, apart from raw
 /// files, which it serves as they are.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, ToSchema)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
 pub enum ResourceType {

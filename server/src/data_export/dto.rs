@@ -1,11 +1,20 @@
 //! The shape of `data.json`. Field names are part of the export format, so
 //! renaming one is a breaking change for anyone importing the file.
 
-use crate::common::cloudinary::ResourceType;
+use crate::{common::cloudinary::ResourceType, todos::dto::TodoDto};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
+
+/// The ZIP the export downloads as.
+#[derive(utoipa::ToSchema)]
+#[schema(value_type = String, format = Binary)]
+#[expect(
+    dead_code,
+    reason = "describes the download in the API documentation only"
+)]
+pub struct DataArchive(Vec<u8>);
 
 pub const FORMAT: &str = "olauda/data-export";
 pub const FORMAT_VERSION: u32 = 3;
@@ -138,7 +147,7 @@ pub struct ContentExport {
     pub files: Vec<UploadedFile>,
     pub announcements: Vec<Announcement>,
     pub system_announcements: Vec<SystemAnnouncement>,
-    pub private_todos: Vec<Value>,
+    pub private_todos: Vec<TodoDto>,
 }
 
 #[derive(Debug, Serialize)]

@@ -21,7 +21,7 @@ export function archivesOnItsOwn(
 ): boolean {
   if (pinned) return false;
   if (
-    task.takesCourse === false &&
+    !task.takesCourse &&
     settings.archiveOtherCoursesPastDue &&
     isPastDue(task, now)
   ) {

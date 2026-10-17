@@ -31,7 +31,7 @@ const RECOVERY_CODE_MAX_CHARS: usize = 32;
 
 /// What the user offers as their second factor, sent as `{ "code": "…" }` or
 /// `{ "recoveryCode": "…" }`.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SecondFactorProof {
     Code(String),

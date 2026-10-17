@@ -1,67 +1,65 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
 import { Laptop, Smartphone, Monitor, Trash2, LogOut } from '@lucide/vue';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
+import type { SessionInfo } from '@/api/schema';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 import { useI18n } from 'vue-i18n';
 import { formatDate } from '@/common/utils/formatDate';
 import { useToast } from '@/common/composables/useToast';
 import { parseUserAgent as parseDeviceUserAgent } from '@/common/utils/userAgent';
-
-interface SessionLocation {
-  city: string | null;
-  country: string | null;
-  countryCode: string | null;
-}
-
-interface ActiveSession {
-  familyId: string;
-  issuedAt: string;
-  lastUsedAt: string;
-  userAgent: string | null;
-  ipAddress: string | null;
-  location: SessionLocation | null;
-}
-
-interface SessionsResponse {
-  sessions: ActiveSession[];
-  currentFamilyId: string | null;
-}
-
-const sessions = ref<ActiveSession[]>([]);
-const currentFamilyId = ref<string | null>(null);
-const loading = ref(true);
-const revokingId = ref<string | null>(null);
-const revokingAll = ref(false);
-const loadFailed = ref(false);
+import {
+  accountKeys,
+  sessionsQuery,
+} from '@/modules/account/utils/accountQueries';
 
 const { t } = useI18n();
 const confirmModal = useConfirmModal();
 const toast = useToast();
+const queryClient = useQueryClient();
 
-async function fetchSessions() {
-  loading.value = true;
-  loadFailed.value = false;
-  try {
-    const res = await api.get<SessionsResponse>('/auth/sessions');
-    sessions.value = res.data.sessions || [];
-    currentFamilyId.value = res.data.currentFamilyId ?? null;
-  } catch (err) {
-    console.error('Failed to fetch active sessions:', err);
-    loadFailed.value = true;
-    toast.error(t('auth.sessions.errors.load'));
-  } finally {
-    loading.value = false;
-  }
+const {
+  data,
+  isPending: loading,
+  isError: loadFailed,
+  error: loadError,
+  refetch: fetchSessions,
+} = useQuery(sessionsQuery());
+
+const sessions = computed(() => data.value?.sessions ?? []);
+const revokingId = ref<string | null>(null);
+
+watch(loadError, (error) => {
+  if (error) toast.error(t('auth.sessions.errors.load'));
+});
+
+function isCurrentSession(session: SessionInfo): boolean {
+  return session.familyId === data.value?.currentFamilyId;
 }
 
-function isCurrentSession(session: ActiveSession): boolean {
-  return (
-    currentFamilyId.value !== null && session.familyId === currentFamilyId.value
-  );
-}
+const sessionsChanged = () =>
+  queryClient.invalidateQueries({ queryKey: accountKeys.sessions() });
 
-async function revokeSession(session: ActiveSession) {
+const revoke = useMutation({
+  mutationFn: (session: SessionInfo) =>
+    unwrap(
+      api.DELETE('/auth/sessions/{family_id}', {
+        params: { path: { family_id: session.familyId } },
+      }),
+    ),
+  onError: () => toast.error(t('auth.sessions.errors.sign_out')),
+  onSettled: sessionsChanged,
+});
+
+const revokeOthers = useMutation({
+  mutationFn: () => unwrap(api.POST('/auth/logout-others')),
+  onError: () => toast.error(t('auth.sessions.errors.sign_out_others')),
+  onSettled: sessionsChanged,
+});
+const revokingAll = revokeOthers.isPending;
+
+async function revokeSession(session: SessionInfo) {
   const isConfirmed = await confirmModal.ask({
     title: t('auth.sessions.delete_modal.title'),
     content: t('auth.sessions.delete_modal.message', {
@@ -71,21 +69,12 @@ async function revokeSession(session: ActiveSession) {
     submitText: t('common.buttons.logout'),
     danger: true,
   });
-
   if (!isConfirmed) return;
 
   revokingId.value = session.familyId;
-  try {
-    await api.delete(`/auth/sessions/${session.familyId}`);
-    sessions.value = sessions.value.filter(
-      (s) => s.familyId !== session.familyId,
-    );
-  } catch (err) {
-    console.error('Failed to revoke session:', err);
-    toast.error(t('auth.sessions.errors.sign_out'));
-  } finally {
-    revokingId.value = null;
-  }
+  revoke.mutate(session, {
+    onSettled: () => (revokingId.value = null),
+  });
 }
 
 async function logoutAllOtherSessions() {
@@ -95,24 +84,10 @@ async function logoutAllOtherSessions() {
     submitText: t('auth.sessions.delete_all_modal.submit'),
     danger: true,
   });
-
-  if (!isConfirmed) return;
-
-  revokingAll.value = true;
-  try {
-    await api.post('/auth/logout-others');
-
-    sessions.value = sessions.value.filter((s) => isCurrentSession(s));
-  } catch (err) {
-    console.error('Failed to logout other sessions:', err);
-    toast.error(t('auth.sessions.errors.sign_out_others'));
-    await fetchSessions();
-  } finally {
-    revokingAll.value = false;
-  }
+  if (isConfirmed) revokeOthers.mutate();
 }
 
-function parseUserAgent(ua: string | null): {
+function parseUserAgent(ua: string | null | undefined): {
   browser: string;
   os: string;
   isMobile: boolean;
@@ -124,10 +99,6 @@ function parseUserAgent(ua: string | null): {
     isMobile: parsed.isMobile,
   };
 }
-
-onMounted(() => {
-  void fetchSessions();
-});
 </script>
 
 <template>
@@ -137,7 +108,7 @@ onMounted(() => {
     </p>
 
     <div v-if="loadFailed" class="flex justify-center">
-      <BaseButton variant="ghost" @click="fetchSessions">{{
+      <BaseButton variant="ghost" @click="fetchSessions()">{{
         t('auth.sessions.actions.retry')
       }}</BaseButton>
     </div>

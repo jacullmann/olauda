@@ -7,7 +7,7 @@ export function useAdminFormat() {
     i18n.t(key, named ?? {});
   const te = (key: string) => i18n.te(key);
 
-  const getTypeLabel = (type?: string) => {
+  const getTypeLabel = (type?: string | null) => {
     if (type === 'homework') return t('tasks.list.types.homework');
     if (type === 'dalton') return t('tasks.list.types.dalton');
     if (type === 'exam') return t('tasks.list.types.exam');

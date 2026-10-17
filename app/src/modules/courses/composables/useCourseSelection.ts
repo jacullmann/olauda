@@ -1,16 +1,15 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import type { CourseSelectionDto, CourseSetup } from '@/api/schema';
 import {
   useSubjectStore,
   type Subject,
 } from '@/modules/courses/stores/useSubjectStore';
-import {
-  useUserStore,
-  type UserData,
-} from '@/modules/account/stores/useUserStore';
+import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useGroups } from '@/modules/groups/composables/useGroups';
+import { invalidatePersonalizedViews } from '@/modules/courses/utils/personalization';
 import {
   courseLabel,
   courseTypeHint,
@@ -18,7 +17,7 @@ import {
 } from '@/modules/courses/utils/subjectLabels';
 import type { UnitOption } from '@/common/components/BaseSelect.vue';
 
-export type Enrollment = UserData['courses'][number];
+export type Enrollment = CourseSelectionDto;
 
 export const NO_COURSE = 'NONE';
 
@@ -32,6 +31,7 @@ export function useCourseSelection(groupId: string) {
   const te = i18n.te.bind(i18n);
   const subjectStore = useSubjectStore();
   const userStore = useUserStore();
+  const queryClient = useQueryClient();
   const { setCourseSetup } = useGroups();
 
   const selections = reactive<Record<string, string>>({});
@@ -55,7 +55,7 @@ export function useCourseSelection(groupId: string) {
 
     for (const { subjectId, courseId } of enrolled) {
       const subject = courseSubjects.value.find((s) => s.id === subjectId);
-      if (subject?.courses?.some((course) => course.id === courseId)) {
+      if (subject?.courses.some((course) => course.id === courseId)) {
         selections[subjectId] = courseId;
       }
     }
@@ -66,7 +66,7 @@ export function useCourseSelection(groupId: string) {
   }
 
   function optionsForSubject(subject: Subject, isOptional: boolean) {
-    const options = (subject.courses ?? []).map((course): UnitOption => ({
+    const options = subject.courses.map((course): UnitOption => ({
       label: courseLabel(course.name, t, te),
       value: course.id,
       hint: courseTypeHint(course.courseType, t, te),
@@ -88,32 +88,51 @@ export function useCourseSelection(groupId: string) {
       const courseId = selections[subject.id];
       return courseId &&
         courseId !== NO_COURSE &&
-        subject.courses?.some((c) => c.id === courseId)
+        subject.courses.some((c) => c.id === courseId)
         ? [{ subjectId: subject.id, courseId }]
         : [];
     }),
   );
 
-  function replaceGroupCourses(courses: Enrollment[]) {
+  function replaceGroupCourses(courses: Enrollment[], setup: CourseSetup) {
     const groupSubjectIds = new Set(subjectStore.subjects.map((s) => s.id));
     const otherGroupsCourses = (userStore.user?.courses ?? []).filter(
       (c) => !groupSubjectIds.has(c.subjectId),
     );
     userStore.updateUser({ courses: [...otherGroupsCourses, ...courses] });
+    setCourseSetup(groupId, setup);
+    void invalidatePersonalizedViews(queryClient);
   }
+
+  const save = useMutation({
+    mutationFn: (courses: Enrollment[]) =>
+      unwrap(
+        api.PATCH('/groups/{group_id}/me/courses', {
+          params: { path: { group_id: groupId } },
+          body: { courses },
+        }),
+      ),
+    onSuccess: (_, courses) => replaceGroupCourses(courses, 'done'),
+  });
+
+  const reset = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE('/groups/{group_id}/me/courses', {
+          params: { path: { group_id: groupId } },
+        }),
+      ),
+    onSuccess: () => replaceGroupCourses([], 'pending'),
+  });
 
   /** Saving, even nothing, completes the member's course setup. */
   async function saveCourses(courses: Enrollment[]): Promise<void> {
-    await api.patch(groupPath(groupId, '/me/courses'), { courses });
-    replaceGroupCourses(courses);
-    setCourseSetup(groupId, 'done');
+    await save.mutateAsync(courses);
   }
 
   /** Clears the member's courses and asks for them again. */
   async function resetCourses(): Promise<void> {
-    await api.delete(groupPath(groupId, '/me/courses'));
-    replaceGroupCourses([]);
-    setCourseSetup(groupId, 'pending');
+    await reset.mutateAsync();
   }
 
   return {

@@ -1,14 +1,17 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
-import type {
-  AccessControls,
-  AccessControlSwitch,
-} from '@/modules/admin/types';
+import type { AccessControlSwitch } from '@/modules/admin/types';
+import {
+  accessControlsQuery,
+  adminKeys,
+} from '@/modules/admin/utils/adminQueries';
 
-const ENDPOINT = '/admin/access-controls';
 const I18N_BASE = 'admin.overview.access_controls';
 
 /**
@@ -20,21 +23,29 @@ export function useAccessControls() {
   const { t } = useI18n();
   const toast = useToast();
   const confirmModal = useConfirmModal();
-  const controls = ref<AccessControls | null>(null);
-  const loading = ref(false);
-  const saving = ref<AccessControlSwitch | null>(null);
+  const queryClient = useQueryClient();
 
-  async function load() {
-    loading.value = true;
-    try {
-      const { data } = await api.get<AccessControls>(ENDPOINT);
-      controls.value = data;
-    } catch {
-      toast.error(t(`${I18N_BASE}.errors.load`));
-    } finally {
-      loading.value = false;
-    }
-  }
+  const query = useQuery(accessControlsQuery());
+  const controls = computed(() => query.data.value ?? null);
+  const loading = computed(() => query.isFetching.value && !controls.value);
+
+  useLoadErrorToast(query, (error) =>
+    apiErrorMessage(error, t(`${I18N_BASE}.errors.load`)),
+  );
+
+  const save = useMutation({
+    mutationFn: ({ name, on }: { name: AccessControlSwitch; on: boolean }) =>
+      unwrap(api.PATCH('/admin/access-controls', { body: { [name]: on } })),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(adminKeys.accessControls(), saved);
+    },
+    onError: (error) =>
+      toast.error(apiErrorMessage(error, t(`${I18N_BASE}.errors.save`))),
+  });
+
+  const saving = computed<AccessControlSwitch | null>(() =>
+    save.isPending.value ? (save.variables.value?.name ?? null) : null,
+  );
 
   /** Shutdown locks everyone else out at once, so turning it on asks first. */
   async function setSwitch(name: AccessControlSwitch, on: boolean) {
@@ -50,17 +61,11 @@ export function useAccessControls() {
       if (!confirmed) return;
     }
 
-    saving.value = name;
-    try {
-      const { data } = await api.patch<AccessControls>(ENDPOINT, {
-        [name]: on,
-      });
-      controls.value = data;
-    } catch {
-      toast.error(t(`${I18N_BASE}.errors.save`));
-    } finally {
-      saving.value = null;
-    }
+    save.mutate({ name, on });
+  }
+
+  function load() {
+    void query.refetch();
   }
 
   return { controls, loading, saving, load, setSwitch };

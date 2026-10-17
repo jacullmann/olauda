@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import { apiErrorMessage } from '@/api/errors';
 import { useGroupPageId } from '@/modules/groups/composables/useGroupPageId';
 import { useToast } from '@/common/composables/useToast';
+import { useLoadErrorToast } from '@/common/composables/useLoadErrorToast';
 import { useSession } from '@/modules/auth/composables/useSession';
 import { useGroups } from '@/modules/groups/composables/useGroups';
+import {
+  groupKeys,
+  groupPermissionsQuery,
+} from '@/modules/groups/utils/groupQueries';
 import type {
   ConfigurablePermissionKey,
   PermissionMatrix,
@@ -76,62 +82,69 @@ function roleOptions(lowestRole: PermissionRole) {
 }
 
 const toast = useToast();
+const queryClient = useQueryClient();
 const { checkAuthStatus } = useSession();
 const { activeGroupPermissions } = useGroups();
 const groupId = useGroupPageId();
 
-const permissions = ref<PermissionMatrix | null>(null);
-const loading = ref(true);
-const saving = ref(false);
+// Only managers may call the admin endpoint; everyone else gets the
+// read-only matrix that the group status already carries.
+const query = useQuery(
+  computed(() => ({
+    ...groupPermissionsQuery(groupId),
+    enabled: props.canManage,
+  })),
+);
+const permissions = computed<PermissionMatrix | null>(() =>
+  props.canManage ? (query.data.value ?? null) : activeGroupPermissions.value,
+);
+const loading = computed(() => props.canManage && query.isPending.value);
 
-async function fetchPermissions() {
-  // Only managers may call the admin endpoint; everyone else gets the
-  // read-only matrix that the group status already carries.
-  if (!props.canManage) {
-    permissions.value = activeGroupPermissions.value;
-    loading.value = false;
-    return;
-  }
+useLoadErrorToast(query, (error) =>
+  apiErrorMessage(error, t('groups.settings.permissions.errors.load')),
+);
 
-  loading.value = true;
-  try {
-    const { data } = await api.get<{ permissions: PermissionMatrix }>(
-      groupPath(groupId, '/admin/permissions'),
+const save = useMutation({
+  mutationFn: (change: Partial<PermissionMatrix>) =>
+    unwrap(
+      api.PATCH('/groups/{group_id}/admin/permissions', {
+        params: { path: { group_id: groupId } },
+        body: { permissions: change },
+      }),
+    ),
+  onMutate: (change) => {
+    const key = groupKeys.permissions(groupId);
+    void queryClient.cancelQueries({ queryKey: key });
+    const previous = queryClient.getQueryData<PermissionMatrix>(key);
+    queryClient.setQueryData<PermissionMatrix>(
+      key,
+      (current) => current && { ...current, ...change },
     );
-    permissions.value = data.permissions;
-  } catch {
-    toast.error(t('groups.settings.permissions.errors.load'));
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function savePermission(
-  key: ConfigurablePermissionKey,
-  role: PermissionRole,
-) {
-  if (!props.canManage || !permissions.value) return;
-
-  saving.value = true;
-  const previousRole = permissions.value[key];
-  permissions.value[key] = role;
-
-  try {
-    await api.patch(groupPath(groupId, '/admin/permissions'), {
-      permissions: { [key]: role },
-    });
-    await checkAuthStatus();
-  } catch {
-    permissions.value[key] = previousRole;
-    toast.error(t('groups.settings.permissions.errors.save'));
-  } finally {
-    saving.value = false;
-  }
-}
-
-onMounted(() => {
-  void fetchPermissions();
+    return { previous };
+  },
+  onSuccess: () => checkAuthStatus(),
+  onError: (error, _, context) => {
+    if (context?.previous) {
+      queryClient.setQueryData(
+        groupKeys.permissions(groupId),
+        context.previous,
+      );
+    }
+    toast.error(
+      apiErrorMessage(error, t('groups.settings.permissions.errors.save')),
+    );
+  },
+  onSettled: () =>
+    queryClient.invalidateQueries({
+      queryKey: groupKeys.topic(groupId, 'settings'),
+    }),
 });
+const saving = save.isPending;
+
+function savePermission(key: ConfigurablePermissionKey, role: PermissionRole) {
+  if (!props.canManage || !permissions.value) return;
+  save.mutate({ [key]: role });
+}
 </script>
 
 <template>

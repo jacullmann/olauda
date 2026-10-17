@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { useI18n } from 'vue-i18n';
 import { authErrorMessage } from '@/modules/auth/utils/authErrors';
 import { useToast } from '@/common/composables/useToast';
@@ -19,14 +19,9 @@ export function useDeleteAccount(emit: {
     submitting.value = true;
     errorMsg.value = '';
     try {
-      const res = await api.delete('/auth/me');
-      if (res?.data?.ok) {
-        toast.success(t('auth.delete_account.success.delete'));
-        emit('deleted');
-      } else {
-        errorMsg.value = t('auth.delete_account.errors.delete');
-        emit('error', errorMsg.value);
-      }
+      await unwrap(api.DELETE('/auth/me'));
+      toast.success(t('auth.delete_account.success.delete'));
+      emit('deleted');
     } catch (e: unknown) {
       const msg = authErrorMessage(e, t('auth.delete_account.errors.delete'));
       errorMsg.value = msg;

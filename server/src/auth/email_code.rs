@@ -28,8 +28,9 @@ pub const MAX_ATTEMPTS_PER_CODE: i32 = 5;
 
 /// A code as we mail it: six digits, quick to read off a phone and type on
 /// another device. Anything else is rejected before it can cost a guess.
-#[derive(Clone, PartialEq, Eq, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Deserialize, utoipa::ToSchema)]
 #[serde(try_from = "String")]
+#[schema(pattern = "^[0-9]{6}$")]
 pub struct EmailCode(String);
 
 impl EmailCode {

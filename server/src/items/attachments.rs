@@ -13,9 +13,10 @@ use crate::{
 use serde::Serialize;
 use sqlx::{PgConnection, PgExecutor};
 use std::collections::HashMap;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AttachmentDto {
     pub id: Uuid,

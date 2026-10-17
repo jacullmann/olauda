@@ -19,7 +19,7 @@ export function formatWeekday(
   return new Intl.DateTimeFormat(locale, { weekday }).format(date);
 }
 
-const DAYS_PER_WEEK = 7;
+export const DAYS_PER_WEEK = 7;
 
 export function addDays(date: Date, days: number): Date {
   const shifted = new Date(date);

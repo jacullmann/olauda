@@ -1,3 +1,4 @@
+use super::service::security_changed;
 use crate::{
     access_control,
     common::{
@@ -6,6 +7,7 @@ use crate::{
     },
     config::{ACCESS_TOKEN_TTL, REFRESH_REUSE_GRACE, REFRESH_TOKEN_TTL, chrono_ttl},
     error::AppError,
+    realtime::event::publish,
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
 };
@@ -309,6 +311,8 @@ impl TokenService {
 
                 self.revoke_family(current.family_id, REUSE_DETECTED)
                     .await?;
+                // Ends the stolen session's open event streams as well.
+                publish(&self.db, [security_changed(current.user_id)]).await?;
 
                 return Ok(Err(rejection));
             }
@@ -468,8 +472,8 @@ impl TokenService {
 
             sessions.push(SessionInfo {
                 family_id: row.family_id,
-                issued_at: row.issued_at.to_rfc3339(),
-                last_used_at: row.last_used_at.to_rfc3339(),
+                issued_at: row.issued_at,
+                last_used_at: row.last_used_at,
                 user_agent: row.user_agent,
                 ip_address: row.ip_address,
                 location,
@@ -550,18 +554,18 @@ struct ActiveUser {
     email: String,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
     pub family_id: Uuid,
-    pub issued_at: String,
-    pub last_used_at: String,
+    pub issued_at: DateTime<Utc>,
+    pub last_used_at: DateTime<Utc>,
     pub user_agent: Option<String>,
     pub ip_address: Option<String>,
     pub location: Option<IpLocation>,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct IpLocation {
     pub city: Option<String>,

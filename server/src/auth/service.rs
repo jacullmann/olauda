@@ -25,9 +25,11 @@ use crate::{
         recovery_codes::RecoveryCodeHasher,
         second_factor::{self, CodeCheck, SecondFactorKeys, SecondFactorProof, Verified},
     },
+    realtime::event::{AccountTopic, Notice, publish},
     reauth::service::confirm_password,
     security_log::{SecurityEvent, SecurityEventKind},
     state::AppState,
+    user::dto::{CourseSelectionDto, PreferencesDto},
 };
 use axum_extra::extract::cookie::CookieJar;
 use serde_json::json;
@@ -278,6 +280,9 @@ impl AuthService {
             .record(&self.db)
             .await?;
 
+        // The account's other devices list the new session.
+        publish(&self.db, [security_changed(user_id)]).await?;
+
         Ok(jar)
     }
 
@@ -364,7 +369,7 @@ impl AuthService {
     /// only created once the code is entered with this password (see
     /// [`email_verification`]), so signing up again, by anyone, leaves every
     /// earlier sign-up for the address as it was.
-    pub async fn register(&self, dto: RegisterDto) -> AppResult<serde_json::Value> {
+    pub async fn register(&self, dto: RegisterDto) -> AppResult<()> {
         access_control::ensure_registration_open(&self.db).await?;
         validate_password_strength(&dto.password).map_err(|e| AppError::BadRequest(e.into()))?;
 
@@ -398,21 +403,21 @@ impl AuthService {
 
         tx.commit().await?;
 
-        let message = match self
+        // The sign-up is stored either way; the user can have the code resent.
+        if let Err(e) = self
             .email
             .send_verification_email(&email, locale, &code)
             .await
         {
-            Ok(()) => "Registration successful. Please check your inbox and spam folder.",
-            Err(_) => "Registration successful but the confirmation email could not be sent.",
-        };
+            tracing::warn!("Confirmation email not sent: {e}");
+        }
 
-        Ok(json!({ "ok": true, "message": message }))
+        Ok(())
     }
 
     /// Mails a new code for the latest sign-up of the address. The answer is
     /// the same whether or not one was sent, so it reveals nothing about it.
-    pub async fn resend_verification(&self, email: &str) -> AppResult<serde_json::Value> {
+    pub async fn resend_verification(&self, email: &str) -> AppResult<()> {
         access_control::ensure_registration_open(&self.db).await?;
         let email = email.to_lowercase();
 
@@ -431,13 +436,10 @@ impl AuthService {
             }
         }
 
-        Ok(json!({
-            "ok": true,
-            "message": "If the account is waiting for confirmation, a new code has been sent."
-        }))
+        Ok(())
     }
 
-    pub async fn get_me(&self, user_id: Uuid) -> AppResult<serde_json::Value> {
+    pub async fn get_me(&self, user_id: Uuid) -> AppResult<Option<CurrentUserDto>> {
         let user = sqlx::query!(
             r#"
             SELECT id, email, mfa_enabled, personalized, preferences,
@@ -449,9 +451,8 @@ impl AuthService {
         .fetch_optional(&self.db)
         .await?;
 
-        let user = match user {
-            None => return Ok(json!({ "authenticated": false })),
-            Some(u) => u,
+        let Some(user) = user else {
+            return Ok(None);
         };
 
         let global_role = if is_superadmin(&self.db, user_id).await? {
@@ -460,29 +461,24 @@ impl AuthService {
             Role::User
         };
 
-        let courses = sqlx::query!(
+        let courses = sqlx::query_as!(
+            CourseSelectionDto,
             r#"SELECT subject_id, course_id FROM user_courses WHERE user_id = $1"#,
             user_id
         )
         .fetch_all(&self.db)
-        .await?
-        .into_iter()
-        .map(|r| json!({ "subjectId": r.subject_id, "courseId": r.course_id }))
-        .collect::<Vec<_>>();
+        .await?;
 
-        let pseudonym = crate::common::name_generator::generate_user_name(&user.id.to_string());
-
-        Ok(json!({
-            "authenticated": true,
-            "id": user.id,
-            "email": user.email,
-            "role": global_role.as_str(),
-            "courses": courses,
-            "personalized": user.personalized,
-            "mfaEnabled": user.mfa_enabled,
-            "hasPassword": user.has_password,
-            "preferences": user.preferences,
-            "username": pseudonym,
+        Ok(Some(CurrentUserDto {
+            username: crate::common::name_generator::generate_user_name(&user.id.to_string()),
+            id: user.id,
+            email: user.email,
+            role: global_role,
+            courses,
+            personalized: user.personalized,
+            mfa_enabled: user.mfa_enabled,
+            has_password: user.has_password,
+            preferences: PreferencesDto::from_stored(user.preferences),
         }))
     }
 
@@ -534,6 +530,7 @@ impl AuthService {
             .record(&mut *tx)
             .await?;
 
+        publish(&mut *tx, [security_changed(user_id)]).await?;
         tx.commit().await?;
 
         let opts = self.config.base_cookie_options();
@@ -609,11 +606,7 @@ impl AuthService {
             .await
     }
 
-    pub async fn forgot_password(
-        &self,
-        email: &str,
-        client: &ClientInfo,
-    ) -> AppResult<serde_json::Value> {
+    pub async fn forgot_password(&self, email: &str, client: &ClientInfo) -> AppResult<()> {
         let email = email.to_lowercase();
 
         let user = sqlx::query!(
@@ -644,17 +637,10 @@ impl AuthService {
             }
         }
 
-        Ok(json!({
-            "ok": true,
-            "message": "If the email exists, a recovery email has been sent."
-        }))
+        Ok(())
     }
 
-    pub async fn verify_reset_token(
-        &self,
-        email: &str,
-        code: &EmailCode,
-    ) -> AppResult<serde_json::Value> {
+    pub async fn verify_reset_token(&self, email: &str, code: &EmailCode) -> AppResult<String> {
         let email = email.to_lowercase();
 
         email_code::redeem(&self.db, &email, code).await?;
@@ -674,10 +660,10 @@ impl AuthService {
             )
             .map_err(|e| AppError::internal(e.to_string()))?;
 
-        Ok(json!({ "ok": true, "resetToken": reset_token }))
+        Ok(reset_token)
     }
 
-    pub async fn request_password_setup_code(&self, user_id: Uuid) -> AppResult<serde_json::Value> {
+    pub async fn request_password_setup_code(&self, user_id: Uuid) -> AppResult<()> {
         let account = self.passwordless_account(user_id).await?;
 
         let code = match email_code::issue(&self.db, &account.email).await? {
@@ -691,7 +677,7 @@ impl AuthService {
             .send_password_setup_email(&account.email, account.locale, &code)
             .await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// Unlike a reset this leaves MFA untouched and signs the caller straight
@@ -703,7 +689,7 @@ impl AuthService {
         code: &EmailCode,
         new_password: String,
         client: &ClientInfo,
-    ) -> AppResult<(CookieJar, serde_json::Value)> {
+    ) -> AppResult<CookieJar> {
         validate_password_strength(&new_password).map_err(|e| AppError::BadRequest(e.into()))?;
 
         let email = self.passwordless_account(user_id).await?.email;
@@ -745,8 +731,9 @@ impl AuthService {
             .await?;
 
         security_notice::notify(&self.db, &self.email, user_id, SecurityNotice::PasswordSet);
+        publish(&self.db, [security_changed(user_id)]).await?;
 
-        Ok((jar, json!({ "ok": true })))
+        Ok(jar)
     }
 
     async fn passwordless_account(&self, user_id: Uuid) -> AppResult<PasswordlessAccount> {
@@ -783,7 +770,7 @@ impl AuthService {
         reset_token: &str,
         password: &str,
         client: &ClientInfo,
-    ) -> AppResult<serde_json::Value> {
+    ) -> AppResult<()> {
         validate_password_strength(password).map_err(|e| AppError::BadRequest(e.into()))?;
 
         let claims = self.jwt.verify_password_reset(reset_token)?;
@@ -848,8 +835,9 @@ impl AuthService {
             user.id,
             SecurityNotice::PasswordReset,
         );
+        publish(&self.db, [security_changed(user.id)]).await?;
 
-        Ok(json!({ "ok": true, "message": "Password reset successfully." }))
+        Ok(())
     }
 
     /// Leaves the account to its passkeys and Google. Every other session
@@ -859,7 +847,7 @@ impl AuthService {
         user_id: Uuid,
         session_id: Uuid,
         client: &ClientInfo,
-    ) -> AppResult<serde_json::Value> {
+    ) -> AppResult<()> {
         let mut tx = self.db.begin().await?;
 
         let methods = SignInMethods::lock(&mut tx, user_id).await?;
@@ -896,8 +884,9 @@ impl AuthService {
             user_id,
             SecurityNotice::PasswordRemoved,
         );
+        publish(&self.db, [security_changed(user_id)]).await?;
 
-        Ok(json!({ "ok": true }))
+        Ok(())
     }
 
     /// The current password is checked like a confirmation of the signed-in
@@ -909,7 +898,7 @@ impl AuthService {
         current_password: String,
         new_password: String,
         client: &ClientInfo,
-    ) -> AppResult<(CookieJar, serde_json::Value)> {
+    ) -> AppResult<CookieJar> {
         validate_password_strength(&new_password).map_err(|e| AppError::BadRequest(e.into()))?;
 
         let user = sqlx::query!(
@@ -957,11 +946,9 @@ impl AuthService {
             user_id,
             SecurityNotice::PasswordChanged,
         );
+        publish(&self.db, [security_changed(user_id)]).await?;
 
-        Ok((
-            jar,
-            json!({ "ok": true, "message": "Password changed successfully." }),
-        ))
+        Ok(jar)
     }
 
     /// Ends the session the refresh token belongs to, if it is still live.
@@ -973,6 +960,7 @@ impl AuthService {
         {
             self.record_sign_out(user_id, json!({ "scope": "current" }), client)
                 .await?;
+            publish(&self.db, [security_changed(user_id)]).await?;
         }
 
         Ok(())
@@ -991,7 +979,11 @@ impl AuthService {
 
         let scope = if keep.is_some() { "others" } else { "all" };
         self.record_sign_out(user_id, json!({ "scope": scope }), client)
-            .await
+            .await?;
+
+        publish(&self.db, [security_changed(user_id)]).await?;
+
+        Ok(())
     }
 
     /// Ends one session from the user's session list. `false` when no live
@@ -1014,6 +1006,7 @@ impl AuthService {
                 client,
             )
             .await?;
+            publish(&self.db, [security_changed(user_id)]).await?;
         }
 
         Ok(ended)
@@ -1035,43 +1028,32 @@ impl AuthService {
 
         Ok(())
     }
-
-    pub async fn get_groups(&self, user_id: Uuid) -> AppResult<serde_json::Value> {
-        let rows = sqlx::query!(
-            r#"
-            SELECT
-                g.id, g.name, g.owner_id, g.schedule_config,
-                r.name as role_name
-            FROM user_roles ur
-            JOIN groups g ON g.id = ur.tenant_id
-            JOIN roles r ON r.id = ur.role_id
-            WHERE ur.user_id = $1 AND ur.tenant_id IS NOT NULL
-            "#,
-            user_id
-        )
-        .fetch_all(&self.db)
-        .await?;
-
-        let groups = rows
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "id": r.id,
-                    "name": r.name,
-                    "ownerId": r.owner_id,
-                    "role": r.role_name,
-                    "scheduleConfig": r.schedule_config,
-                })
-            })
-            .collect::<Vec<_>>();
-
-        Ok(json!({ "groups": groups }))
-    }
 }
 
 pub enum LoginResult {
     Success(CookieJar),
     MfaRequired(CookieJar),
+}
+
+impl LoginResult {
+    /// The cookies to set and what the client learns about the sign-in.
+    pub fn into_parts(self) -> (CookieJar, SignInResultDto) {
+        match self {
+            Self::Success(jar) => (
+                jar,
+                SignInResultDto {
+                    requires_mfa: false,
+                },
+            ),
+            Self::MfaRequired(jar) => (jar, SignInResultDto { requires_mfa: true }),
+        }
+    }
+}
+
+/// Sign-in methods, second factors and sessions show on every device, and an
+/// ended session's event stream closes with the next one.
+pub const fn security_changed(user_id: Uuid) -> Notice {
+    Notice::account(user_id, AccountTopic::Security)
 }
 
 /// Identifies the password a reset token replaces without exposing it: once

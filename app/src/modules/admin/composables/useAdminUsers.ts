@@ -1,11 +1,12 @@
 import { useI18n } from 'vue-i18n';
-import { useToast } from '@/common/composables/useToast';
+import { apiErrorMessage } from '@/api/errors';
 import type {
   SortOrder,
   AdminUser,
   UserSort,
   UserStatusFilter,
 } from '@/modules/admin/types';
+import { adminKeys, adminUsersQuery } from '@/modules/admin/utils/adminQueries';
 import { useServerPagedList } from './useServerPagedList';
 
 export const USER_STATUS_FILTERS = [
@@ -24,19 +25,20 @@ const USER_SORTS = [
 const SORT_ORDERS = ['asc', 'desc'] as const satisfies readonly SortOrder[];
 
 export function useAdminUsers() {
-  const toast = useToast();
   const { t } = useI18n();
 
   return useServerPagedList<
-    AdminUser,
     {
       search: string;
       status: UserStatusFilter;
       sort: UserSort;
       order: SortOrder;
-    }
+    },
+    AdminUser,
+    ReturnType<typeof adminUsersQuery>['queryKey']
   >({
-    endpoint: '/admin/users',
+    query: adminUsersQuery,
+    listKey: adminKeys.userLists(),
     defaults: { search: '', status: 'all', sort: 'createdAt', order: 'desc' },
     rules: {
       status: USER_STATUS_FILTERS,
@@ -44,6 +46,7 @@ export function useAdminUsers() {
       order: SORT_ORDERS,
     },
     ascendingSorts: ['email'],
-    onError: () => toast.error(t('admin.users.errors.load')),
+    loadErrorMessage: (error) =>
+      apiErrorMessage(error, t('admin.users.errors.load')),
   });
 }

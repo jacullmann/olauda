@@ -3,12 +3,13 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::net::IpAddr;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 use crate::{common::pagination::SortOrder, security_log::Outcome};
 
 /// Which log an entry comes from: the security audit log or the activity log.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, ToSchema)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "text", rename_all = "lowercase")]
 pub enum EventSource {
@@ -66,8 +67,9 @@ impl TryFrom<String> for EventCursor {
 /// Narrows the log down; every filter left out matches everything. Address,
 /// outcome and group are recorded for security events only, so filtering by
 /// any of them leaves out the activity log.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, IntoParams)]
 #[serde(rename_all = "camelCase")]
+#[into_params(parameter_in = Query)]
 pub struct EventLogQuery {
     /// Entries about this account as well as those it caused.
     pub user_id: Option<Uuid>,
@@ -76,6 +78,7 @@ pub struct EventLogQuery {
     pub category: Option<String>,
     pub r#type: Option<String>,
     pub outcome: Option<Outcome>,
+    #[param(value_type = Option<String>)]
     pub ip: Option<IpAddr>,
     pub group_id: Option<Uuid>,
     /// Inclusive.
@@ -84,8 +87,10 @@ pub struct EventLogQuery {
     pub to: Option<DateTime<Utc>>,
     pub search: Option<String>,
     #[serde(default)]
+    #[param(inline)]
     pub order: SortOrder,
     /// Where the previous page ended; left out for the first page.
+    #[param(value_type = Option<String>)]
     pub cursor: Option<EventCursor>,
 }
 
@@ -105,7 +110,7 @@ fn non_blank(raw: Option<&str>) -> Option<&str> {
 
 /// An entry of either log with the names of the accounts and group it refers
 /// to, as far as they still exist: security events outlive them.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EventLogEntryDto {
     pub id: Uuid,
@@ -121,6 +126,7 @@ pub struct EventLogEntryDto {
     pub group_name: Option<String>,
     pub ip_address: Option<String>,
     pub user_agent: Option<String>,
+    #[schema(value_type = std::collections::HashMap<String, Value>)]
     pub metadata: Value,
     pub created_at: DateTime<Utc>,
 }
@@ -134,11 +140,12 @@ impl EventLogEntryDto {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EventLogPage {
     pub items: Vec<EventLogEntryDto>,
     /// Absent once the log is exhausted.
+    #[schema(value_type = Option<String>)]
     pub next_cursor: Option<EventCursor>,
     /// How many entries match in all, counted for the first page only, so
     /// scrolling further costs no count of the whole log.

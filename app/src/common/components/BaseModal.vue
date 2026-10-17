@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core';
 import { useIsMobileViewport } from '@/common/composables/useViewport';
-import { Check, X } from '@lucide/vue';
+import { X } from '@lucide/vue';
 import { computed, useId } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { expandFrom, type MorphOrigin } from '@/common/utils/morph';
 
 // Two roots (dialog and sheet), so attributes and listeners such as drag and
@@ -66,7 +65,6 @@ const handleCancel = () => {
   }
 };
 
-const { t } = useI18n();
 const isMobile = useIsMobileViewport();
 const titleId = useId();
 const formId = useId();

@@ -1,10 +1,9 @@
-import api from '@/api/client';
+import api, { unwrap } from '@/api/client';
 import { apiErrorCode, apiErrorMessage } from '@/api/errors';
-import { groupPath } from '@/api/groupPath';
+import { queryClient } from '@/api/queryClient';
 import i18n from '@/i18n';
 import { useSession } from '@/modules/auth/composables/useSession';
-
-const BANNED_FROM_GROUP = 'BANNED_FROM_GROUP';
+import { groupKeys } from '@/modules/groups/utils/groupQueries';
 
 /** Creating an invite link, and reading and accepting one someone shared. */
 export function useInvite() {
@@ -12,10 +11,15 @@ export function useInvite() {
     groupId: string,
   ): Promise<{ ok: boolean; token?: string; error?: string }> {
     try {
-      const { data } = await api.post<{ token: string }>(
-        groupPath(groupId, '/invites'),
+      const { token } = await unwrap(
+        api.POST('/groups/{group_id}/invites', {
+          params: { path: { group_id: groupId } },
+        }),
       );
-      return { ok: true, token: data.token };
+      void queryClient.invalidateQueries({
+        queryKey: groupKeys.invites(groupId),
+      });
+      return { ok: true, token };
     } catch (error: unknown) {
       return {
         ok: false,
@@ -36,14 +40,16 @@ export function useInvite() {
     groupId?: string;
   }> {
     try {
-      const { data } = await api.get(`/invites/${encodeURIComponent(token)}`);
+      const invite = await unwrap(
+        api.GET('/invites/{token}', { params: { path: { token } } }),
+      );
       return {
         ok: true,
-        groupName: data.groupName,
-        avatarUrl: data.avatarUrl,
-        memberCount: data.memberCount,
-        alreadyMember: data.alreadyMember === true,
-        groupId: data.groupId ?? undefined,
+        groupName: invite.groupName,
+        avatarUrl: invite.avatarUrl ?? undefined,
+        memberCount: invite.memberCount,
+        alreadyMember: invite.alreadyMember,
+        groupId: invite.groupId ?? undefined,
       };
     } catch {
       // An invite that cannot be read is shown as invalid, which says it all.
@@ -58,17 +64,16 @@ export function useInvite() {
     error?: string;
   }> {
     try {
-      const { data } = await api.post(
-        `/invites/${encodeURIComponent(token)}/accept`,
+      const { groupId, alreadyMember } = await unwrap(
+        api.POST('/invites/{token}/accept', { params: { path: { token } } }),
       );
-      const alreadyMember = data.alreadyMember === true;
       if (!alreadyMember) await useSession().checkAuthStatus();
-      return { ok: true, groupId: data.groupId, alreadyMember };
+      return { ok: true, groupId, alreadyMember };
     } catch (error: unknown) {
       return {
         ok: false,
         error:
-          apiErrorCode(error) === BANNED_FROM_GROUP
+          apiErrorCode(error) === 'BANNED_FROM_GROUP'
             ? i18n.global.t('groups.errors.banned')
             : apiErrorMessage(error, i18n.global.t('groups.errors.join')),
       };

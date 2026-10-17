@@ -12,12 +12,7 @@ import { inviteRoute } from '@/modules/groups/utils/invites';
 import type { GroupInviteLog } from '@/modules/groups/types';
 import { useGroupInvites } from '@/modules/groups/composables/useGroupInvites';
 
-const {
-  invites,
-  loadingInvites: loading,
-  loadInvites,
-  revokeInvite,
-} = useGroupInvites();
+const { invites, loadingInvites: loading, revokeInvite } = useGroupInvites();
 
 const { t } = useI18n();
 const { createInvite } = useInvite();
@@ -35,7 +30,6 @@ async function inviteMember() {
     const res = await createInvite(groupId);
     if (res.ok && res.token) {
       inviteModal.open({ groupId: groupId, token: res.token });
-      void loadInvites();
     } else {
       toast.error(res.error || t('groups.errors.create_invite'));
     }

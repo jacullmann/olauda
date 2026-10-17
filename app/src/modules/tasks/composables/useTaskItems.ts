@@ -1,9 +1,24 @@
-import { ref, type Ref } from 'vue';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
-import { hiddenByCourses as countHiddenByCourses } from '@/modules/courses/utils/personalization';
+import { computed, type Ref } from 'vue';
+import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import type { Task } from '@/modules/tasks/types';
+import {
+  taskListQuery,
+  type TaskListParams,
+} from '@/modules/tasks/utils/taskQueries';
 import type { TaskFilters } from './useTaskFilters';
+
+function listParams(
+  { tab, showOldEntries, subject, hideChecked }: TaskFilters,
+  personalized: boolean,
+): TaskListParams {
+  return {
+    type: tab === 'all' ? undefined : tab,
+    archived: showOldEntries,
+    subjectId: subject || undefined,
+    hideChecked,
+    personalized,
+  };
+}
 
 /** The group's tasks as the server lists them for the current filters. */
 export function useTaskItems(
@@ -11,66 +26,42 @@ export function useTaskItems(
   filters: Readonly<Ref<TaskFilters>>,
   personalized: Readonly<Ref<boolean>>,
 ) {
-  const items = ref<Task[]>([]);
+  const query = useQuery(
+    computed(() => ({
+      ...taskListQuery(groupId, listParams(filters.value, personalized.value)),
+      // The list for the previous filters stays until the new one arrives,
+      // instead of the page dropping back to its skeleton.
+      placeholderData: keepPreviousData,
+    })),
+  );
+
+  const items = computed<Task[]>(() => query.data.value?.items ?? []);
   /** Tasks the server left out because of the member's course selection. */
-  const hiddenByCourses = ref(0);
-  const loading = ref(true);
-  const initialLoad = ref(true);
-  /** The last load failed, so the list shown is not the one for the filters. */
-  const loadError = ref(false);
-  let latestReload = 0;
+  const hiddenByCourses = computed(
+    () => query.data.value?.hiddenByCourses ?? 0,
+  );
+  const hasCurrentList = computed(
+    () => query.data.value !== undefined && !query.isPlaceholderData.value,
+  );
+  /** No list for the current filters yet; a background refetch is not this. */
+  const loading = computed(
+    () => query.isFetching.value && !hasCurrentList.value,
+  );
+  const initialLoad = query.isPending;
+  /**
+   * There is no list for the filters, as loading it failed. A failed
+   * background refetch keeps showing the list it had.
+   */
+  const loadError = computed(
+    () => query.isError.value && !hasCurrentList.value,
+  );
 
-  // Reloads overlap as filters change in quick succession, and an earlier one
-  // answering last would show the list for filters no longer chosen.
-  async function reloadList() {
-    const reload = ++latestReload;
-    loading.value = true;
-    const { tab, showOldEntries, subject, hideChecked } = filters.value;
-    const params: Record<string, string | boolean> = { type: tab };
-    if (showOldEntries) params.filter = 'old';
-    if (subject) params.subjectId = subject;
-    if (hideChecked) params.hideChecked = true;
-    if (personalized.value) params.personalized = true;
-
-    try {
-      const response = await api.get<Task[]>(groupPath(groupId, '/items'), {
-        params,
-      });
-      if (reload !== latestReload) return;
-      items.value = response.data;
-      hiddenByCourses.value = countHiddenByCourses(response);
-      loadError.value = false;
-    } catch (e) {
-      if (reload !== latestReload) return;
-      console.error('Failed to load items:', e);
-      loadError.value = true;
-    } finally {
-      if (reload === latestReload) {
-        loading.value = false;
-        initialLoad.value = false;
-      }
-    }
-  }
-
-  async function fetchTask(taskId: string): Promise<Task> {
-    const { data } = await api.get<Task>(
-      groupPath(groupId, `/items/${taskId}`),
-    );
-    return data;
+  async function reloadList(): Promise<void> {
+    await query.refetch();
   }
 
   function findInList(taskId: string): Task | undefined {
     return items.value.find((task) => task.id === taskId);
-  }
-
-  /** Replaces the list's copy of a task, if it holds one. */
-  function replaceInList(task: Task) {
-    const index = items.value.findIndex(({ id }) => id === task.id);
-    if (index !== -1) items.value[index] = task;
-  }
-
-  function removeFromList(taskId: string) {
-    items.value = items.value.filter(({ id }) => id !== taskId);
   }
 
   return {
@@ -79,10 +70,9 @@ export function useTaskItems(
     loading,
     initialLoad,
     loadError,
+    /** When the list last arrived, which its copies of tasks are as fresh as. */
+    updatedAt: query.dataUpdatedAt,
     reloadList,
-    fetchTask,
     findInList,
-    replaceInList,
-    removeFromList,
   };
 }

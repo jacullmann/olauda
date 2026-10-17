@@ -1,15 +1,20 @@
 import { onBeforeUnmount, onMounted, ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useEventListener } from '@vueuse/core';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
-import type { Task } from '@/modules/tasks/types';
+import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
 import type {
-  ItemSubjectPayload,
-  ItemType,
+  CreateItemDto,
+  ItemSubjectDto,
+  UpdateItemDto,
+} from '@/api/schema';
+import type {
+  Task,
   TaskFile,
   TaskPrefill,
+  TaskType,
 } from '@/modules/tasks/types';
+import { taskKeys } from '@/modules/tasks/utils/taskQueries';
 import { taskRoute } from '@/modules/tasks/utils/routes';
 import { useImageUpload } from './useImageUpload';
 import { useFileDrop } from './useFileDrop';
@@ -32,7 +37,7 @@ import {
   formatSubjectDisplay,
   subjectLabel,
 } from '@/modules/courses/utils/subjectLabels';
-import { apiErrorMessage } from '@/api/errors';
+import { ApiError, apiErrorMessage } from '@/api/errors';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 import { useConfirmModal } from '@/shell/stores/useConfirmModal';
 
@@ -43,7 +48,7 @@ const DESCRIPTION_MAX_LENGTH = 1000;
 export function useTaskForm(
   initialGroupId: string,
   initial: Task | null | undefined,
-  initialType: Exclude<ItemType, 'all'> | undefined,
+  initialType: TaskType | undefined,
   prefill: TaskPrefill,
   emit: {
     (e: 'cancel'): void;
@@ -52,7 +57,7 @@ export function useTaskForm(
 ) {
   const i18n = useI18n();
   const router = useRouter();
-  const t = (key: string, named?: Record<string, any>) =>
+  const t = (key: string, named?: Record<string, unknown>) =>
     i18n.t(key, named || {});
   const te = (key: string) => i18n.te(key);
 
@@ -76,7 +81,7 @@ export function useTaskForm(
   ]);
 
   const requestedType = initialType ?? 'homework';
-  const activeType = ref<Exclude<ItemType, 'all'>>(
+  const activeType = ref<TaskType>(
     initial
       ? initial.type
       : requestedType === 'dalton' && !daltonEnabled.value
@@ -239,6 +244,35 @@ export function useTaskForm(
   const submitting = ref(false);
   const submitError = ref('');
 
+  const queryClient = useQueryClient();
+  // The task can show in any list of the group, and the opened one as well.
+  const reloadTasks = () =>
+    void queryClient.invalidateQueries({
+      queryKey: taskKeys.all(groupId.value),
+    });
+
+  const createTask = useMutation({
+    mutationFn: (body: CreateItemDto) =>
+      unwrap(
+        api.POST('/groups/{group_id}/items', {
+          params: { path: { group_id: groupId.value } },
+          body,
+        }),
+      ),
+    onSuccess: reloadTasks,
+  });
+
+  const saveTask = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateItemDto }) =>
+      unwrap(
+        api.PATCH('/groups/{group_id}/items/{id}', {
+          params: { path: { group_id: groupId.value, id } },
+          body,
+        }),
+      ),
+    onSuccess: reloadTasks,
+  });
+
   const selectableSubjects = computed(() =>
     activeType.value === 'dalton'
       ? subjectStore.daltonSubjects
@@ -310,7 +344,7 @@ export function useTaskForm(
     dueDateError.value = '';
 
     let hasValidationErrors = false;
-    let subject: ItemSubjectPayload | null = null;
+    let subject: ItemSubjectDto | null = null;
 
     if (!subjectSel.value) {
       subjectError.value = t(
@@ -392,46 +426,35 @@ export function useTaskForm(
       return;
     }
 
-    try {
-      const payload = {
-        title: cleanTitle,
-        subject,
-        description: cleanDesc,
-      };
-      const dueDate = selectedDate.toISOString();
+    const payload = { title: cleanTitle, subject, description: cleanDesc };
+    const dueDate = selectedDate.toISOString();
 
+    try {
       if (initial) {
-        await api.patch(groupPath(groupId.value, `/items/${initial.id}`), {
-          ...payload,
-          ...(dueDateUnchanged.value ? {} : { dueDate }),
+        await saveTask.mutateAsync({
+          id: initial.id,
+          body: { ...payload, ...(dueDateUnchanged.value ? {} : { dueDate }) },
         });
       } else {
-        await api.post(groupPath(groupId.value, '/items'), {
+        await createTask.mutateAsync({
           ...payload,
           dueDate,
           type: activeType.value,
           // An existing task's files are changed through their own endpoints.
           attachmentIds: imgImages.value.map((file) => file.id),
-          confirmDoubleTask: doubleCheckPassed.value,
+          confirmDuplicate: doubleCheckPassed.value,
         });
       }
 
       emit('success');
     } catch (e: unknown) {
-      const err = e as {
-        response?: {
-          status?: number;
-          data?: { code?: string; item?: Task };
-        };
-      };
-
-      if (
-        err.response?.status === 409 &&
-        err.response?.data?.code === 'DUPLICATE_ITEM'
-      ) {
-        doubleTaskOriginalItem.value = err.response.data.item || null;
+      const duplicate =
+        e instanceof ApiError && e.code === 'DUPLICATE_ITEM'
+          ? e.body?.duplicate
+          : undefined;
+      if (duplicate) {
+        doubleTaskOriginalItem.value = duplicate;
         showDoubleTaskConfirm.value = true;
-        submitting.value = false;
         return;
       }
       submitError.value = apiErrorMessage(e, t('tasks.errors.save'));
@@ -493,7 +516,7 @@ export function useTaskForm(
     }
   }
 
-  const titleInputRef = ref<any>(null);
+  const titleInputRef = ref<{ focus: () => void } | null>(null);
 
   useEventListener(window, 'keydown', onKeyDown);
 

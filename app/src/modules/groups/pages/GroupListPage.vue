@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from '@/modules/account/stores/useUserStore';
 import { useCreateGroupModal } from '@/modules/groups/stores/useCreateGroupModal';
 import { useGroups } from '@/modules/groups/composables/useGroups';
 import { Plus, UsersRound } from '@lucide/vue';
-import api from '@/api/client';
 import { useI18n } from 'vue-i18n';
 import { entranceDelay } from '@/common/utils/entrance';
 import { menuAnchor, type MenuAnchor } from '@/common/utils/menuAnchor';
 import { useLongPress } from '@/common/composables/useLongPress';
-import { useToast } from '@/common/composables/useToast';
 import GroupMenu from '@/modules/groups/components/GroupMenu.vue';
 
 const { t } = useI18n();
@@ -22,12 +20,7 @@ const createGroupModal = useCreateGroupModal();
 const { user } = storeToRefs(userStore);
 const { userGroups } = useGroups();
 
-const loading = ref(false);
 const navigatingGroupId = ref<string | null>(null);
-const allGroups = ref<
-  Array<{ id: string; name: string; memberCount: number; created_at: string }>
->([]);
-
 const isSuperadmin = computed(() => user.value?.role === 'superadmin');
 
 function roleLabel(role: string): string {
@@ -52,24 +45,6 @@ async function navigateToGroup(groupId: string) {
     navigatingGroupId.value = null;
   }
 }
-
-async function loadAllGroups() {
-  if (!isSuperadmin.value) return;
-  loading.value = true;
-  try {
-    const { data } = await api.get('/admin/groups');
-    allGroups.value = data;
-  } catch (err) {
-    console.error('Failed to load groups:', err);
-    useToast().error(t('admin.groups.errors.load'));
-  } finally {
-    loading.value = false;
-  }
-}
-
-onMounted(() => {
-  void loadAllGroups();
-});
 
 const isMenuOpen = ref(false);
 const menuGroupId = ref<string | null>(null);
@@ -164,7 +139,7 @@ const GROUPS_LIST_ENTRANCE_ORDER = 2;
     </section>
 
     <section
-      v-if="!isSuperadmin && userGroups.length === 0 && !loading"
+      v-if="!isSuperadmin && userGroups.length === 0"
       class="flex flex-1 flex-col max-md:p-4 animate-enter"
       :style="{ '--enter-delay': entranceDelay(GROUPS_HEADER_ENTRANCE_ORDER) }"
     >
@@ -180,15 +155,5 @@ const GROUPS_LIST_ENTRANCE_ORDER = 2;
         }}</template>
       </BaseEmptyState>
     </section>
-
-    <div
-      v-if="loading"
-      class="flex justify-center p-10 animate-enter"
-      :style="{ '--enter-delay': entranceDelay(GROUPS_HEADER_ENTRANCE_ORDER) }"
-    >
-      <div
-        class="w-7 h-7 border-2 border-ghost-border border-t-on-ghost rounded-full animate-spin"
-      ></div>
-    </div>
   </div>
 </template>

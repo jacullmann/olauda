@@ -1,11 +1,12 @@
 use crate::{auth::sign_in_methods::SignInMethods, mfa::second_factor::SecondFactorProof};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 use webauthn_rs::prelude::PublicKeyCredential;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ReauthStatus {
     pub methods: SignInMethods,
@@ -13,7 +14,7 @@ pub struct ReauthStatus {
     pub recent_until: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PasswordReauthDto {
     #[validate(length(min = 1, max = 255))]
@@ -23,15 +24,10 @@ pub struct PasswordReauthDto {
     pub second_factor: Option<SecondFactorProof>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PasskeyReauthDto {
     pub challenge_id: Uuid,
+    #[schema(value_type = Value)]
     pub credential: PublicKeyCredential,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GoogleReauthStart {
-    pub url: String,
 }

@@ -80,10 +80,6 @@ function toggleExpanded() {
   sidebarStore.toggle();
 }
 
-function onPersonalizationChanged(value: boolean) {
-  userStore.updateUser({ personalized: value });
-}
-
 function handleNavigation(to: RouteLocationRaw) {
   void router.push(to);
 }
@@ -174,9 +170,6 @@ watch(
 );
 
 onMounted(() => {
-  if (!userStore.initialized) {
-    void userStore.fetchUser();
-  }
   setupObserver();
 });
 
@@ -365,7 +358,6 @@ onUnmounted(() => {
       :user-data="user"
       :expanded="isExpanded"
       @logout="performLogout"
-      @personalization-changed="onPersonalizationChanged"
     />
   </aside>
 </template>

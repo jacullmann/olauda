@@ -1,10 +1,22 @@
-import { reactive, ref, type Ref } from 'vue';
+import { computed, reactive, watch, type Ref } from 'vue';
 import { createEventHook, useEventListener } from '@vueuse/core';
-import api from '@/api/client';
-import { groupPath } from '@/api/groupPath';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/vue-query';
+import api, { unwrap } from '@/api/client';
+import type { ItemIdsDto, VisibilityDto, VisibilityStatus } from '@/api/schema';
 import { usePageSettings } from '@/modules/account/composables/usePageSettings';
 import type { Task } from '@/modules/tasks/types';
 import { archivesOnItsOwn } from '@/modules/tasks/utils/archive';
+import {
+  taskChecksQuery,
+  taskKeys,
+  taskPinsQuery,
+  taskVisibilityQuery,
+} from '@/modules/tasks/utils/taskQueries';
 
 // The UI updates instantly; the API call is debounced per task so rapid
 // check/uncheck toggles collapse into at most one request, and requests
@@ -14,8 +26,8 @@ const CHECK_SYNC_DELAY_MS = 400;
 interface CheckSyncEntry {
   task: Task;
   serverChecked: boolean;
-  /** Whether the task was kept before the first toggle, restored if the sync fails. */
-  wasKept: boolean;
+  /** The server cleared the task's archive status, as checking does. */
+  checkedOnServer: boolean;
   timer?: number;
   inFlight: boolean;
 }
@@ -25,37 +37,75 @@ export interface CheckReverted {
   checked: boolean;
 }
 
-type VisibilityStatus = 'archived' | 'kept';
-
-function replaceIds(set: Set<string>, ids: Iterable<string> = []) {
-  set.clear();
-  for (const id of ids) set.add(id);
+function withId(ids: string[], id: string, included: boolean): string[] {
+  const without = ids.filter((other) => other !== id);
+  return included ? [...without, id] : without;
 }
 
-/** What the member marked on the group's tasks: checks, pins and archive overrides. */
+/**
+ * What the member marked on the group's tasks: checks, pins and archive
+ * overrides. The server keeps them for all groups at once, so they are
+ * loaded and cached once for all of them.
+ */
 export function useTaskMarks(
   groupId: string,
   isLoggedIn: Readonly<Ref<boolean>>,
 ) {
-  const checked = reactive(new Set<string>());
-  const pinned = reactive(new Set<string>());
-  const archived = reactive(new Set<string>());
-  const kept = reactive(new Set<string>());
-  const checksLoading = ref(true);
-  const pinsLoading = ref(true);
-  const checkReverted = createEventHook<CheckReverted>();
+  const queryClient = useQueryClient();
   const { settings } = usePageSettings('tasks');
+  const checkReverted = createEventHook<CheckReverted>();
+  const pinReverted = createEventHook<Task>();
 
-  const taskPath = (id: string, path: string) =>
-    groupPath(groupId, `/items/${id}${path}`);
+  const checks = useQuery({ ...taskChecksQuery(), enabled: isLoggedIn });
+  const pins = useQuery({ ...taskPinsQuery(), enabled: isLoggedIn });
+  const visibility = useQuery({
+    ...taskVisibilityQuery(),
+    enabled: isLoggedIn,
+  });
 
-  const isChecked = (id: string) => checked.has(id);
-  const isPinned = (id: string) => pinned.has(id);
+  const checkedIds = computed(() => new Set(checks.data.value?.itemIds));
+  const pinnedIds = computed(() => new Set(pins.data.value?.itemIds));
+  const storedVisibility = computed(() => {
+    const statuses = new Map<string, VisibilityStatus>();
+    for (const id of visibility.data.value?.archived ?? []) {
+      statuses.set(id, 'archived');
+    }
+    for (const id of visibility.data.value?.kept ?? []) {
+      statuses.set(id, 'kept');
+    }
+    return statuses;
+  });
+
+  // Changes the server has not confirmed yet. They win over the loaded
+  // marks, so a refetch arriving in between cannot undo a click; dropping
+  // one shows the server's state again, which is how a failure rolls back.
+  const checkOverrides = reactive(new Map<string, boolean>());
+  const pinOverrides = reactive(new Map<string, boolean>());
+  const visibilityOverrides = reactive(
+    new Map<string, VisibilityStatus | null>(),
+  );
+
+  const loading = computed(
+    () => checks.isLoading.value || pins.isLoading.value,
+  );
+
+  const isChecked = (id: string) =>
+    isLoggedIn.value && (checkOverrides.get(id) ?? checkedIds.value.has(id));
+  const isPinned = (id: string) =>
+    isLoggedIn.value && (pinOverrides.get(id) ?? pinnedIds.value.has(id));
+
+  function visibilityOf(id: string): VisibilityStatus | null {
+    const override = visibilityOverrides.get(id);
+    if (override !== undefined) return override;
+    if (!isLoggedIn.value || checkOverrides.get(id) === true) return null;
+    return storedVisibility.value.get(id) ?? null;
+  }
 
   /** Where the server's list filter puts the task, see `setInArchive`. */
   function isInArchive(task: Task) {
-    if (archived.has(task.id)) return true;
-    if (kept.has(task.id)) return false;
+    const status = visibilityOf(task.id);
+    if (status === 'archived') return true;
+    if (status === 'kept') return false;
     return isNaturallyOld(task);
   }
 
@@ -67,54 +117,84 @@ export function useTaskMarks(
     );
   }
 
-  async function loadIds(
-    set: Set<string>,
-    loading: Ref<boolean>,
-    path: string,
-  ) {
-    loading.value = true;
-    try {
-      const { data } = await api.get<{ itemIds?: string[] }>(path);
-      replaceIds(set, data.itemIds);
-    } catch {
-      // Keeps the marks already shown, see loadVisibility.
-    } finally {
-      loading.value = false;
+  /**
+   * Stores what the server confirmed. A refetch that started before the
+   * change could otherwise land after it and show the old state again.
+   * Marks that never loaded have nothing to write into, so they are loaded
+   * anew, which includes the change.
+   */
+  function writeConfirmed<T>(queryKey: QueryKey, change: (current: T) => T) {
+    if (queryClient.getQueryData<T>(queryKey) === undefined) {
+      void queryClient.invalidateQueries({ queryKey });
+      return;
     }
+    void queryClient.cancelQueries({ queryKey });
+    queryClient.setQueryData<T>(
+      queryKey,
+      (current) => current && change(current),
+    );
   }
 
-  // A failed read keeps the last known marks: clearing them would show the
-  // member's pins and checks as gone for a request that merely dropped.
-  async function loadVisibility() {
-    try {
-      const { data } = await api.get<{ archived?: string[]; kept?: string[] }>(
-        '/user/visibility',
+  const writeIds = (queryKey: QueryKey, id: string, included: boolean) =>
+    writeConfirmed<ItemIdsDto>(queryKey, ({ itemIds }) => ({
+      itemIds: withId(itemIds, id, included),
+    }));
+
+  const writeVisibility = (id: string, status: VisibilityStatus | null) =>
+    writeConfirmed<VisibilityDto>(taskKeys.visibility(), (stored) => ({
+      archived: withId(stored.archived, id, status === 'archived'),
+      kept: withId(stored.kept, id, status === 'kept'),
+    }));
+
+  const itemParams = (id: string) => ({
+    params: { path: { group_id: groupId, id } },
+  });
+
+  // Checks and pins are debounced and queued per task below, so these only
+  // send the state a sync settled on; the queue decides when.
+  const checkWrite = useMutation({
+    mutationFn: ({ id, checked }: { id: string; checked: boolean }) => {
+      const path = '/groups/{group_id}/items/{id}/check';
+      const init = itemParams(id);
+      return unwrap(checked ? api.POST(path, init) : api.DELETE(path, init));
+    },
+  });
+
+  const pinWrite = useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) => {
+      const path = '/groups/{group_id}/items/{id}/pin';
+      const init = itemParams(id);
+      return unwrap(pinned ? api.POST(path, init) : api.DELETE(path, init));
+    },
+  });
+
+  const visibilityWrite = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: VisibilityStatus | null;
+    }) => {
+      const path = '/groups/{group_id}/items/{id}/visibility';
+      const init = itemParams(id);
+      return unwrap(
+        status === null
+          ? api.DELETE(path, init)
+          : api.POST(path, { ...init, body: { status } }),
       );
-      replaceIds(archived, data.archived);
-      replaceIds(kept, data.kept);
-    } catch {
-      // Keep the marks already shown; a reload retries the read.
-    }
-  }
-
-  function clear() {
-    checked.clear();
-    pinned.clear();
-    archived.clear();
-    kept.clear();
-    pinConfirmed.clear();
-    checksLoading.value = false;
-    pinsLoading.value = false;
-  }
-
-  async function load() {
-    if (!isLoggedIn.value) return clear();
-    await Promise.all([
-      loadIds(checked, checksLoading, '/user/checks'),
-      loadIds(pinned, pinsLoading, '/user/pins'),
-      loadVisibility(),
-    ]);
-  }
+    },
+    onMutate: ({ id, status }) => {
+      visibilityOverrides.set(id, status);
+    },
+    onSuccess: (_, { id, status }) => writeVisibility(id, status),
+    onSettled: (_, __, { id, status }) => {
+      // A later move of the same task owns the override by now.
+      if (visibilityOverrides.get(id) === status) {
+        visibilityOverrides.delete(id);
+      }
+    },
+  });
 
   const checkSync = new Map<string, CheckSyncEntry>();
   /** The pin state the server last confirmed, kept while a change is still syncing. */
@@ -125,25 +205,19 @@ export function useTaskMarks(
     if (!isLoggedIn.value) return;
     const wasChecked = isChecked(task.id);
     if (wasChecked === isNowChecked) return;
-    const wasKept = kept.has(task.id);
-
-    if (isNowChecked) {
-      checked.add(task.id);
-      kept.delete(task.id);
-    } else {
-      checked.delete(task.id);
-    }
-    scheduleCheckSync(task, wasChecked, wasKept);
+    checkOverrides.set(task.id, isNowChecked);
+    scheduleCheckSync(task, wasChecked);
   }
 
-  function scheduleCheckSync(
-    task: Task,
-    wasChecked: boolean,
-    wasKept: boolean,
-  ) {
+  function scheduleCheckSync(task: Task, wasChecked: boolean) {
     let entry = checkSync.get(task.id);
     if (!entry) {
-      entry = { task, serverChecked: wasChecked, wasKept, inFlight: false };
+      entry = {
+        task,
+        serverChecked: wasChecked,
+        checkedOnServer: false,
+        inFlight: false,
+      };
       checkSync.set(task.id, entry);
     }
     entry.task = task;
@@ -164,16 +238,15 @@ export function useTaskMarks(
 
     const desired = isChecked(id);
     if (!isLoggedIn.value || desired === entry.serverChecked) {
-      checkSync.delete(id);
-      return;
+      return settleCheck(entry);
     }
 
     entry.inFlight = true;
     let failed = false;
     try {
-      if (desired) await api.post(taskPath(id, '/check'));
-      else await api.delete(taskPath(id, '/check'));
+      await checkWrite.mutateAsync({ id, checked: desired });
       entry.serverChecked = desired;
+      if (desired) entry.checkedOnServer = true;
     } catch {
       failed = true;
     } finally {
@@ -184,24 +257,27 @@ export function useTaskMarks(
     if (entry.timer !== undefined) return;
 
     if (failed) {
-      checkSync.delete(id);
-      revertCheck(entry);
+      const shown = isChecked(id);
+      settleCheck(entry);
+      if (shown !== entry.serverChecked) {
+        void checkReverted.trigger({
+          task: entry.task,
+          checked: entry.serverChecked,
+        });
+      }
     } else if (isChecked(id) !== entry.serverChecked) {
       await flushCheckSync(id);
     } else {
-      checkSync.delete(id);
+      settleCheck(entry);
     }
   }
 
-  function revertCheck({ task, serverChecked, wasKept }: CheckSyncEntry) {
-    if (isChecked(task.id) === serverChecked) return;
-    if (serverChecked) {
-      checked.add(task.id);
-    } else {
-      checked.delete(task.id);
-      if (wasKept) kept.add(task.id);
-    }
-    void checkReverted.trigger({ task, checked: serverChecked });
+  function settleCheck(entry: CheckSyncEntry) {
+    const id = entry.task.id;
+    checkSync.delete(id);
+    writeIds(taskKeys.checks(), id, entry.serverChecked);
+    if (entry.checkedOnServer) writeVisibility(id, null);
+    checkOverrides.delete(id);
   }
 
   // Send pending syncs right away when the page is hidden (tab switch/close).
@@ -212,66 +288,59 @@ export function useTaskMarks(
     }
   });
 
-  function setPinned(id: string, value: boolean) {
-    if (value) pinned.add(id);
-    else pinned.delete(id);
-  }
-
   // Pin requests for one task run one after another, each sending the state
   // the member ended on, so the server cannot end on an earlier click.
-  async function syncPin(id: string) {
-    const confirmed = pinConfirmed.get(id);
-    const desired = isPinned(id);
-    if (confirmed === undefined || confirmed === desired) {
-      pinConfirmed.delete(id);
-      return;
-    }
+  async function syncPin(task: Task) {
+    const confirmed = pinConfirmed.get(task.id);
+    const desired = pinOverrides.get(task.id);
+    if (confirmed === undefined || desired === undefined) return;
+    if (confirmed === desired) return;
 
     try {
-      if (desired) await api.post(taskPath(id, '/pin'));
-      else await api.delete(taskPath(id, '/pin'));
-      pinConfirmed.set(id, desired);
+      await pinWrite.mutateAsync({ id: task.id, pinned: desired });
+      pinConfirmed.set(task.id, desired);
     } catch {
-      setPinned(id, confirmed);
-      pinConfirmed.delete(id);
+      // Undone meanwhile, the click that failed is no longer what is shown.
+      if (pinOverrides.get(task.id) !== desired) return;
+      pinOverrides.set(task.id, confirmed);
+      void pinReverted.trigger(task);
     }
+  }
+
+  function settlePin(id: string) {
+    const confirmed = pinConfirmed.get(id);
+    pinConfirmed.delete(id);
+    if (confirmed !== undefined) writeIds(taskKeys.pins(), id, confirmed);
+    pinOverrides.delete(id);
   }
 
   async function togglePin(task: Task) {
     if (!isLoggedIn.value) return;
     const id = task.id;
-    if (!pinConfirmed.has(id)) pinConfirmed.set(id, isPinned(id));
-    setPinned(id, !isPinned(id));
+    const wasPinned = isPinned(id);
+    if (!pinConfirmed.has(id)) pinConfirmed.set(id, wasPinned);
+    pinOverrides.set(id, !wasPinned);
 
     const queued = (pinQueue.get(id) ?? Promise.resolve()).then(() =>
-      syncPin(id),
+      syncPin(task),
     );
     pinQueue.set(id, queued);
     await queued;
-    if (pinQueue.get(id) === queued) pinQueue.delete(id);
-  }
-
-  function setVisibilityStatus(id: string, status: VisibilityStatus | null) {
-    archived.delete(id);
-    kept.delete(id);
-    if (status === 'archived') archived.add(id);
-    if (status === 'kept') kept.add(id);
+    if (pinQueue.get(id) !== queued) return;
+    pinQueue.delete(id);
+    settlePin(id);
   }
 
   /**
    * Moves a task into the archive or out of it, storing only what differs
-   * from where the server's list filter would put it on its own.
+   * from where the server's list filter would put it on its own. Resolves to
+   * whether the server took it.
    */
   async function setInArchive(
     task: Task,
     inArchive: boolean,
   ): Promise<boolean> {
     const id = task.id;
-    const original: VisibilityStatus | null = archived.has(id)
-      ? 'archived'
-      : kept.has(id)
-        ? 'kept'
-        : null;
     const naturallyOld = isNaturallyOld(task);
     const status: VisibilityStatus | null = inArchive
       ? naturallyOld
@@ -281,32 +350,38 @@ export function useTaskMarks(
         ? 'kept'
         : null;
 
-    setVisibilityStatus(id, status);
-    if (!isLoggedIn.value) return true;
+    // Without an account, the choice lasts as long as the page.
+    if (!isLoggedIn.value) {
+      visibilityOverrides.set(id, status);
+      return true;
+    }
 
     try {
-      if (status === null) await api.delete(taskPath(id, '/visibility'));
-      else await api.post(taskPath(id, '/visibility'), { status });
+      await visibilityWrite.mutateAsync({ id, status });
       return true;
     } catch {
-      setVisibilityStatus(id, original);
       return false;
     }
   }
 
+  // The overrides belong to whoever made them.
+  watch(isLoggedIn, () => {
+    checkOverrides.clear();
+    pinOverrides.clear();
+    visibilityOverrides.clear();
+  });
+
   return {
-    checksLoading,
-    pinsLoading,
+    loading,
     isChecked,
     isPinned,
     isInArchive,
     isNaturallyOld,
-    load,
-    clear,
     setChecked,
     togglePin,
     setInArchive,
     onCheckReverted: checkReverted.on,
+    onPinReverted: pinReverted.on,
   };
 }
 

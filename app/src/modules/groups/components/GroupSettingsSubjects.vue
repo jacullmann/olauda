@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGroups } from '@/modules/groups/composables/useGroups';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { Library, Plus, Pencil, Trash2, Search } from '@lucide/vue';
@@ -44,7 +44,6 @@ const {
   subjects,
   loading,
   saving,
-  loadSubjects,
   createSubject,
   updateSubject,
   deleteSubject,
@@ -294,13 +293,12 @@ function closeCreateModal() {
 async function handleCreate() {
   const name = newSubjectNamePicker.storedName.value;
   if (!name) return;
-  const oldLength = subjects.value.length;
-  await createSubject(
+  const created = await createSubject(
     name,
     newSubjectCategory.value,
     activeGroupDaltonEnabled.value && newSubjectIsDalton.value,
   );
-  if (subjects.value.length > oldLength) {
+  if (created) {
     newSubjectNamePicker.reset();
     newSubjectCategory.value = defaultSubjectCategory(activeGroupType.value);
     newSubjectIsDalton.value = false;
@@ -367,7 +365,6 @@ async function handleEditCourse() {
   if (!subject.value || !editingCourse.value || !editCourseName.value.trim())
     return;
   const ok = await updateCourse(
-    subject.value.id,
     editingCourse.value.id,
     editCourseName.value,
     effectiveCourseType(editCourseType.value),
@@ -382,12 +379,8 @@ async function handleEditCourse() {
 
 async function handleDeleteCourse(courseId: string) {
   if (!subject.value) return;
-  await deleteCourse(subject.value.id, courseId);
+  await deleteCourse(courseId);
 }
-
-onMounted(() => {
-  void loadSubjects();
-});
 </script>
 
 <template>

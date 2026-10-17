@@ -50,7 +50,8 @@ const {
   hasAllLevels,
   needsLessonChoice,
   loadingLessons,
-  loadLessons,
+  lessonsError,
+  retryLessons,
   scheduleConfig,
   setupLessons,
   resolution,
@@ -101,14 +102,9 @@ watch(
 
 // Fetched while the member picks levels, so the timetable is there on Continue.
 watch(
-  isAbitur,
-  (preload) => {
-    if (!preload) return;
-    loadLessons().catch((e: unknown) => {
-      if (isLessonStep.value) {
-        error.value = apiErrorMessage(e, t('schedule.errors.load'));
-      }
-    });
+  () => isLessonStep.value && !loadingLessons.value && lessonsError.value,
+  (e) => {
+    error.value = e ? apiErrorMessage(e, t('schedule.errors.load')) : '';
   },
   { immediate: true },
 );
@@ -154,15 +150,11 @@ async function saveAndFinish(courses: Enrollment[], personalized: boolean) {
   }
 }
 
-async function showLessonStep() {
+function showLessonStep() {
   error.value = '';
   step.value = 'lessons';
   scrollLayoutToTop();
-  try {
-    await loadLessons();
-  } catch (e: unknown) {
-    error.value = apiErrorMessage(e, t('schedule.errors.load'));
-  }
+  if (lessonsError.value) retryLessons();
 }
 
 async function submit() {

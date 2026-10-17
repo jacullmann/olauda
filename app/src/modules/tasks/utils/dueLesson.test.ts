@@ -11,6 +11,7 @@ const TUESDAY = '2026-10-13T00:00:00.000Z';
 const WEDNESDAY = '2026-10-14T00:00:00.000Z';
 const NEXT_TUESDAY = '2026-10-20T00:00:00.000Z';
 const WEEK = '2026-10-12';
+const CREATED_AT = '2026-01-01T00:00:00Z';
 const NEXT_WEEK = '2026-10-19';
 
 interface TestTask {
@@ -18,7 +19,7 @@ interface TestTask {
   dueDate: string;
   subjectId: string | null;
   courseId: string | null;
-  takesCourse?: boolean;
+  takesCourse: boolean;
 }
 
 const task = (
@@ -27,7 +28,7 @@ const task = (
   {
     dueDate = TUESDAY,
     courseId = null,
-    takesCourse,
+    takesCourse = true,
   }: Partial<Pick<TestTask, 'dueDate' | 'courseId' | 'takesCourse'>> = {},
 ): TestTask => ({ id, dueDate, subjectId, courseId, takesCourse });
 
@@ -37,13 +38,22 @@ const lesson = (
   day: number,
   slot: number,
   courseId: string | null = null,
-): Lesson => ({ id, subjectId, courseId, day, slot, duration: 1, room: null });
+): Lesson => ({
+  id,
+  subjectId,
+  courseId,
+  day,
+  slot,
+  duration: 1,
+  isDalton: false,
+});
 
 const cancel = (lessonId: string, weekStart = WEEK): Substitution => ({
   id: `cancel-${lessonId}`,
   lessonId,
   weekStart,
   cancelled: true,
+  createdAt: CREATED_AT,
 });
 
 function schedule(
@@ -188,6 +198,8 @@ describe('inDueOrder', () => {
       lessonId: 'math-1',
       weekStart: WEEK,
       day: 2,
+      cancelled: false,
+      createdAt: CREATED_AT,
     };
 
     expect(
@@ -208,6 +220,8 @@ describe('inDueOrder', () => {
       lessonId: 'math-1',
       weekStart: WEEK,
       subject: 'Physics',
+      cancelled: false,
+      createdAt: CREATED_AT,
     };
 
     expect(

@@ -1,6 +1,10 @@
 import { ref, watch } from 'vue';
 
-export type ThemeMode = 'system' | 'light' | 'dark';
+export const THEME_MODES = ['system', 'light', 'dark'] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
+
+export const isThemeMode = (value: string): value is ThemeMode =>
+  (THEME_MODES as readonly string[]).includes(value);
 
 // public/theme-init.js reads this key before the bundle loads; keep them in sync.
 const LOCAL_STORAGE_KEY = 'theme-preference2gl';
@@ -35,10 +39,7 @@ function initializeTheme() {
     LOCAL_STORAGE_KEY,
   ) as ThemeMode | null;
 
-  if (
-    storedPreference &&
-    ['system', 'light', 'dark'].includes(storedPreference)
-  ) {
+  if (storedPreference && isThemeMode(storedPreference)) {
     selectedThemeMode.value = storedPreference;
   } else {
     selectedThemeMode.value = 'system';

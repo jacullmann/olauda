@@ -1,11 +1,15 @@
+use crate::items::dto::ItemDto;
 use axum::{
     Json,
     http::{StatusCode, header},
     response::{IntoResponse, Response},
 };
-use serde_json::json;
+use serde::Serialize;
 use thiserror::Error;
+use utoipa::ToSchema;
 use uuid::Uuid;
+
+const UNEXPECTED: &str = "An unexpected error occurred.";
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -92,8 +96,8 @@ pub enum AppError {
     #[error("Only images, PDFs and Word, PowerPoint or Excel documents can be uploaded.")]
     UnsupportedFile,
 
-    #[error("Conflict: {0}")]
-    Conflict(String, serde_json::Value),
+    #[error("A task like this one already exists.")]
+    DuplicateItem(Box<ItemDto>),
 
     #[error("{0}")]
     NameTaken(String),
@@ -102,11 +106,11 @@ pub enum AppError {
     /// failure it was, so it can say what needs fixing.
     #[error("{message}")]
     Upstream {
-        code: &'static str,
+        code: ErrorCode,
         message: &'static str,
     },
 
-    #[error("An unexpected error occurred.")]
+    #[error("{UNEXPECTED}")]
     Internal(#[from] anyhow::Error),
 
     #[error("Database error.")]
@@ -140,113 +144,204 @@ impl AppError {
     }
 }
 
+/// The body of every error response. `error` is English and meant for
+/// debugging; clients explain a failure by its `code`.
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ErrorBody {
+    pub error: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorCode>,
+    /// Seconds until a refused action may be tried again.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry_after: Option<i64>,
+    /// The group a ban or mute applies to, so a client with several groups
+    /// open knows which one is affected.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_bytes: Option<u64>,
+    /// The fields that failed validation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<String>>,
+    /// The task a new one would duplicate.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duplicate: Option<Box<ItemDto>>,
+}
+
+impl ErrorBody {
+    pub fn new(error: impl Into<String>) -> Self {
+        Self {
+            error: error.into(),
+            code: None,
+            retry_after: None,
+            group_id: None,
+            max_bytes: None,
+            fields: None,
+            duplicate: None,
+        }
+    }
+
+    pub fn with_code(error: impl Into<String>, code: ErrorCode) -> Self {
+        Self {
+            code: Some(code),
+            ..Self::new(error)
+        }
+    }
+}
+
+/// Every reason a client may tell apart and act on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ErrorCode {
+    /// The access token is missing or expired; a refresh can fix it.
+    AuthRequired,
+    MfaChallengeExpired,
+    LoginLocked,
+    MfaLocked,
+    EmailCodeThrottled,
+    PasskeyChallengeExpired,
+    PasskeyUnknown,
+    PasskeyRejected,
+    PasskeyRegistrationRejected,
+    PasskeyAlreadyRegistered,
+    PasskeyLimitReached,
+    InvalidCredentials,
+    IncorrectPassword,
+    EmailAlreadyRegistered,
+    EmailNotVerified,
+    SecondFactorRequired,
+    InvalidSecondFactor,
+    LastSignInMethod,
+    ReauthRequired,
+    ReauthLocked,
+    RegistrationPaused,
+    Shutdown,
+    BannedFromGroup,
+    GroupBanned,
+    MutedInGroup,
+    FileTooLarge,
+    UnsupportedFile,
+    DuplicateItem,
+    NameTaken,
+    RateLimited,
+    ResendNotConfigured,
+    ResendKeyRejected,
+    ResendUnreachable,
+    HetznerTokenRejected,
+    HetznerServerNotFound,
+    HetznerUnreachable,
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, body) = match &self {
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, json!({ "error": msg })),
-            AppError::Validation(errs) => (
+        let message = self.to_string();
+        let coded = |status, code| (status, ErrorBody::with_code(message.clone(), code));
+
+        let (status, body) = match self {
+            AppError::BadRequest(_) => (StatusCode::BAD_REQUEST, ErrorBody::new(message)),
+            AppError::Validation(fields) => (
                 StatusCode::BAD_REQUEST,
-                json!({ "error": "Validation Error.", "errors": errs }),
+                ErrorBody {
+                    fields: Some(fields),
+                    ..ErrorBody::new(message)
+                },
             ),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, json!({ "error": msg })),
-            AppError::AuthRequired => (
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": "Authentication required.", "requiresAuth": true }),
-            ),
-            AppError::TokenExpired => (
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": "Access token is invalid or has expired.", "requiresAuth": true }),
-            ),
-            AppError::MfaChallengeExpired => (
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": self.to_string(), "code": "MFA_CHALLENGE_EXPIRED" }),
-            ),
+            AppError::Unauthorized(_) => (StatusCode::UNAUTHORIZED, ErrorBody::new(message)),
+            AppError::AuthRequired | AppError::TokenExpired => {
+                coded(StatusCode::UNAUTHORIZED, ErrorCode::AuthRequired)
+            }
+            AppError::MfaChallengeExpired => {
+                coded(StatusCode::UNAUTHORIZED, ErrorCode::MfaChallengeExpired)
+            }
             AppError::LoginLocked { retry_after } => {
-                return too_many_requests(&self, "LOGIN_LOCKED", *retry_after);
+                return too_many_requests(
+                    message,
+                    ErrorCode::LoginLocked,
+                    whole_seconds(retry_after),
+                );
             }
             AppError::MfaLocked { retry_after } => {
-                return too_many_requests(&self, "MFA_LOCKED", *retry_after);
+                return too_many_requests(
+                    message,
+                    ErrorCode::MfaLocked,
+                    whole_seconds(retry_after),
+                );
             }
             AppError::EmailCodeThrottled { retry_after } => {
-                return too_many_requests(&self, "EMAIL_CODE_THROTTLED", *retry_after);
+                return too_many_requests(
+                    message,
+                    ErrorCode::EmailCodeThrottled,
+                    whole_seconds(retry_after),
+                );
             }
-            AppError::Passkey(failure) => (
-                failure.status(),
-                json!({ "error": self.to_string(), "code": failure.code() }),
-            ),
-            AppError::Auth(failure) => (
-                failure.status(),
-                json!({ "error": self.to_string(), "code": failure.code() }),
-            ),
+            AppError::Passkey(failure) => coded(failure.status(), failure.code()),
+            AppError::Auth(failure) => coded(failure.status(), failure.code()),
             // A 403, not a 401: the session is valid, and a 401 would send the
             // client to refresh it instead of asking the user to confirm.
-            AppError::ReauthRequired => (
-                StatusCode::FORBIDDEN,
-                json!({ "error": self.to_string(), "code": "REAUTH_REQUIRED" }),
-            ),
+            AppError::ReauthRequired => coded(StatusCode::FORBIDDEN, ErrorCode::ReauthRequired),
             AppError::ReauthLocked { retry_after } => {
-                return too_many_requests(&self, "REAUTH_LOCKED", *retry_after);
+                return too_many_requests(
+                    message,
+                    ErrorCode::ReauthLocked,
+                    whole_seconds(retry_after),
+                );
             }
-            AppError::RegistrationPaused => (
-                StatusCode::FORBIDDEN,
-                json!({ "error": self.to_string(), "code": "REGISTRATION_PAUSED" }),
-            ),
+            AppError::RegistrationPaused => {
+                coded(StatusCode::FORBIDDEN, ErrorCode::RegistrationPaused)
+            }
             // A 503, not a 401: the session stays valid through shutdown,
             // and a 401 would send the client to refresh it and then sign out.
-            AppError::Shutdown => (
-                StatusCode::SERVICE_UNAVAILABLE,
-                json!({ "error": self.to_string(), "code": "SHUTDOWN" }),
-            ),
-            AppError::BannedFromGroup => (
-                StatusCode::FORBIDDEN,
-                json!({ "error": self.to_string(), "code": "BANNED_FROM_GROUP" }),
-            ),
-            // The group is named so a client with several groups open knows
-            // which one to close.
+            AppError::Shutdown => coded(StatusCode::SERVICE_UNAVAILABLE, ErrorCode::Shutdown),
+            AppError::BannedFromGroup => coded(StatusCode::FORBIDDEN, ErrorCode::BannedFromGroup),
             AppError::GroupBanned { group_id } => (
                 StatusCode::FORBIDDEN,
-                json!({ "error": self.to_string(), "code": "GROUP_BANNED", "groupId": group_id }),
+                ErrorBody {
+                    group_id: Some(group_id),
+                    ..ErrorBody::with_code(message, ErrorCode::GroupBanned)
+                },
             ),
-            // Named like a banned group, so a mute placed mid-session takes
-            // effect in the right group at once.
             AppError::MutedInGroup { group_id } => (
                 StatusCode::FORBIDDEN,
-                json!({ "error": self.to_string(), "code": "MUTED_IN_GROUP", "groupId": group_id }),
+                ErrorBody {
+                    group_id: Some(group_id),
+                    ..ErrorBody::with_code(message, ErrorCode::MutedInGroup)
+                },
             ),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, json!({ "error": msg })),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, json!({ "error": msg })),
+            AppError::Forbidden(_) => (StatusCode::FORBIDDEN, ErrorBody::new(message)),
+            AppError::NotFound(_) => (StatusCode::NOT_FOUND, ErrorBody::new(message)),
             AppError::FileTooLarge { max_bytes } => (
                 StatusCode::PAYLOAD_TOO_LARGE,
-                json!({ "error": self.to_string(), "code": "FILE_TOO_LARGE", "maxBytes": max_bytes }),
+                ErrorBody {
+                    max_bytes: Some(max_bytes),
+                    ..ErrorBody::with_code(message, ErrorCode::FileTooLarge)
+                },
             ),
-            AppError::UnsupportedFile => (
+            AppError::UnsupportedFile => coded(
                 StatusCode::UNSUPPORTED_MEDIA_TYPE,
-                json!({ "error": self.to_string(), "code": "UNSUPPORTED_FILE" }),
+                ErrorCode::UnsupportedFile,
             ),
-            AppError::Conflict(msg, item) => (
+            AppError::DuplicateItem(item) => (
                 StatusCode::CONFLICT,
-                json!({ "error": msg, "code": "DUPLICATE_ITEM", "item": item }),
+                ErrorBody {
+                    duplicate: Some(item),
+                    ..ErrorBody::with_code(message, ErrorCode::DuplicateItem)
+                },
             ),
-            AppError::NameTaken(msg) => (
-                StatusCode::CONFLICT,
-                json!({ "error": msg, "code": "NAME_TAKEN" }),
-            ),
-            AppError::Upstream { code, message } => (
-                StatusCode::BAD_GATEWAY,
-                json!({ "error": message, "code": code }),
-            ),
+            AppError::NameTaken(_) => coded(StatusCode::CONFLICT, ErrorCode::NameTaken),
+            AppError::Upstream { code, .. } => coded(StatusCode::BAD_GATEWAY, code),
             AppError::Internal(e) => {
                 tracing::error!("Internal error: {e:#}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    json!({ "error": "An unexpected error occurred." }),
+                    ErrorBody::new(UNEXPECTED),
                 )
             }
             AppError::Database(e) => {
                 tracing::error!("Database error: {e}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    json!({ "error": "An unexpected error occurred." }),
+                    ErrorBody::new(UNEXPECTED),
                 )
             }
         };
@@ -255,17 +350,22 @@ impl IntoResponse for AppError {
     }
 }
 
-/// A 429 that tells the client when to try again, in whole seconds rounded up
-/// so a client that waits exactly this long is never refused again.
-fn too_many_requests(error: &AppError, code: &str, retry_after: chrono::TimeDelta) -> Response {
-    let secs = (retry_after.num_milliseconds().max(0) + 999) / 1000;
-
+/// A 429 that tells the client how many seconds to wait before trying again.
+pub fn too_many_requests(message: String, code: ErrorCode, secs: i64) -> Response {
     (
         StatusCode::TOO_MANY_REQUESTS,
         [(header::RETRY_AFTER, secs.to_string())],
-        Json(json!({ "error": error.to_string(), "code": code, "retryAfter": secs })),
+        Json(ErrorBody {
+            retry_after: Some(secs),
+            ..ErrorBody::with_code(message, code)
+        }),
     )
         .into_response()
+}
+
+/// Rounded up, so a client that waits exactly this long is never refused again.
+fn whole_seconds(delta: chrono::TimeDelta) -> i64 {
+    (delta.num_milliseconds().max(0) + 999) / 1000
 }
 
 /// Why a passkey registration or sign-in was refused. Each case has its own
@@ -308,14 +408,14 @@ impl PasskeyFailure {
         }
     }
 
-    fn code(self) -> &'static str {
+    fn code(self) -> ErrorCode {
         match self {
-            Self::ChallengeExpired => "PASSKEY_CHALLENGE_EXPIRED",
-            Self::UnknownCredential => "PASSKEY_UNKNOWN",
-            Self::SignInRejected => "PASSKEY_REJECTED",
-            Self::RegistrationRejected => "PASSKEY_REGISTRATION_REJECTED",
-            Self::AlreadyRegistered => "PASSKEY_ALREADY_REGISTERED",
-            Self::LimitReached => "PASSKEY_LIMIT_REACHED",
+            Self::ChallengeExpired => ErrorCode::PasskeyChallengeExpired,
+            Self::UnknownCredential => ErrorCode::PasskeyUnknown,
+            Self::SignInRejected => ErrorCode::PasskeyRejected,
+            Self::RegistrationRejected => ErrorCode::PasskeyRegistrationRejected,
+            Self::AlreadyRegistered => ErrorCode::PasskeyAlreadyRegistered,
+            Self::LimitReached => ErrorCode::PasskeyLimitReached,
         }
     }
 }
@@ -370,15 +470,15 @@ impl AuthFailure {
         }
     }
 
-    fn code(self) -> &'static str {
+    fn code(self) -> ErrorCode {
         match self {
-            Self::InvalidCredentials => "INVALID_CREDENTIALS",
-            Self::IncorrectPassword => "INCORRECT_PASSWORD",
-            Self::EmailAlreadyRegistered => "EMAIL_ALREADY_REGISTERED",
-            Self::EmailNotVerified => "EMAIL_NOT_VERIFIED",
-            Self::SecondFactorRequired => "SECOND_FACTOR_REQUIRED",
-            Self::InvalidSecondFactor => "INVALID_SECOND_FACTOR",
-            Self::LastSignInMethod => "LAST_SIGN_IN_METHOD",
+            Self::InvalidCredentials => ErrorCode::InvalidCredentials,
+            Self::IncorrectPassword => ErrorCode::IncorrectPassword,
+            Self::EmailAlreadyRegistered => ErrorCode::EmailAlreadyRegistered,
+            Self::EmailNotVerified => ErrorCode::EmailNotVerified,
+            Self::SecondFactorRequired => ErrorCode::SecondFactorRequired,
+            Self::InvalidSecondFactor => ErrorCode::InvalidSecondFactor,
+            Self::LastSignInMethod => ErrorCode::LastSignInMethod,
         }
     }
 }
